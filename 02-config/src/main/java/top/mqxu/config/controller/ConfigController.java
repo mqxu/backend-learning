@@ -37,6 +37,6 @@ public class ConfigController {
 
     @GetMapping("/my")
     public String getMyInfo() {
-        return "我的姓名是：" + this.myJob + ",职业是：：" + myJob;
+        return "我的姓名是：" + this.myName + ",职业是：：" + myJob;
     }
 }
