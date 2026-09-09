@@ -1,0 +1,11 @@
+server:
+  port: 9999
+
+spring:
+  application:
+    name: 02-配置管理
+
+
+mqxu:
+  name: 许莫淇
+  job: 教师
