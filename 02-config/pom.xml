@@ -11,5 +11,12 @@
 
     <artifactId>02-config</artifactId>
 
+    <dependencies>
+        <!-- 配置校验：@Validated + JSR-303（jakarta.validation） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

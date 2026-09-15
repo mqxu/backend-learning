@@ -1,11 +1,48 @@
+# =====================================================
+# 主配置文件：所有环境共享的通用配置
+# 环境差异配置放在 application-{profile}.yml 中
+# =====================================================
+
 server:
-  port: 9999
+  port: 8002
 
 spring:
   application:
     name: 02-配置管理
+  # 激活的环境（dev / prod），可通过命令行参数 --spring.profiles.active=prod 覆盖
+  profiles:
+    active: dev
 
-
+# 基础自定义配置：@Value 直接注入
 mqxu:
   name: 许莫淇
   job: 教师
+
+# 案例 1：@ConfigurationProperties 类型安全绑定（嵌套对象 + List + Map + List 嵌套对象）
+student:
+  name: 张三
+  age: 18
+  hobbies:
+    - 篮球
+    - 编程
+    - 阅读
+  scores:
+    chinese: 90
+    math: 95
+    english: 88
+  address:
+    province: 江苏省
+    city: 南京市
+  courses:
+    - name: 高等数学
+      credit: 4
+    - name: 大学英语
+      credit: 3
+
+# 案例 4：@ConfigurationProperties + @Validated 配置校验
+app:
+  name: 配置管理模块
+  # 占位符：引用上方 mqxu.name 的值
+  author: ${mqxu.name}
+  port: 8002
+  max-count: 100

@@ -1,0 +1,5 @@
+# 开发环境配置（spring.profiles.active=dev 时生效）
+
+env:
+  name: dev
+  description: 开发环境

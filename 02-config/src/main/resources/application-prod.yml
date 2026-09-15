@@ -1,0 +1,5 @@
+# 生产环境配置（spring.profiles.active=prod 时生效）
+
+env:
+  name: prod
+  description: 生产环境
