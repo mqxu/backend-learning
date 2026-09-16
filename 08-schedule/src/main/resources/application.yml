@@ -1,0 +1,6 @@
+server:
+  port: 8008
+
+spring:
+  application:
+    name: 08-定时任务

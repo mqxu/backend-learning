@@ -1,0 +1,6 @@
+server:
+  port: 8009
+
+spring:
+  application:
+    name: 09-认证与授权

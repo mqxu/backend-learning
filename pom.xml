@@ -19,6 +19,18 @@
     <modules>
         <module>01-quickstart</module>
         <module>02-config</module>
+        <module>03-logging</module>
+        <module>04-web</module>
+        <module>05-mybatis</module>
+        <module>06-redis</module>
+        <module>07-mq</module>
+        <module>08-schedule</module>
+        <module>09-security</module>
+        <module>10-file</module>
+        <module>11-doc</module>
+        <module>12-test</module>
+        <module>13-actuator</module>
+        <module>14-deploy</module>
     </modules>
 
 

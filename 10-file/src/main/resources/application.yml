@@ -1,0 +1,6 @@
+server:
+  port: 8010
+
+spring:
+  application:
+    name: 10-文件上传下载

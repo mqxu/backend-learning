@@ -1,0 +1,6 @@
+server:
+  port: 8012
+
+spring:
+  application:
+    name: 12-测试

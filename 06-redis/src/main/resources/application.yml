@@ -1,0 +1,6 @@
+server:
+  port: 8006
+
+spring:
+  application:
+    name: 06-缓存与分布式锁

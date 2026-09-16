@@ -1,0 +1,6 @@
+server:
+  port: 8004
+
+spring:
+  application:
+    name: 04-Web 开发进阶

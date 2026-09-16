@@ -1,0 +1,6 @@
+server:
+  port: 8014
+
+spring:
+  application:
+    name: 14-部署与 CI/CD

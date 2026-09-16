@@ -1,0 +1,6 @@
+server:
+  port: 8005
+
+spring:
+  application:
+    name: 05-数据访问

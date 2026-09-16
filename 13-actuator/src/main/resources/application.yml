@@ -1,0 +1,6 @@
+server:
+  port: 8013
+
+spring:
+  application:
+    name: 13-应用监控
