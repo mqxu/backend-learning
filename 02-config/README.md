@@ -1,4 +1,5 @@
 # 配置管理学习模块
+> 📖 详细教程：[docs/02-config.md](../docs/02-config.md)
 
 演示 Spring Boot 中常见的配置管理用法，涵盖 5 个实用案例。
 

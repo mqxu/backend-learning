@@ -1,4 +1,5 @@
 # 09-security · 认证与授权
+> 📖 详细教程：[docs/09-security.md](../docs/09-security.md)
 
 > 状态：🚧 骨架已创建，核心案例待开发
 

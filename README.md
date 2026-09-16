@@ -11,22 +11,22 @@
 
 ## 模块导航
 
-| 序号 | 模块 | 主题 | 状态 |
-| --- | --- | --- | --- |
-| 01 | [01-quickstart](01-quickstart/README.md) | 快速入门 | ✅ 完成 |
-| 02 | [02-config](02-config/README.md) | 配置管理 | ✅ 完成 |
-| 03 | [03-logging](03-logging/README.md) | 日志管理 | 🚧 骨架 |
-| 04 | [04-web](04-web/README.md) | Web 开发进阶 | 🚧 骨架 |
-| 05 | [05-mybatis](05-mybatis/README.md) | 数据访问 | 🚧 骨架 |
-| 06 | [06-redis](06-redis/README.md) | 缓存与分布式锁 | 🚧 骨架 |
-| 07 | [07-mq](07-mq/README.md) | 消息队列 | 🚧 骨架 |
-| 08 | [08-schedule](08-schedule/README.md) | 定时任务 | 🚧 骨架 |
-| 09 | [09-security](09-security/README.md) | 认证与授权 | 🚧 骨架 |
-| 10 | [10-file](10-file/README.md) | 文件上传下载 | 🚧 骨架 |
-| 11 | [11-doc](11-doc/README.md) | 接口文档 | 🚧 骨架 |
-| 12 | [12-test](12-test/README.md) | 测试 | 🚧 骨架 |
-| 13 | [13-actuator](13-actuator/README.md) | 应用监控 | 🚧 骨架 |
-| 14 | [14-deploy](14-deploy/README.md) | 部署与 CI/CD | 🚧 骨架 |
+| 序号 | 模块 | 主题 | 状态 | 教程 |
+| --- | --- | --- | --- | --- |
+| 01 | [01-quickstart](01-quickstart/README.md) | 快速入门 | ✅ 完成 | [教程](docs/01-quickstart.md) |
+| 02 | [02-config](02-config/README.md) | 配置管理 | ✅ 完成 | [教程](docs/02-config.md) |
+| 03 | [03-logging](03-logging/README.md) | 日志管理 | 🚧 骨架 | [教程](docs/03-logging.md) |
+| 04 | [04-web](04-web/README.md) | Web 开发进阶 | 🚧 骨架 | [教程](docs/04-web.md) |
+| 05 | [05-mybatis](05-mybatis/README.md) | 数据访问 | 🚧 骨架 | [教程](docs/05-mybatis.md) |
+| 06 | [06-redis](06-redis/README.md) | 缓存与分布式锁 | 🚧 骨架 | [教程](docs/06-redis.md) |
+| 07 | [07-mq](07-mq/README.md) | 消息队列 | 🚧 骨架 | [教程](docs/07-mq.md) |
+| 08 | [08-schedule](08-schedule/README.md) | 定时任务 | 🚧 骨架 | [教程](docs/08-schedule.md) |
+| 09 | [09-security](09-security/README.md) | 认证与授权 | 🚧 骨架 | [教程](docs/09-security.md) |
+| 10 | [10-file](10-file/README.md) | 文件上传下载 | 🚧 骨架 | [教程](docs/10-file.md) |
+| 11 | [11-doc](11-doc/README.md) | 接口文档 | 🚧 骨架 | [教程](docs/11-doc.md) |
+| 12 | [12-test](12-test/README.md) | 测试 | 🚧 骨架 | [教程](docs/12-test.md) |
+| 13 | [13-actuator](13-actuator/README.md) | 应用监控 | 🚧 骨架 | [教程](docs/13-actuator.md) |
+| 14 | [14-deploy](14-deploy/README.md) | 部署与 CI/CD | 🚧 骨架 | [教程](docs/14-deploy.md) |
 
 ## 模块详解
 
@@ -53,6 +53,7 @@
 backend-learning
 ├── pom.xml                 # 父 POM：统一依赖版本与插件
 ├── README.md               # 本文件
+├── docs/                   # 各模块详细教程
 ├── 01-quickstart/          # 快速入门
 ├── 02-config/              # 配置管理
 ├── 03-logging/             # 日志管理

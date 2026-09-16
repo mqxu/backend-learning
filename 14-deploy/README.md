@@ -1,4 +1,5 @@
 # 14-deploy · 部署与 CI/CD
+> 📖 详细教程：[docs/14-deploy.md](../docs/14-deploy.md)
 
 > 状态：🚧 骨架已创建，核心案例待开发
 

@@ -1,4 +1,5 @@
 # 快速入门学习模块
+> 📖 详细教程：[docs/01-quickstart.md](../docs/01-quickstart.md)
 
 Spring Boot 最小可运行示例，演示一个后端模块的基本骨架：启动类、REST 接口、实体类与配置文件。
 

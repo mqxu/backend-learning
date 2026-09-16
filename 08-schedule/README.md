@@ -1,4 +1,5 @@
 # 08-schedule · 定时任务
+> 📖 详细教程：[docs/08-schedule.md](../docs/08-schedule.md)
 
 > 状态：🚧 骨架已创建，核心案例待开发
 

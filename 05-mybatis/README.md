@@ -1,4 +1,5 @@
 # 05-mybatis · 数据访问
+> 📖 详细教程：[docs/05-mybatis.md](../docs/05-mybatis.md)
 
 > 状态：🚧 骨架已创建，核心案例待开发
 

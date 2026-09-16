@@ -1,4 +1,5 @@
 # 13-actuator · 应用监控
+> 📖 详细教程：[docs/13-actuator.md](../docs/13-actuator.md)
 
 > 状态：🚧 骨架已创建，核心案例待开发
 

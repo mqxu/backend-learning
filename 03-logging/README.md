@@ -1,4 +1,5 @@
 # 03-logging · 日志管理
+> 📖 详细教程：[docs/03-logging.md](../docs/03-logging.md)
 
 > 状态：🚧 骨架已创建，核心案例待开发
 
