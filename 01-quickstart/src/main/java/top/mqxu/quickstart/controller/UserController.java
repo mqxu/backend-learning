@@ -17,7 +17,7 @@ import java.time.LocalDate;
 public class UserController {
 
     @GetMapping("/info")
-    private User getUserInfo() {
+    public User getUserInfo() {
         return new User(1001L, "张三", LocalDate.of(2005, 10, 24));
     }
 

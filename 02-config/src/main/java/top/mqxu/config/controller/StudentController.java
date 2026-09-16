@@ -1,6 +1,6 @@
 package top.mqxu.config.controller;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,9 +13,10 @@ import top.mqxu.config.properties.StudentProperties;
  **/
 @RestController
 @RequestMapping("/student")
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class StudentController {
 
+    //构造器注入
     private final StudentProperties studentProperties;
 
     @GetMapping("/info")
