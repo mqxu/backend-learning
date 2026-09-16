@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：05-mybatis
 > - 预计时长：约 60 分钟
-> - 对应代码：[06-redis](../06-redis)
+> - 对应代码：[06-redis](https://github.com/mqxu/backend-learning/tree/main/06-redis)
 
 ## 1. 本节导读
 

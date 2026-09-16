@@ -3,7 +3,7 @@
 > - 难度：入门
 > - 前置模块：无
 > - 预计时长：约 30 分钟
-> - 对应代码：[01-quickstart](../01-quickstart)
+> - 对应代码：[01-quickstart](https://github.com/mqxu/backend-learning/tree/main/01-quickstart)
 
 ## 1. 本节导读
 

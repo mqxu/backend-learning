@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：13-actuator
 > - 预计时长：约 45 分钟
-> - 对应代码：[14-deploy](../14-deploy)
+> - 对应代码：[14-deploy](https://github.com/mqxu/backend-learning/tree/main/14-deploy)
 
 ## 1. 本节导读
 

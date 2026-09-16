@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：05-mybatis
 > - 预计时长：约 75 分钟
-> - 对应代码：[09-security](../09-security)
+> - 对应代码：[09-security](https://github.com/mqxu/backend-learning/tree/main/09-security)
 
 ## 1. 本节导读
 

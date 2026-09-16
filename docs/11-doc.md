@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：04-web
 > - 预计时长：约 30 分钟
-> - 对应代码：[11-doc](../11-doc)
+> - 对应代码：[11-doc](https://github.com/mqxu/backend-learning/tree/main/11-doc)
 
 ## 1. 本节导读
 

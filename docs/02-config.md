@@ -3,7 +3,7 @@
 > - 难度：入门
 > - 前置模块：01-quickstart
 > - 预计时长：约 45 分钟
-> - 对应代码：[02-config](../02-config)
+> - 对应代码：[02-config](https://github.com/mqxu/backend-learning/tree/main/02-config)
 
 ## 1. 本节导读
 

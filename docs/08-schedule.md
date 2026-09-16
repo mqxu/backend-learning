@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：07-mq
 > - 预计时长：约 45 分钟
-> - 对应代码：[08-schedule](../08-schedule)
+> - 对应代码：[08-schedule](https://github.com/mqxu/backend-learning/tree/main/08-schedule)
 
 ## 1. 本节导读
 

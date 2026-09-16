@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：04-web
 > - 预计时长：约 60 分钟
-> - 对应代码：[05-mybatis](../05-mybatis)
+> - 对应代码：[05-mybatis](https://github.com/mqxu/backend-learning/tree/main/05-mybatis)
 
 ## 1. 本节导读
 

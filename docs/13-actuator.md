@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：04-web
 > - 预计时长：约 45 分钟
-> - 对应代码：[13-actuator](../13-actuator)
+> - 对应代码：[13-actuator](https://github.com/mqxu/backend-learning/tree/main/13-actuator)
 
 ## 1. 本节导读
 

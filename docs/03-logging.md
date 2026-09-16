@@ -3,7 +3,7 @@
 > - 难度：入门
 > - 前置模块：02-config
 > - 预计时长：约 45 分钟
-> - 对应代码：[03-logging](../03-logging)
+> - 对应代码：[03-logging](https://github.com/mqxu/backend-learning/tree/main/03-logging)
 
 ## 1. 本节导读
 

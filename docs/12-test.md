@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：04-web
 > - 预计时长：约 45 分钟
-> - 对应代码：[12-test](../12-test)
+> - 对应代码：[12-test](https://github.com/mqxu/backend-learning/tree/main/12-test)
 
 ## 1. 本节导读
 

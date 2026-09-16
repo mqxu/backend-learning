@@ -3,7 +3,7 @@
 > - 难度：进阶
 > - 前置模块：02-config、03-logging
 > - 预计时长：约 60 分钟
-> - 对应代码：[04-web](../04-web)
+> - 对应代码：[04-web](https://github.com/mqxu/backend-learning/tree/main/04-web)
 
 ## 1. 本节导读
 
