@@ -20,7 +20,7 @@
 
 ## 2. 概念铺垫
 
-### 2.1 为什么要「规范」地打日志
+### 2.1 为什么要规范地打日志
 
 排查线上问题，往往只能靠日志。如果日志里是一堆 `System.out.println`、没有时间、没有级别、没有上下文，出了问题就是大海捞针。规范的日志要能回答三个问题：**什么时间、哪个请求、发生了什么**。
 
@@ -114,7 +114,61 @@ log.info("用户 " + name + " 登录成功");     // ❌ 禁止
 
 验证：访问 `/log/demo`，控制台能看到带时间、级别、类名的日志。
 
-### 步骤 2：配置日志格式与按环境输出
+### 步骤 2 ：控制台日志个性化（颜色 + 长度）
+
+目标：学会配置控制台日志。
+
+```yaml
+spring:
+  output:
+    ansi:
+      enabled: always   # 强制输出 ANSI 颜色（重定向到文件/管道时也保留）
+
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} %clr([%thread]){yellow} %clr(%-5level) %clr(%logger{36}){cyan} [%X{traceId}] - %msg%n'
+```
+
+#### 每个占位符的含义
+
+| 占位符 | 含义 |
+| --- | --- |
+| `%d{yyyy-MM-dd HH:mm:ss.SSS}` | 时间，`{}` 里是日期格式 |
+| `%thread` | 线程名 |
+| `%-5level` | 级别，`-5` 表示左对齐并补足到 5 个字符（`INFO `、`WARN `） |
+| `%logger{36}` | 类名（logger 名），`{36}` 表示最多保留 36 个字符 |
+| `%X{traceId}` | 从 MDC 里取 `traceId`（步骤 3 会写入） |
+| `%msg` | 日志消息本体 |
+| `%n` | 换行 |
+| `%clr(...)` | Spring Boot 的颜色转换器，给 `()` 里的内容上色 |
+
+#### 颜色怎么写
+
+`%clr(...){颜色}` 的 `{}` 支持三类，还可以用逗号叠加多个：
+
+- **前景色**：`black` `red` `green` `yellow` `blue` `magenta` `cyan` `white`，以及亮色 `bright_black` `bright_red` `bright_green` `bright_yellow` `bright_blue` `bright_magenta` `bright_cyan` `bright_white`
+- **背景色**：加 `bg_` 前缀，如 `bg_red`、`bg_bright_green`
+- **文字样式**：`normal` `bold` `faint` `italic` `underline` `reverse`
+
+```text
+%clr(%-5level){red}          # 级别固定红色
+%clr(%msg){yellow,bold}      # 消息黄色 + 加粗
+%clr(%logger){bg_blue}       # 类名蓝底
+```
+
+如果**不写 `{}`**，`%clr(%-5level)` 会按级别自动上色：`ERROR` 红、`WARN` 黄、其余（`INFO`/`DEBUG`/`TRACE`）绿。
+
+#### 长度控制
+
+- `%logger{36}`：类名超过 36 个字符时从右截断（保留末段包名，如 `t.m.l.controller.LoggingController`）；
+- `%-5level`：级别左对齐、补足到 5 位，让后面的内容对齐；
+- `%15.15thread`：线程名补齐/截断到 15 位；前缀 `-` 表示左对齐，如 `%-15.15thread`。
+
+> **两个前提**：
+> 1. `%clr` 是 Spring Boot 扩展，自定义 `logback-spring.xml` 不会自动注册，必须先加 `<conversionRule conversionWord="clr" .../>`；
+> 2. 颜色要生效，需设 `spring.output.ansi.enabled: always`（`detect` 在重定向到文件时会自动关掉颜色）。
+
+### 步骤 3：配置日志格式与按环境输出
 
 目标：自定义输出格式、按天滚动写文件、dev/prod 用不同级别。
 
@@ -123,10 +177,17 @@ log.info("用户 " + name + " 登录成功");     // ❌ 禁止
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- 注册 Spring Boot 的 %clr 颜色转换器（自定义 logback-spring.xml 不会自动注册） -->
+    <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
+
+    <!-- 控制台格式从 application.yml 的 logging.pattern.console 读取 -->
+    <springProperty scope="context" name="CONSOLE_LOG_PATTERN" source="logging.pattern.console"
+                    defaultValue="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] - %msg%n"/>
+
     <!-- 控制台 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] - %msg%n</pattern>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
         </encoder>
     </appender>
 
@@ -141,6 +202,11 @@ log.info("用户 " + name + " 登录成功");     // ❌ 禁止
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <!-- 默认兜底：任何 profile 都未匹配时，INFO 输出到控制台 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
 
     <!-- 开发环境：INFO，输出到控制台 -->
     <springProfile name="dev">
@@ -161,9 +227,10 @@ log.info("用户 " + name + " 登录成功");     // ❌ 禁止
 讲解：
 
 - `%d` 时间、`%thread` 线程、`%-5level` 级别、`%logger` 类名、`%X{traceId}` MDC 值、`%msg` 消息、`%n` 换行；
-- `<springProfile>` 让不同环境用不同配置（dev 打控制台、prod 写文件且级别更高）。
+- `<springProfile>` 让不同环境用不同配置（dev 打控制台、prod 写文件且级别更高）；
+- 顶部的默认 `<root level="INFO">` 是兜底：即使没有任何 profile 激活，日志也会输出到控制台，避免「定义了 appender 却没人引用」导致日志凭空消失。
 
-### 步骤 3：MDC 链路追踪
+### 步骤 4：MDC 链路追踪
 
 目标：每次请求自动打上 `traceId`。
 
@@ -211,7 +278,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import top.mqxu.logging.common.TraceInterceptor;
 
 /**
  * Web 配置
@@ -238,7 +304,7 @@ public class WebConfig implements WebMvcConfigurer {
 
 > **规范点**：`MDC.clear()` 必须放在 `afterCompletion`（或 `finally`）里，否则线程池复用线程会串号。
 
-### 步骤 4：日志脱敏
+### 步骤 5：日志脱敏
 
 目标：手机号、身份证等敏感信息不落明文。
 
@@ -276,6 +342,31 @@ log.info("用户手机号：{}", LogMaskUtil.maskPhone("13812345678"));
 - 脱敏放在「打日志前」用工具方法处理，是最简单直接的方式；
 - 更彻底的做法是用 Logback 的 `MessageConverter` 自动识别并脱敏，属于进阶内容，可自行了解。
 
+### 步骤 6：自定义启动 Banner
+
+启动时控制台那串 `Spring Boot` 大字就是 Banner，可以换成自己的。最简单的方式是在 `resources` 下放一个 `banner.txt`，内容会原样打印：
+
+```text
+${AnsiColor.BRIGHT_GREEN}
+  ____            _             
+ / ___| _ __  _ __(_)_ __   __ _ 
+ \___ \| '_ \| '__| | '_ \ / _` |
+  ___) | |_) | |  | | | | | (_| |
+ |____/| .__/|_|  |_|_| |_|\__, |
+       |_|                 |___/ 
+${AnsiColor.DEFAULT}
+```
+
+讲解：
+
+- `banner.txt` 放在 classpath 根（即 `resources` 下），Spring Boot 启动时自动读取；
+- 支持颜色变量：`${AnsiColor.RED}`、`${AnsiColor.BRIGHT_GREEN}`、`${AnsiStyle.BOLD}` 等，`${AnsiColor.DEFAULT}` 复位（颜色名见步骤 2 补充）；
+- 支持版本变量：`${application.version}`、`${spring-boot.version}`、`${spring-boot.formatted-version}`；
+- 想关掉 Banner：在 `application.yml` 里配 `spring.main.banner-mode: off`（可选 `console` / `log`）；
+- 也可以用图片当 Banner：放 `banner.png` / `banner.gif`，Spring Boot 会转成 ASCII 艺术字。
+
+> `banner.txt` 里想输出字面 `$`，要写成 `\$`。
+
 ---
 
 ## 5. 完整代码与目录结构
@@ -292,7 +383,9 @@ log.info("用户手机号：{}", LogMaskUtil.maskPhone("13812345678"));
     │       └── LogMaskUtil.java
     └── resources
         ├── application.yml
-        └── logback-spring.xml
+        ├── application-prod.yml
+        ├── logback-spring.xml
+        └── banner.txt
 ```
 
 ---
@@ -341,6 +434,7 @@ mvn -pl 03-logging -am spring-boot:run
 - **基础**：给 `LogController` 增加一个带 `@RequestParam name` 的接口，用占位符打印 `name`。
 - **进阶**：新增 `application-prod.yml` 与 `<springProfile name="prod">`，实现 prod 写文件、级别 WARN。
 - **挑战**：自定义一个 Logback `MessageConverter`，自动把日志中的手机号脱敏，无需手动调用工具方法。
+- **拓展**：写一个带颜色的 `banner.txt`，替换默认的 Spring Boot 启动横幅。
 
 ---
 
@@ -352,6 +446,8 @@ mvn -pl 03-logging -am spring-boot:run
 | `@Slf4j` | 自动生成 `log` 字段 |
 | 占位符 `{}` | 禁止字符串拼接 |
 | logback-spring.xml | 格式、按天滚动、`<springProfile>` 分环境 |
+| `%clr` / 颜色 | 控制台个性化，`{颜色}` 或按级别自动上色 |
+| Banner | `resources/banner.txt` 自定义启动横幅 |
 | MDC | 用 `traceId` 串起一次请求的全部日志 |
 | 脱敏 | 敏感信息打码后再落日志 |
 

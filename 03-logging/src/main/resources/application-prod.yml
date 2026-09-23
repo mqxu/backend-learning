@@ -1,0 +1,3 @@
+# 生产环境专用配置（占位）
+# 激活方式：启动参数 --spring.profiles.active=prod
+# 激活后 logback-spring.xml 的 <springProfile name="prod"> 生效，日志 WARN 级别写入 logs/ 目录

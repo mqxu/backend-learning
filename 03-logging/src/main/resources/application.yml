@@ -4,3 +4,12 @@ server:
 spring:
   application:
     name: 03-日志管理
+  profiles:
+    active: dev
+  output:
+    ansi:
+      enabled: always   # 强制控制台输出 ANSI 颜色（即使重定向到文件/管道）
+
+#logging:
+#  pattern:
+#    console: '%d{yyyy-MM-dd HH:mm:ss:SSS} %clr([%thread]){magenta} %clr(%-5level) %clr(%logger{12}){cyan} [%X{traceId}] - %msg%n'
