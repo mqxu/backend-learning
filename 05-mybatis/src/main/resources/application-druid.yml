@@ -1,0 +1,25 @@
+# Druid 版数据源，用 --spring.profiles.active=druid 启用
+# 依赖 druid-spring-boot-4-starter，放在 pom 的 druid profile 里：mvn -pl 05-mybatis -Pdruid spring-boot:run
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5            # 启动时建好的连接数
+      min-idle: 5                # 最小空闲
+      max-active: 10             # 池上限，对应 HikariCP 的 maximum-pool-size
+      max-wait: 3000             # 取连接超时，毫秒，对应 HikariCP 的 connection-timeout
+      validation-query: SELECT 1
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      # 内置监控页：http://localhost:8005/druid/
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: admin
+        login-password: admin
+        reset-enable: false
+      filter:
+        stat:
+          enabled: true
+          log-slow-sql: true
+          slow-sql-millis: 1000

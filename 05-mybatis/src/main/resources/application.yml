@@ -4,3 +4,37 @@ server:
 spring:
   application:
     name: 05-数据访问
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/backend_learning?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    # 连接池参数，不写就用 HikariCP 默认值；Druid 版见 application-druid.yml
+    hikari:
+      pool-name: backend-learning-pool
+      maximum-pool-size: 10     # 池上限
+      minimum-idle: 5           # 空闲保底连接数
+      connection-timeout: 3000  # 取连接超时，毫秒，默认 30000
+      max-lifetime: 1800000     # 连接最长存活，毫秒，默认 1800000
+  # 启动时先执行 schema.sql 建表，再执行 data.sql 写入示例数据
+  # MySQL 属于非内嵌库，必须显式写 always 才会执行
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      encoding: UTF-8
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true   # 下划线转驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印 SQL，开发期用
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto                      # 主键自增
+      table-underline: true              # 实体驼峰转表名下划线
+      # 逻辑删除：delete 变成 update deleted=1，查询自动追加 deleted=0
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
