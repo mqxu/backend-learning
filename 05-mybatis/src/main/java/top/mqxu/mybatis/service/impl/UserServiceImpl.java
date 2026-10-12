@@ -121,6 +121,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return updateById(user);
     }
 
+    @Override
+    public boolean modifyEmailByUsername(String username, String email) {
+        // LambdaUpdateWrapper 不需要先查再改：eq 定位到行，set 直接指定要改的列。
+        // 注意这种方式走的是 Wrapper 更新，不经过实体，updateTime 的自动填充不会触发
+        return update(new LambdaUpdateWrapper<User>()
+                .eq(User::getUsername, username)
+                .set(User::getEmail, email));
+    }
+
     /* ==================== 查（基础） ==================== */
 
     @Override
@@ -209,7 +218,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public Map<String, Object> statistics() {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // 单行聚合，getMap 返回「列名 -> 值」
+        // 单行聚合，getMap 返回“列名 -> 值”
         Map<String, Object> aggregate = getMap(new QueryWrapper<User>()
                 .select("COUNT(*) AS totalCount",
                         "IFNULL(SUM(balance), 0) AS totalBalance",

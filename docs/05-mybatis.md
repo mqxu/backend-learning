@@ -24,7 +24,7 @@
 
 ### 2.1 为什么要 ORM
 
-操作数据库要写 SQL、把结果一行行塞进 Java 对象，非常繁琐。ORM（对象关系映射）帮我们做「对象 ↔ 表」的自动映射：操作对象就像操作数据。
+操作数据库要写 SQL、把结果一行行塞进 Java 对象，非常繁琐。ORM（对象关系映射）帮我们做“对象 ↔ 表”的自动映射：操作对象就像操作数据。
 
 MyBatis-Plus 是在 MyBatis 基础上的增强：提供 `BaseMapper` 通用 CRUD，连 SQL 都能省掉大半。
 
@@ -58,7 +58,7 @@ Spring Boot 默认的连接池是 HikariCP，随 `spring-boot-starter-jdbc` 一�
 
 ### 2.5 MySQL 常用数据类型与 Java 映射
 
-先按「数据长什么样」选类型，再按类型选 Java 类。
+先按“数据长什么样”选类型，再按类型选 Java 类。
 
 | 用在什么字段上 | MySQL 类型 | 取值范围 / 说明 | Java 类型 |
 | --- | --- | --- | --- |
@@ -81,7 +81,7 @@ Spring Boot 默认的连接池是 HikariCP，随 `spring-boot-starter-jdbc` 一�
 两个容易踩的点：
 
 - 金额和任何参与精确计算的数用 `DECIMAL`，不要用 `FLOAT` / `DOUBLE`，浮点的舍入误差累加后会算错账。
-- `UNSIGNED` 不是「更省空间」，而是「不允许负数」。给年龄、积分这类字段加 `UNSIGNED` 之后，写 `-1` 会被数据库直接拒绝并报 `Out of range value`，业务层的校验要提前拦住这类值。
+- `UNSIGNED` 不是“更省空间”，而是“不允许负数”。给年龄、积分这类字段加 `UNSIGNED` 之后，写 `-1` 会被数据库直接拒绝并报 `Out of range value`，业务层的校验要提前拦住这类值。
 
 ### 2.6 MyBatis-Plus 帮你做了哪些事
 
@@ -562,11 +562,11 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
 - 填充只对实体上标了 `@TableField(fill = ...)` 的字段生效。`FieldFill.INSERT` 只在新增时填，`FieldFill.INSERT_UPDATE` 新增和更新都填；
 - 新增用 `strictInsertFill` 是安全的：只在传入值为 null 时才补默认值，调用方显式传了 `createTime` 就尊重传入值；
-- 更新不能用 `strictUpdateFill`。它的判断和新增一样是「字段为 null 才填」，而更新时实体通常是从库里查出来的，`updateTime` 已经有旧值，结果就是时间永远不变。用 `setFieldValByName` 直接覆盖。
+- 更新不能用 `strictUpdateFill`。它的判断和新增一样是“字段为 null 才填”，而更新时实体通常是从库里查出来的，`updateTime` 已经有旧值，结果就是时间永远不变。用 `setFieldValByName` 直接覆盖。
 
 ### 步骤 6：逻辑删除与乐观锁
 
-两个都是「加注解 + 注册插件」就生效。
+两个都是“加注解 + 注册插件”就生效。
 
 逻辑删除：实体字段加 `@TableLogic`，或者像本模块这样在 `application.yml` 里配置 `logic-delete-field` 全局生效。
 
@@ -968,24 +968,52 @@ mvn -pl 05-mybatis -Pdruid spring-boot:run -Dspring-boot.run.arguments="--spring
     ├── main
     │   ├── java/top/mqxu/mybatis
     │   │   ├── MybatisApplication.java
-    │   │   ├── controller/UserController.java
-    │   │   ├── service/UserService.java
-    │   │   ├── service/impl/UserServiceImpl.java
-    │   │   ├── mapper/UserMapper.java
-    │   │   ├── entity/User.java
+    │   │   ├── controller
+    │   │   │   ├── UserController.java
+    │   │   │   ├── CourseController.java
+    │   │   │   ├── ProductController.java
+    │   │   │   ├── OrderController.java
+    │   │   │   └── DiagnosticsController.java
+    │   │   ├── service
+    │   │   │   ├── UserService.java
+    │   │   │   ├── CourseService.java
+    │   │   │   ├── ProductService.java
+    │   │   │   ├── OrderService.java
+    │   │   │   └── impl
+    │   │   │       ├── UserServiceImpl.java
+    │   │   │       ├── CourseServiceImpl.java
+    │   │   │       ├── ProductServiceImpl.java
+    │   │   │       └── OrderServiceImpl.java
+    │   │   ├── mapper
+    │   │   │   ├── UserMapper.java
+    │   │   │   ├── CourseMapper.java
+    │   │   │   ├── ProductMapper.java
+    │   │   │   └── OrderMapper.java
+    │   │   ├── entity
+    │   │   │   ├── User.java
+    │   │   │   ├── Course.java
+    │   │   │   ├── Product.java
+    │   │   │   └── Order.java
     │   │   ├── dto/UserQuery.java
-    │   │   ├── config/MybatisPlusConfig.java
-    │   │   └── config/MyMetaObjectHandler.java
+    │   │   └── config
+    │   │       ├── MybatisPlusConfig.java
+    │   │       └── MyMetaObjectHandler.java
     │   └── resources
     │       ├── application.yml
     │       ├── application-druid.yml
+    │       ├── application-pool1.yml
     │       ├── schema.sql
     │       └── data.sql
     └── test/java/top/mqxu/mybatis
         ├── UserServiceTest.java
         ├── UserLambdaQueryTest.java
-        └── UserApiTest.java
+        ├── UserApiTest.java
+        ├── PracticeTest.java
+        ├── HomeworkTest.java
+        └── OrderApiTest.java
 ```
+
+`Course` / `Product` / `Order` 三套代码是第 8 节练习的参考实现，`DiagnosticsController` 只服务于连接池实验。
 
 > `IService` 与 `ServiceImpl` 在 3.5.9 之后的构件里移到了 `com.baomidou.mybatisplus.spring.service` 包下，IDE 提示旧路径 `extension.service` 时直接改成新路径。
 
@@ -999,7 +1027,7 @@ mvn -pl 05-mybatis spring-boot:run
 
 > 不加 `-am`：加上 `-am` 会把父工程一并放进 reactor，`spring-boot:run` 在父工程（pom 打包、无主类）上会直接失败。
 
-启动后 `t_user` 里有 4 个可查到的示例用户，另有一条 `deleted = 1` 的记录。逐个接口验证：
+启动后 `t_user` 里有 6 条记录，其中 1 条 `deleted = 1`（查不到）、1 条 `status = 0`；`t_course` 有 3 条课程，`t_product` 有 2 件商品，`t_order` 为空。逐个接口验证：
 
 | 操作 | 请求 | 期望 |
 | --- | --- | --- |
@@ -1022,15 +1050,27 @@ mvn -pl 05-mybatis spring-boot:run
 | 删除 | `DELETE /users/{id}` | `true`，再查返回 null，库里那行 `deleted=1` 仍在 |
 | 批量删除 | `DELETE /users/batch?ids=8,9` | `true` |
 | 按状态删除 | `DELETE /users/status/0` | `true` |
-| 事务回滚 | `POST /users` body `{"username":"x","age":200}` | 返回 500「年龄超出合理范围，回滚」，库里不落数据 |
+| 事务回滚 | `POST /users` body `{"username":"x","age":200}` | 返回 500“年龄超出合理范围，回滚”，库里不落数据 |
+| 改邮箱 | `PUT /users/email?username=zhangsan&email=zhangsan@mqxu.top` | `true`，`version` 不变 |
+| 课程列表 | `GET /courses` | 3 条课程 |
+| 课程批量新增 | `POST /courses/batch` body 为数组 | `true` |
+| 课程批量删除 | `DELETE /courses/batch?ids=4,5` | `true`，物理删除 |
+| 商品列表 | `GET /products` | 2 件商品，含 `stock` |
+| 下单 | `POST /orders?userId=1&productId=1&quantity=2` | 返回订单，商品库存同步减 2 |
+| 下单超卖 | `POST /orders?userId=1&productId=1&quantity=99` | 返回 500“库存不足”，库存与订单表都不变 |
+| 我的订单 | `GET /orders?userId=1` | 按 id 倒序的订单列表 |
+| 取消订单 | `PUT /orders/{id}/cancel` | `true`，`status` 变 0、`version` 加一 |
+| 删除订单 | `DELETE /orders/{id}` | `true`，逻辑删除 |
 
-自动化测试连本地 MySQL（与 `application.yml` 用同一套数据源），每条用例前清空 `t_user`，跑之前先启动 MySQL：
+手工测试跑完记得按 8.4 恢复示例数据。
+
+自动化测试连本地 MySQL（与 `application.yml` 用同一套数据源），每条用例前清空自己涉及的表，跑之前先启动 MySQL：
 
 ```bash
 mvn -pl 05-mybatis test
 ```
 
-三个测试类共 42 个用例：`UserServiceTest` 覆盖增删改查、自动填充、逻辑删除、乐观锁与事务；`UserLambdaQueryTest` 覆盖各类条件查询；`UserApiTest` 逐个验证上面的接口表。
+六个测试类共 57 个用例：`UserServiceTest` 覆盖增删改查、自动填充、逻辑删除、乐观锁与事务；`UserLambdaQueryTest` 覆盖各类条件查询；`UserApiTest` 逐个验证上面的接口表；`PracticeTest`、`HomeworkTest`、`OrderApiTest` 是第 8 节练习的参考答案与验证。
 
 > 注意：`schema.sql` 每次启动都会重建表，DevTools 热重启同样会触发，数据会被重置成 `data.sql` 里的示例数据。
 
@@ -1056,29 +1096,495 @@ mvn -pl 05-mybatis test
 | 日志报 `Connection is not available, request timed out` | 池被占满 | 查慢 SQL 与长事务；确属高并发再调大 `maximum-pool-size` |
 | MySQL 报 `Too many connections` | 各实例池上限之和超过 `max_connections` | 减小 `maximum-pool-size`，或调大 MySQL 的 `max_connections` |
 | 用 Druid 时 Hikari 参数不生效 | Druid 自动配置顶掉了 HikariCP | 两者选一个，删掉另一套配置 |
+| Druid 启动报 `illegal maxActive 1` | `max-active` 小于 `min-idle`，或 `initial-size` 大于 `max-active` | 三个值一起调；这两种情况抛的消息都只写 `maxActive`，别只看字面 |
+| 池明明没用满却报取不到连接 | 慢 SQL 或长事务占着连接不放 | 用 8.3 的实验复现一遍，再查慢日志 |
+| 想复现超卖却一次就拦住 | 把库存校验写在了扣减之前，扣减没执行 | 先扣减再校验，让已执行的写操作暴露在回滚面前 |
+| 批量删除没把行删掉 | 实体上有 `@TableLogic`，删的是标记不是行 | 符合预期；要物理删除就换成不带 `@TableLogic` 的实体 |
 | 事务没回滚 | 异常类型不在回滚范围，或方法是自调用 | 用 `rollbackFor = Exception.class`；别在同类内部自调用 |
 
 ---
 
-## 8. 练习
+## 8. 练习与参考答案
+
+练习的参考实现和验证用例都在本模块内：
+
+| 内容 | 文件 |
+| --- | --- |
+| 8.1 五题的用例 | `src/test/java/top/mqxu/mybatis/PracticeTest.java` |
+| 8.2 四题的用例 | `src/test/java/top/mqxu/mybatis/HomeworkTest.java` |
+| 商品与订单的接口用例 | `src/test/java/top/mqxu/mybatis/OrderApiTest.java` |
+| 连接池耗尽实验 | 手工步骤，见 8.3 |
+
+跑全部用例：
+
+```bash
+mvn -pl 05-mybatis test
+```
+
+只跑其中一题：
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice2AgeGreaterThan18AndVip
+```
+
+测试连的是 `application.yml` 里那个库，也就是本地 MySQL 的 `backend_learning`。每条用例开头清表，跑完库里是空的，恢复示例数据见 8.4。
 
 ### 8.1 课堂随堂练习
 
-| # | 练习 | 验证点 |
-| --- | --- | --- |
-| 1 | 用 `getById` 查询一个不存在的 id | 返回 null，不报错 |
-| 2 | 用 `LambdaQueryWrapper` 按 `age > 18` 且 `vip = true` 查询 | 两个条件都生效 |
-| 3 | 新增一条 `age = 200` 的记录 | 接口返回 500，`count` 不变（事务回滚） |
-| 4 | 逻辑删除一条记录后 `selectById` | 返回 null，直接查库能看到 `deleted = 1` |
-| 5 | 用同一个实体对象连续调两次 `updateById` | 第二次返回 false，被乐观锁拦下 |
+#### 练习 1：用 getById 查一个不存在的 id
+
+主键查询用 `IService` 的 `getById`，不需要额外写代码。
+
+```java
+User user = userService.getById(99999L);
+assertThat(user).isNull();
+```
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice1GetByIdReturnsNull
+```
+
+```
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+```
+
+`getById` 生成的是 `SELECT ... FROM t_user WHERE id = ? AND deleted = 0`，没命中直接返回 null。用例里先用 `assertThatCode(...).doesNotThrowAnyException()` 确认调用本身不抛异常，再断言返回值为 null，两件事分开验证。
+
+#### 练习 2：age > 18 且 vip = true
+
+两个条件挂在同一个 `LambdaQueryWrapper` 上，默认按 AND 连接。
+
+```java
+List<User> result = userService.list(new LambdaQueryWrapper<User>()
+        .gt(User::getAge, 18)
+        .eq(User::getVip, true));
+```
+
+用例造了四条数据把边界卡住，比只造一条更能说明问题：
+
+| 数据 | 结果 |
+| --- | --- |
+| 成年会员 20 / vip=true | 命中 |
+| 未成年会员 17 / vip=true | 被 `gt` 挡住 |
+| 成年非会员 30 / vip=false | 被 `eq` 挡住 |
+| 刚好十八岁 18 / vip=true | 被 `gt` 挡住，`gt` 是严格大于 |
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice2AgeGreaterThan18AndVip
+```
+
+断言是 `containsExactly("成年会员")`，既确认命中一条，也确认没有多余的行混进来。
+
+#### 练习 3：新增 age = 200 的记录，观察事务回滚
+
+要看到回滚效果，方法体得是“先写库、再校验”的形状。`createUser` 就是按这个顺序写的：
+
+```java
+@Transactional(rollbackFor = Exception.class)
+public boolean createUser(User user) {
+    applyDefaults(user);
+    save(user);                                          // 第一步：insert 已经发出去了
+    if (user.getAge() != null && (user.getAge() < 0 || user.getAge() > 150)) {
+        throw new RuntimeException("年龄超出合理范围，回滚");   // 第二步：校验失败
+    }
+    return true;
+}
+```
+
+用例先记下 `count`，再断言异常类型与消息，最后比对数量，并额外查一次 username 确认那条记录确实没落库：
+
+```java
+long countBefore = userService.count();
+
+assertThatThrownBy(() -> userService.createUser(illegal))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("年龄超出合理范围");
+
+assertThat(userService.count()).isEqualTo(countBefore);
+assertThat(userService.getOne(new LambdaQueryWrapper<User>()
+        .eq(User::getUsername, "超龄用户"))).isNull();
+```
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice3IllegalAgeRollsBack
+```
+
+把 `@Transactional` 去掉再跑一次，`count` 会变成 `countBefore + 1`，这是确认事务确实在起作用最直接的办法。
+
+校验条件写成 `> 150` 而不是只判负数，是因为 `age` 列是 `TINYINT UNSIGNED`，写负数在数据库层就被 `Out of range value` 挡掉，走不到“插入成功之后再回滚”的路径。
+
+#### 练习 4：逻辑删除后 selectById
+
+```java
+assertThat(userService.removeById(user.getId())).isTrue();
+assertThat(userService.getById(user.getId())).isNull();
+
+Integer deleted = jdbcTemplate.queryForObject(
+        "SELECT deleted FROM t_user WHERE id = ?", Integer.class, user.getId());
+assertThat(deleted).isEqualTo(1);
+```
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice4LogicalDelete
+```
+
+“查不到”和“行还在”不矛盾，是两条不同的 SQL。`getById` 走 MyBatis-Plus，`@TableLogic` 让它在 WHERE 后面追加 `deleted = 0`；`JdbcTemplate` 绕过 MyBatis-Plus 直接查物理行，所以能看到 `deleted = 1`。这里用 `JdbcTemplate` 而不是再写一个 Mapper 方法，是为了让这条用例的意图一眼看得见。
+
+#### 练习 5：乐观锁拦下过期的更新
+
+乐观锁要比的是两个各自查过一次的版本号，用例读两次模拟两个请求：
+
+```java
+User requestA = userService.getById(user.getId());   // version = 0
+User requestB = userService.getById(user.getId());   // version = 0
+
+requestA.setNickname("A 改的");
+assertThat(userService.updateById(requestA)).isTrue();
+
+requestB.setNickname("B 改的");
+assertThat(userService.updateById(requestB)).isFalse();   // AND version = 0 匹配不到行
+
+assertThat(userService.getById(user.getId()).getNickname()).isEqualTo("A 改的");
+```
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice5OptimisticLockRejectsStaleUpdate
+```
+
+题面写的“同一个实体对象连续调两次 `updateById`，第二次返回 false”和实际行为不一致。更新成功后乐观锁插件会把新版本号写回实体，所以第二次拼出来的条件是 `AND version = 1`，正好对上库里那一行，照样成功。测试类里另外一条用例覆盖了这种情况：
+
+```java
+same.setNickname("第一次");
+assertThat(userService.updateById(same)).isTrue();
+assertThat(same.getVersion()).isEqualTo(1);   // 插件回填了新版本
+
+same.setNickname("第二次");
+assertThat(userService.updateById(same)).isTrue();        // 仍然成功
+assertThat(userService.getById(user.getId()).getVersion()).isEqualTo(2);
+```
+
+```bash
+mvn -pl 05-mybatis test -Dtest=PracticeTest#practice5SameInstanceTwiceSucceeds
+```
+
+要复现“第二次失败”，得让第二个更新持有过期的版本号，也就是前面那条用例的写法。
 
 ### 8.2 课后练习
 
-- **基础**：给 `t_user` 加 `email` 字段，改用 `LambdaUpdateWrapper` 按 username 更新邮箱。
-- **基础**：给 `score` 之外的字段补上 `@JsonFormat`，验证接口输入输出格式。
-- **进阶**：新增一张 `t_course` 表（`id` / `name` / `teacher` / `credit`），练习 `saveBatch` 与 `removeByIds`，字段类型自行对照 2.5 的表来选。
-- **进阶**：把 `maximum-pool-size` 调成 1，用并发请求压同一个接口，复现 `Connection is not available`，再调回默认值，对照 Druid 监控页上的活跃连接数。
-- **挑战**：新增一张 `t_order` 表，演示「创建订单 + 扣库存」两个写操作在一个事务里的原子性，并给 `t_order` 加上逻辑删除与自动填充。
+#### 基础一：按 username 更新 email
+
+`email` 列在 `t_user` 里已经有了（`VARCHAR(100)`），补一个 Service 方法和对应接口即可。
+
+```java
+@Override
+public boolean modifyEmailByUsername(String username, String email) {
+    return update(new LambdaUpdateWrapper<User>()
+            .eq(User::getUsername, username)
+            .set(User::getEmail, email));
+}
+```
+
+```java
+@PutMapping("/email")
+public boolean updateEmail(@RequestParam String username, @RequestParam String email) {
+    return userService.modifyEmailByUsername(username, email);
+}
+```
+
+```bash
+mvn -pl 05-mybatis test -Dtest=HomeworkTest#basic1UpdateEmailByUsername
+```
+
+用例覆盖两点：改完之后 `email` 是新值；用户名不存在时返回 `false`，不抛异常。另外顺手断言了 `version` 仍是 0，因为 Wrapper 更新只拼 `SET email = ?`，不经过实体，乐观锁和 `updateTime` 自动填充都不会参与。
+
+手工调一次：
+
+```bash
+curl -X PUT "http://localhost:8005/users/email?username=zhangsan&email=zhangsan@mqxu.top"
+```
+
+#### 基础二：给时间字段补 @JsonFormat
+
+三个时间字段各自带上格式：
+
+```java
+@JsonFormat(pattern = "yyyy-MM-dd")
+private LocalDate birthday;
+
+@JsonFormat(pattern = "HH:mm:ss")
+private LocalTime workTime;
+
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+private LocalDateTime lastLoginTime;
+```
+
+`createTime` / `updateTime` 用同一套 `yyyy-MM-dd HH:mm:ss`。
+
+```bash
+mvn -pl 05-mybatis test -Dtest=HomeworkTest#basic2JsonFormatRoundTrip
+```
+
+用例从接口 POST 一条带三种时间格式的数据，再断言返回：
+
+```java
+mockMvc.perform(post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(jsonPath("$.birthday").value("1998-05-05"))
+        .andExpect(jsonPath("$.workTime").value("08:45:00"))
+        .andExpect(jsonPath("$.lastLoginTime").value("2026-10-12 09:30:00"))
+        .andExpect(jsonPath("$.createTime",
+                matchesPattern("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")));
+```
+
+`createTime` 用正则匹配而不是固定值，因为它的值由自动填充生成，不确定，但格式必须一致。
+
+不加 `@JsonFormat` 时，Spring Boot 4 自带的 Jackson 3 对 `LocalDateTime` 只认带 `T` 的 ISO 格式，传 `"2026-10-12 09:30:00"` 会返回 400，错误信息里是 `Text '2026-10-12 09:30:00' could not be parsed at index 10`。
+
+#### 进阶一：t_course 表的批量操作
+
+建表按 2.5 的类型对照表选：主键 `BIGINT UNSIGNED`、`name VARCHAR(64)`、`teacher VARCHAR(32)`、`credit TINYINT UNSIGNED`。
+
+Service 两个方法：
+
+```java
+@Override
+public boolean saveCourses(List<Course> courses) {
+    if (courses == null || courses.isEmpty()) {
+        return false;
+    }
+    return saveBatch(courses, BATCH_SIZE);
+}
+
+@Override
+public boolean removeCourses(List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
+        return false;
+    }
+    return removeByIds(ids);
+}
+```
+
+对应接口是 `POST /courses/batch` 和 `DELETE /courses/batch?ids=1,2`。
+
+```bash
+mvn -pl 05-mybatis test -Dtest=HomeworkTest#advanced1CourseBatchSaveAndRemove
+```
+
+用例传三条课程进去，断言 `saveBatch` 之后每个对象的 `id` 都非空（自增主键会回填，不用再查一次库），再按前两条的 id 批量删除，最后 `listCourses()` 只剩一条。
+
+`t_course` 没有 `deleted` 列，`removeByIds` 走的是物理删除，SQL 是 `DELETE FROM t_course WHERE id IN (...)`。这和 `t_user` 的批量删除行为不同，对照着看能分清逻辑删除和物理删除。
+
+Course 实体刻意没写 `updateTime`，`MyMetaObjectHandler` 在填充时会先判断属性是否存在，避免在缺少审计字段的实体上报错。
+
+#### 进阶二：复现连接池耗尽
+
+需要单独起服务做实验，步骤见 8.3。
+
+#### 挑战：下单事务的原子性
+
+三张表配合：`t_product` 存库存，`t_order` 存订单，`t_order` 同样带自动填充、逻辑删除与乐观锁。
+
+下单方法把两次写操作放在同一个事务里。扣库存先执行，库存校验故意放在写库之后：
+
+```java
+@Transactional(rollbackFor = Exception.class)
+public Order createOrder(Long userId, Long productId, int quantity) {
+    ...
+    int stockBefore = product.getStock();
+
+    // 第一步：扣库存，先把库改了
+    product.setStock(stockBefore - quantity);
+    productMapper.updateById(product);
+
+    // 第二步：库存成负数就抛异常。
+    // 这里不提前 return，就是为了让“扣库存已经执行”暴露在回滚面前
+    if (product.getStock() < 0) {
+        throw new IllegalStateException("库存不足：剩余 " + stockBefore + "，需要 " + quantity);
+    }
+
+    // 第三步：写订单
+    Order order = new Order();
+    order.setOrderNo(generateOrderNo());
+    ...
+    save(order);
+    return order;
+}
+```
+
+库存 5、下单 6 件：
+
+```bash
+mvn -pl 05-mybatis test -Dtest=HomeworkTest#challenge1OrderTransactionRollsBack
+```
+
+```java
+assertThatThrownBy(() -> orderService.createOrder(1L, product.getId(), 6))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("库存不足");
+
+assertThat(productService.getById(product.getId()).getStock()).isEqualTo(5);   // 扣掉的库存回来了
+assertThat(orderService.count()).isZero();                                     // 订单没写进去
+```
+
+库存充足时下单成功：
+
+```bash
+mvn -pl 05-mybatis test -Dtest=HomeworkTest#challenge2OrderSucceeds
+```
+
+```java
+Order order = orderService.createOrder(1L, product.getId(), 2);
+
+assertThat(order.getId()).isNotNull();
+assertThat(order.getOrderNo()).startsWith("NO");
+assertThat(order.getAmount()).isEqualByComparingTo("798.00");   // 399.00 * 2
+assertThat(order.getStatus()).isEqualTo(1);
+assertThat(order.getCreateTime()).isNotNull();
+assertThat(order.getUpdateTime()).isNotNull();
+assertThat(order.getDeleted()).isZero();
+assertThat(order.getVersion()).isZero();
+```
+
+最后几个断言一次过掉自动填充：新增时 `createTime`、`updateTime`、`deleted`、`version` 四个字段都有值。
+
+取消与删除：
+
+```bash
+mvn -pl 05-mybatis test -Dtest=HomeworkTest#challenge3CancelAndLogicalDelete
+```
+
+```java
+assertThat(orderService.cancelOrder(order.getId())).isTrue();
+Order cancelled = orderService.getById(order.getId());
+assertThat(cancelled.getStatus()).isZero();
+assertThat(cancelled.getVersion()).isEqualTo(1);    // 更新一次，版本加一
+
+assertThat(orderService.removeOrder(order.getId())).isTrue();
+assertThat(orderService.getById(order.getId())).isNull();
+assertThat(jdbcTemplate.queryForObject(
+        "SELECT deleted FROM t_order WHERE id = ?", Integer.class, order.getId())).isEqualTo(1);
+```
+
+接口层再走一遍：
+
+```bash
+mvn -pl 05-mybatis test -Dtest=OrderApiTest
+```
+
+`OrderApiTest` 三个用例覆盖 `GET /products`、下单到删除的完整链路，以及库存不足时接口层的行为。
+
+### 8.3 连接池耗尽实验
+
+这一题要手工做：把池压到 1 个连接，再让一个慢查询把它占住，看后来的请求报什么。
+
+实验用到的两个文件：
+
+| 文件 | 作用 |
+| --- | --- |
+| `application-pool1.yml` | 把 Hikari 的池压到 1、取连接超时压到 1 秒 |
+| `controller/DiagnosticsController.java` | 只在 `pool1` profile 下注册的 `GET /diagnostics/slow-query?seconds=n`，内部执行 `SELECT SLEEP(n)` |
+
+`DiagnosticsController` 挂了 `@Profile("pool1")`，正常启动不会出现在接口列表里，演示代码不会混进业务路径。
+
+#### HikariCP 版
+
+用 8017 端口启动，避免和默认的 8005 冲突：
+
+```bash
+mvn -pl 05-mybatis spring-boot:run -Dspring-boot.run.arguments="--server.port=8017 --spring.profiles.active=pool1"
+```
+
+启动日志里能确认池配置生效：
+
+```
+com.zaxxer.hikari.HikariDataSource : backend-learning-pool-single - Starting...
+com.zaxxer.hikari.HikariPool       : backend-learning-pool-single - Added connection ...
+com.zaxxer.hikari.HikariDataSource : backend-learning-pool-single - Start completed.
+```
+
+第一步，后台发起一个 5 秒的慢查询，把唯一的连接占住；第二步，等 1 秒后请求 `/users`：
+
+```bash
+curl "http://127.0.0.1:8017/diagnostics/slow-query?seconds=5" &
+sleep 1
+curl -i "http://127.0.0.1:8017/users"
+```
+
+`/users` 返回 500，耗时约 1 秒（`connection-timeout` 设的是 1000 毫秒）。服务端日志里的根因是：
+
+```
+java.sql.SQLTransientConnectionException: backend-learning-pool-single -
+Connection is not available, request timed out after 1005ms (total=1, active=1, idle=0, waiting=0)
+```
+
+括号里四个数是这次实验最值得看的地方：`total=1` 池里一共 1 个连接，`active=1` 全被占着，`idle=0` 没有空闲的，`waiting=0` 连排队等待的线程都没有（请求已经超时退出）。等慢查询返回之后再请求一次 `/users`，恢复 200，说明连接归还了。
+
+#### Druid 版对照
+
+换 Druid 再看一遍，现象一样，报错信息不同：
+
+```bash
+mvn -pl 05-mybatis -Pdruid spring-boot:run -Dspring-boot.run.arguments="--server.port=8018 --spring.profiles.active=druid,pool1 --spring.datasource.druid.max-active=1 --spring.datasource.druid.min-idle=1 --spring.datasource.druid.initial-size=1 --spring.datasource.druid.max-wait=1000"
+```
+
+三个参数要一起覆盖。`application-druid.yml` 里 `min-idle: 5`，只把 `max-active` 改成 1 会触发 Druid 的参数校验，启动直接失败：
+
+```
+java.lang.IllegalArgumentException: illegal maxActive 1
+```
+
+Druid 的 `init()` 对 `maxActive <= 0`、`maxActive < minIdle`、`initialSize > maxActive` 三种情况都会拒绝启动，后两种抛的消息里都只写 `illegal maxActive`，排查时容易看错地方。
+
+同样的两步压测，`/users` 返回 500，日志里的根因：
+
+```
+com.alibaba.druid.pool.GetConnectionTimeoutException:
+wait millis 1005, active 1, maxActive 1, creating 0, runningSqlCount 1 : SELECT SLEEP(?) AS slept
+```
+
+`runningSqlCount 1` 后面跟着的正是占用连接的那条 SQL，比 Hikari 的提示更直接。
+
+Druid 的监控页也能看到这次等待。访问 `http://127.0.0.1:8018/druid/`，用 `admin / admin` 登录，数据源页上的指标：
+
+| 指标 | 值 | 含义 |
+| --- | --- | --- |
+| `MaxActive` | 1 | 池上限 |
+| `ActiveCount` / `ActivePeak` | 0 / 1 | 当前活跃连接数 / 峰值 |
+| `NotEmptyWaitCount` | 1 | 等待过连接的次数 |
+| `NotEmptyWaitMillis` | 1005 | 累计等待毫秒数 |
+
+`NotEmptyWaitCount` 和 `NotEmptyWaitMillis` 是判断池够不够用最直接的两个数：它们持续增长就说明有请求在排队等连接。HikariCP 没有监控页，要看这些数字得接 Micrometer，暴露 `hikaricp.connections.pending` 一类的指标。
+
+实验做完把 profile 去掉重启，或直接换回默认配置。
+
+### 8.4 全量测试与数据恢复
+
+```bash
+mvn -pl 05-mybatis test
+```
+
+```
+Running top.mqxu.mybatis.OrderApiTest        Tests run: 3
+Running top.mqxu.mybatis.UserServiceTest     Tests run: 12
+Running top.mqxu.mybatis.HomeworkTest        Tests run: 6
+Running top.mqxu.mybatis.UserApiTest         Tests run: 20
+Running top.mqxu.mybatis.PracticeTest        Tests run: 6
+Running top.mqxu.mybatis.UserLambdaQueryTest Tests run: 10
+Tests run: 57, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+六个测试类跑在同一个 MySQL 库上，每条用例开头清掉自己涉及的表，顺序不影响结果。
+
+测试库和手工启动应用用的是同一个，`spring.sql.init.mode: always` 会在每次启动 Spring 上下文时执行一遍 `schema.sql` 与 `data.sql`。这意味着两件事：跑完测试库里是空的（用例清表后没有再灌数据），要恢复示例数据：
+
+```bash
+mysql -uroot -p123456 -D backend_learning --default-character-set=utf8mb4 < src/main/resources/schema.sql
+mysql -uroot -p123456 -D backend_learning --default-character-set=utf8mb4 < src/main/resources/data.sql
+```
+
+应用在跑的时候，DevTools 热重启同样会执行这两个脚本，手工测出来的数据会被重置回示例数据。
 
 ---
 
@@ -1098,7 +1604,8 @@ mvn -pl 05-mybatis test
 | 逻辑删除 | `@TableLogic`，删除变更新，查询自动过滤 |
 | 乐观锁 | `@Version` + 插件，靠影响行数判断有没有人抢先改 |
 | 条件构造器 | `LambdaQueryWrapper` 选条件，`LambdaUpdateWrapper` 改数据，`and(w -> ...)` 记得包括号 |
-| `@Transactional` | 写操作原子性，显式 `rollbackFor`，注意自调用失效 |
+| 批量操作 | `saveBatch` 会把自增主键回填到对象上，`removeByIds` 是物理还是逻辑删除看实体有没有 `@TableLogic` |
+| `@Transactional` | 写操作原子性，显式 `rollbackFor`，把业务校验放在写库之后才能看见回滚，注意自调用失效 |
 | 分页插件 | `PaginationInnerInterceptor` + `Page` |
 
 下一节 [06-redis](06-redis.md) 会在数据访问之上加缓存，解决热点数据的高频查询。

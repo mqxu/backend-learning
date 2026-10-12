@@ -1,0 +1,10 @@
+# 连接池演示用配置，配合 --spring.profiles.active=pool1 启动
+# 把池压到最小、把取连接的超时压到 1 秒，方便复现池耗尽
+spring:
+  datasource:
+    hikari:
+      pool-name: backend-learning-pool-single
+      maximum-pool-size: 1
+      minimum-idle: 1
+      connection-timeout: 1000   # 取连接最多等 1 秒，默认 30000
+      max-lifetime: 1800000

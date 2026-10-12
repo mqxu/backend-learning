@@ -50,6 +50,9 @@ public interface UserService extends IService<User> {
     /** 充值，先查后改，靠乐观锁避免并发覆盖 */
     boolean recharge(Long id, BigDecimal amount);
 
+    /** 按用户名更新邮箱，演示 LambdaUpdateWrapper 的 eq 定位 + set 赋值 */
+    boolean modifyEmailByUsername(String username, String email);
+
     /* ==================== 查（基础） ==================== */
 
     /** 按主键查询，不存在返回 null */

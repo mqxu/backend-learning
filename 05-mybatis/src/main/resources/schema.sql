@@ -39,3 +39,58 @@ CREATE TABLE t_user
     KEY idx_status_gender (status, gender)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='用户表';
+
+-- 课程表：课后进阶练习用，字段刻意保持简单，只用来演练 saveBatch 与 removeByIds
+-- 这里没有审计字段，正好验证自动填充器对没有该属性的实体不会报错
+DROP TABLE IF EXISTS t_course;
+
+CREATE TABLE t_course
+(
+    id      BIGINT UNSIGNED AUTO_INCREMENT COMMENT '主键',
+    name    VARCHAR(64)      NOT NULL COMMENT '课程名',
+    teacher VARCHAR(32) COMMENT '授课教师',
+    credit  TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '学分',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_name (name)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='课程表';
+
+-- 商品表：挑战练习里扣库存的对象
+DROP TABLE IF EXISTS t_product;
+
+CREATE TABLE t_product
+(
+    id          BIGINT UNSIGNED AUTO_INCREMENT COMMENT '主键',
+    name        VARCHAR(64)     NOT NULL COMMENT '商品名',
+    price       DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '单价',
+    stock       INT             NOT NULL DEFAULT 0 COMMENT '库存',
+    create_time DATETIME        NOT NULL COMMENT '创建时间，自动填充',
+    update_time DATETIME        NOT NULL COMMENT '更新时间，自动填充',
+    deleted     TINYINT         NOT NULL DEFAULT 0 COMMENT '逻辑删除，0 未删除 / 1 已删除',
+    version     INT             NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_name (name)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='商品表';
+
+-- 订单表：挑战练习里下单的结果，带自动填充与逻辑删除
+DROP TABLE IF EXISTS t_order;
+
+CREATE TABLE t_order
+(
+    id          BIGINT UNSIGNED AUTO_INCREMENT COMMENT '主键',
+    order_no    VARCHAR(32)     NOT NULL COMMENT '订单号',
+    user_id     BIGINT UNSIGNED NOT NULL COMMENT '下单用户',
+    product_id  BIGINT UNSIGNED NOT NULL COMMENT '商品',
+    quantity    INT             NOT NULL DEFAULT 1 COMMENT '购买数量',
+    amount      DECIMAL(12, 2)  NOT NULL DEFAULT 0.00 COMMENT '订单金额 = 单价 * 数量',
+    status      TINYINT         NOT NULL DEFAULT 1 COMMENT '状态，1 已创建 / 0 已取消',
+    create_time DATETIME        NOT NULL COMMENT '创建时间，自动填充',
+    update_time DATETIME        NOT NULL COMMENT '更新时间，自动填充',
+    deleted     TINYINT         NOT NULL DEFAULT 0 COMMENT '逻辑删除，0 未删除 / 1 已删除',
+    version     INT             NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_order_no (order_no),
+    KEY idx_user_id (user_id)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='订单表';

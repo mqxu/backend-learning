@@ -141,6 +141,12 @@ public class UserController {
         return userService.getUser(id);
     }
 
+    /** 按用户名改邮箱，路径是字面量，会比 /{id} 优先匹配 */
+    @PutMapping("/email")
+    public boolean updateEmail(@RequestParam String username, @RequestParam String email) {
+        return userService.modifyEmailByUsername(username, email);
+    }
+
     /* ==================== 删 ==================== */
 
     /** 按主键删除（逻辑删除） */
