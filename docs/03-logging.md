@@ -28,7 +28,7 @@
 
 这是经典的**门面模式**：
 
-- **SLF4J**：一套「打日志」的统一接口（门面），你的代码只依赖它；
+- **SLF4J**：一套“打日志”的统一接口（门面），你的代码只依赖它；
 - **Logback**：真正干活的实现（Spring Boot 默认），负责格式化、写文件等。
 
 好处：代码面向 SLF4J 写，将来想换实现（如 Log4j2）只改依赖，不改代码。
@@ -55,7 +55,7 @@ private static final Logger log = LoggerFactory.getLogger(X.class);
 
 ### 2.4 MDC 是什么
 
-一个请求从进来到响应，会经过 controller、service、mapper 层层调用，日志是「平铺」的，很难看出哪些属于同一次请求。MDC（Mapped Diagnostic Context）是 SLF4J 提供的「当前线程上下文」，你可以往里面塞一个 `traceId`，它会在本次请求的所有日志里带上，从而把一次请求的日志串成一条线。
+一个请求从进来到响应，会经过 controller、service、mapper 层层调用，日志是“平铺”的，很难看出哪些属于同一次请求。MDC（Mapped Diagnostic Context）是 SLF4J 提供的“当前线程上下文”，你可以往里面塞一个 `traceId`，它会在本次请求的所有日志里带上，从而把一次请求的日志串成一条线。
 
 ---
 
@@ -228,7 +228,7 @@ logging:
 
 - `%d` 时间、`%thread` 线程、`%-5level` 级别、`%logger` 类名、`%X{traceId}` MDC 值、`%msg` 消息、`%n` 换行；
 - `<springProfile>` 让不同环境用不同配置（dev 打控制台、prod 写文件且级别更高）；
-- 顶部的默认 `<root level="INFO">` 是兜底：即使没有任何 profile 激活，日志也会输出到控制台，避免「定义了 appender 却没人引用」导致日志凭空消失。
+- 顶部的默认 `<root level="INFO">` 是兜底：即使没有任何 profile 激活，日志也会输出到控制台，避免“定义了 appender 却没人引用”导致日志凭空消失。
 
 ### 步骤 4：MDC 链路追踪
 
@@ -339,7 +339,7 @@ log.info("用户手机号：{}", LogMaskUtil.maskPhone("13812345678"));
 
 讲解：
 
-- 脱敏放在「打日志前」用工具方法处理，是最简单直接的方式；
+- 脱敏放在“打日志前”用工具方法处理，是最简单直接的方式；
 - 更彻底的做法是用 Logback 的 `MessageConverter` 自动识别并脱敏，属于进阶内容，可自行了解。
 
 ### 步骤 6：自定义启动 Banner

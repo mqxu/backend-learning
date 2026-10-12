@@ -20,7 +20,7 @@
 
 ## 2. 概念铺垫
 
-### 2.1 配置应该放哪，为什么要「外部化」
+### 2.1 配置应该放哪，为什么要“外部化”
 
 把端口、数据库地址、密钥等写死在代码里，换个环境就得改代码、重新打包。Spring Boot 的**外部化配置**把配置放到代码之外（`application.yml`、环境变量、命令行参数等），改配置不用改代码。
 
@@ -34,7 +34,7 @@
 4. `application-{profile}.yml`（环境专属）
 5. `application.yml`（通用）
 
-> 记忆点：**越「外面」、越「临时」的越优先**。所以 `--spring.profiles.active=prod` 能覆盖 yml 里的 `active: dev`。
+> 记忆点：**越“外面”、越“临时”的越优先**。所以 `--spring.profiles.active=prod` 能覆盖 yml 里的 `active: dev`。
 
 ### 2.3 为什么官方推荐 `@ConfigurationProperties` 而非 `@Value`
 
@@ -51,7 +51,7 @@ student:
 
 ### 2.4 什么是 profile
 
-profile 是「环境」的代号（`dev` / `prod`）。同一个应用，开发时连本地库、生产时连线上库，这两份差异写进 `application-dev.yml`、`application-prod.yml`，靠一个开关切换。
+profile 是“环境”的代号（`dev` / `prod`）。同一个应用，开发时连本地库、生产时连线上库，这两份差异写进 `application-dev.yml`、`application-prod.yml`，靠一个开关切换。
 
 ---
 
@@ -120,7 +120,7 @@ app:
 讲解：
 
 - `student` 段演示了 YAML 的四种结构：标量、List、Map（`scores`）、嵌套对象；
-- `author: ${mqxu.name}` 是**占位符引用**，运行时会被替换成「许莫淇」。
+- `author: ${mqxu.name}` 是**占位符引用**，运行时会被替换成“许莫淇”。
 
 ### 步骤 2：`@ConfigurationProperties` 类型安全绑定
 
@@ -180,7 +180,7 @@ public class StudentProperties {
 
 讲解：
 
-- `@Component` 把它注册成 Bean；`@ConfigurationProperties(prefix = "student")` 声明「把 student 前缀下的配置按字段名绑定进来」；
+- `@Component` 把它注册成 Bean；`@ConfigurationProperties(prefix = "student")` 声明“把 student 前缀下的配置按字段名绑定进来”；
 - 绑定是**宽松绑定**：yml 里的 `max-count` 可对应 Java 的 `maxCount`；
 - 嵌套静态类 `Address`、`Course` 同样用 `@Data` 生成 setter，绑定器靠 setter 赋值。
 
@@ -262,7 +262,7 @@ public class ConfigController {
 
 讲解：
 
-- `@RequiredArgsConstructor` 会为**所有 `final` 字段**生成构造器，Spring 用构造器注入 `AppProperties`、`EnvService`。这是官方推荐的注入方式——**依赖不可变（`final`），且不会出现「字段注入下对象还没初始化就被用」的问题**；
+- `@RequiredArgsConstructor` 会为**所有 `final` 字段**生成构造器，Spring 用构造器注入 `AppProperties`、`EnvService`。这是官方推荐的注入方式——**依赖不可变（`final`），且不会出现“字段注入下对象还没初始化就被用”的问题**；
 - `@Value` 四种形态：
   - `${app.author}` 占位符引用；
   - `${app.remark:暂无备注}` 带默认值（key 不存在也不报错）；
@@ -323,7 +323,7 @@ public class ProdEnvService implements EnvService {
 
 讲解：
 
-- `@Profile("dev")` 表示「仅当激活了 dev 时才创建这个 Bean」；
+- `@Profile("dev")` 表示“仅当激活了 dev 时才创建这个 Bean”；
 - 激活 `dev` 时容器里只有 `DevEnvService`，`ConfigController` 注入的 `EnvService` 就是它；切到 `prod` 则换成 `ProdEnvService`。
 
 > **规范点**：覆写接口方法必须加 `@Override`（阿里手册强制项）。
@@ -414,7 +414,7 @@ mvn -pl 02-config -am spring-boot:run
 | `GET /student/info` | 返回完整的 student JSON（含 hobbies、scores、address、courses） |
 | `GET /config/value` | 打印占位符引用、默认值、随机 UUID、随机整数、SpEL 结果 |
 | `GET /config/app` | 返回 `app` 配置对象 |
-| `GET /config/env` | 输出「我是 dev 环境专属的 Bean」 |
+| `GET /config/env` | 输出“我是 dev 环境专属的 Bean” |
 
 **切换环境验证**：
 
@@ -423,9 +423,9 @@ mvn -pl 02-config -am spring-boot:run \
   -Dspring-boot.run.arguments=--spring.profiles.active=prod
 ```
 
-再次访问 `/config/env`，应输出「我是 prod 环境专属的 Bean」。
+再次访问 `/config/env`，应输出“我是 prod 环境专属的 Bean”。
 
-**校验验证**：把 `application.yml` 里 `app.port` 改成 `99999`，启动会报「app.port 必须小于等于 65535」。
+**校验验证**：把 `application.yml` 里 `app.port` 改成 `99999`，启动会报“app.port 必须小于等于 65535”。
 
 ---
 
@@ -445,7 +445,7 @@ mvn -pl 02-config -am spring-boot:run \
 
 ### 8.1 课堂随堂练习（课上约 10 分钟）
 
-> 跟着做即可，做完立刻用 curl 验证，追求「当场跑通」。
+> 跟着做即可，做完立刻用 curl 验证，追求“当场跑通”。
 
 | # | 练习 | 验证点 |
 | --- | --- | --- |

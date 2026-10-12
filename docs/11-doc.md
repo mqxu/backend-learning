@@ -218,4 +218,4 @@ mvn -pl 11-doc -am spring-boot:run
 
 下一节 [12-test](12-test.md) 会讲测试，保证代码质量。
 
-> 本节遵循的规范（官方 + 阿里手册）：接口用 `@Operation` 写清「做什么」；参数用 `@Parameter` 写清含义；文档按环境控制暴露。
+> 本节遵循的规范（官方 + 阿里手册）：接口用 `@Operation` 写清“做什么”；参数用 `@Parameter` 写清含义；文档按环境控制暴露。

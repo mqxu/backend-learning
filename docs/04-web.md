@@ -21,7 +21,7 @@
 
 ## 2. 概念铺垫
 
-### 2.1 为什么要「统一响应体」
+### 2.1 为什么要“统一响应体”
 
 如果一个接口返回 `User` 对象，另一个返回字符串，前端就得分情况解析，出错时也不知道错误码是什么。统一成：
 
@@ -33,7 +33,7 @@
  }
 ```
 
-前端只需解析一种结构，`code` 表达成功/失败，`data` 放业务数据。这是后端工程化的第一道「约定」。
+前端只需解析一种结构，`code` 表达成功/失败，`data` 放业务数据。这是后端工程化的第一道“约定”。
 
 ### 2.2 为什么用全局异常处理
 
@@ -41,7 +41,7 @@
 
 ### 2.3 RESTful 是什么
 
-把「操作」用 HTTP 方法表达、把「对象」用 URL 表达：
+把“操作”用 HTTP 方法表达、把“对象”用 URL 表达：
 
 | 方法 | 语义 | 示例 | 说明 |
 | --- | --- | --- | --- |
@@ -52,7 +52,7 @@
 
 > 一个接口是否幂等（重复调用结果一致）是设计要点：GET/PUT/DELETE 应幂等，POST 不必。
 
-### 2.4 为什么要「错误码枚举」
+### 2.4 为什么要“错误码枚举”
 
 如果业务代码里到处写 `Result.fail(404, "用户不存在")`，错误码散落各处，改一个文案要全局搜索。把 code/message 收敛到一个枚举：
 
@@ -66,7 +66,7 @@ public enum ErrorCode {
 
 好处：**错误码只有一处定义**，`Result`、`BusinessException`、全局异常处理器都引用它，避免魔法数字与文案漂移。
 
-### 2.5 为什么要「分页封装」
+### 2.5 为什么要“分页封装”
 
 列表接口几乎都要分页。如果每次都返回裸 `List`，前端不知道总共有多少条、当前第几页，没法渲染分页条。统一封装：
 
@@ -268,7 +268,7 @@ public class GlobalExceptionHandler {
 讲解：
 
 - `@RestControllerAdvice` 监听所有 controller 抛出的异常，`@ExceptionHandler` 按异常类型分流；
-- 最后 `Exception.class` 是「兜底」，避免把堆栈直接抛给前端；
+- 最后 `Exception.class` 是“兜底”，避免把堆栈直接抛给前端；
 - **规范点**：兜底异常要 `log.error("系统异常", e)` 记录完整堆栈，但**返回给前端的 message 不暴露内部细节**；
 - 新增三个实用 handler：`MethodArgumentTypeMismatchException`（如 `GET /users/abc`）、`HttpMessageNotReadableException`（请求体 JSON 格式错误）与 `NoResourceFoundException`（访问不存在的路径返回 404，而不是 500）。
 
@@ -317,7 +317,7 @@ public class UserCreateRequest {
 
 ### 步骤 4：拦截器与过滤器
 
-目标：理解两类「关卡」的区别并各写一个。
+目标：理解两类“关卡”的区别并各写一个。
 
 - **过滤器 Filter**：Servlet 层的关卡，在进入 Spring 之前；
 - **拦截器 Interceptor**：Spring MVC 层的关卡，能拿到 handler。

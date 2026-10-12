@@ -11,7 +11,7 @@
 
 1. 用 Maven 建出一个最小的 Spring Boot 模块骨架；
 2. 启动应用，并写一个返回 JSON 的 REST 接口；
-3. 说清「启动类、控制器、实体类」三者的分工。
+3. 说清“启动类、控制器、实体类”三者的分工。
 
 **前置知识**：会一点 Java 语法（类、方法、包）即可，不要求会 Spring。
 
@@ -21,7 +21,7 @@
 
 ### 2.1 什么是 Spring Boot
 
-普通 Java Web 项目要配一堆东西：Tomcat 容器、一堆 XML、各种依赖版本。Spring Boot 的理念是**「约定优于配置」**：
+普通 Java Web 项目要配一堆东西：Tomcat 容器、一堆 XML、各种依赖版本。Spring Boot 的理念是**“约定优于配置”**：
 
 - 内置 Tomcat，`main` 方法一跑就是一个 Web 服务，不用自己部署到服务器；
 - 自动装配（Auto Configuration）：根据你引入的依赖自动配置好组件，少写甚至不写配置；
@@ -29,7 +29,7 @@
 
 ### 2.2 什么是 REST 接口
 
-浏览器访问 `http://localhost:8001/user/hello`，服务器返回一段文字或 JSON，这就是一个 REST 接口。它的核心是「用 URL 定位资源，用 HTTP 方法表达操作」：
+浏览器访问 `http://localhost:8001/user/hello`，服务器返回一段文字或 JSON，这就是一个 REST 接口。它的核心是“用 URL 定位资源，用 HTTP 方法表达操作”：
 
 | 方法 | 含义 | 示例 |
 | --- | --- | --- |
@@ -44,12 +44,12 @@
 
 这三个词后面会反复出现，先有个印象：
 
-- **容器**：Spring 启动后维护的一个「对象仓库」，帮你管理对象从创建到销毁的一生；
+- **容器**：Spring 启动后维护的一个“对象仓库”，帮你管理对象从创建到销毁的一生；
 - **Bean**：放进容器、由 Spring 管理的对象就叫 Bean；
-- **注入**：你不在代码里 `new`，而是让 Spring 把建好的对象「塞」给你，这就是依赖注入（DI）。
+- **注入**：你不在代码里 `new`，而是让 Spring 把建好的对象“塞”给你，这就是依赖注入（DI）。
 
 ```java
-// 不用自己 new，Spring 会帮你把 User 造好 —— 这就是「控制反转」
+// 不用自己 new，Spring 会帮你把 User 造好 —— 这就是“控制反转”
 @RestController
 public class UserController {
     // 里面直接 return new User(...)，暂时先 new，后面模块会讲注入
@@ -111,7 +111,7 @@ public class UserController {
 讲解：
 
 - `<parent>` 指向父 POM，`groupId/version` 都不用重复声明；
-- 子模块只有唯一的 `artifactId`，这就是「约定优于配置」在构建上的体现。
+- 子模块只有唯一的 `artifactId`，这就是“约定优于配置”在构建上的体现。
 
 验证：在仓库根目录执行 `mvn -pl 01-quickstart -am compile` 能通过（`-pl` 指定模块，`-am` 连带编译它依赖的模块）。
 
@@ -152,7 +152,7 @@ public class QuickStartApplication {
 
 ### 步骤 3：写实体类 User
 
-目标：定义一个「用户」模型，用 Lombok 省掉样板代码。
+目标：定义一个“用户”模型，用 Lombok 省掉样板代码。
 
 `src/main/java/top/mqxu/quickstart/entity/User.java`：
 
@@ -184,7 +184,7 @@ public class User {
 
 - `@Data`：自动生成 getter / setter / `toString` / `equals` / `hashCode`；
 - `@NoArgsConstructor` / `@AllArgsConstructor`：生成无参 / 全参构造器；
-- **规范点**：`id` 用包装类型 `Long` 而非基本类型 `long`——POJO 属性统一用包装类型，能区分「没赋值」和「值为 0」。
+- **规范点**：`id` 用包装类型 `Long` 而非基本类型 `long`——POJO 属性统一用包装类型，能区分“没赋值”和“值为 0”。
 
 验证：编译通过，无需运行。
 
@@ -227,7 +227,7 @@ public class UserController {
 
 讲解：
 
-- `@RestController` = `@Controller` + `@ResponseBody`，意思是「方法的返回值直接写进响应体」，而不是去跳转页面；
+- `@RestController` = `@Controller` + `@ResponseBody`，意思是“方法的返回值直接写进响应体”，而不是去跳转页面；
 - `@RequestMapping("/user")` 是类级前缀，`@GetMapping("/hello")` 是方法级子路径，拼起来就是 `GET /user/hello`；
 - 返回 `User` 对象时，Spring 会自动用 Jackson 把它转成 JSON。
 
@@ -295,7 +295,7 @@ curl http://localhost:8001/user/info
 | `Whitelabel Error Page` 404 | 路径写错或没加 `@RestController` | 检查 `@RequestMapping` 前缀与方法路径拼接 |
 | 端口被占用 | 8001 已起过服务 | 换端口，或 `lsof -i:8001` 找到并结束进程 |
 | 返回的不是 JSON 而是报错 | 实体类缺 getter（没加 `@Data`） | Jackson 靠 getter 序列化，补 `@Data` |
-| 启动报「无法解析主类」 | 启动类包名与目录不一致 | 确保类在 `top.mqxu.quickstart` 下 |
+| 启动报“无法解析主类” | 启动类包名与目录不一致 | 确保类在 `top.mqxu.quickstart` 下 |
 | 改了代码没生效 | devtools 未生效 / 没重新编译 | 重启，或确认 IDE 开了自动编译 |
 
 ---
@@ -304,7 +304,7 @@ curl http://localhost:8001/user/info
 
 ### 8.1 课堂随堂练习（课上约 10 分钟）
 
-> 跟着做即可，做完立刻用 curl 验证，追求「当场跑通」。
+> 跟着做即可，做完立刻用 curl 验证，追求“当场跑通”。
 
 | # | 练习 | 验证点 |
 | --- | --- | --- |

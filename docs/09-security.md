@@ -29,13 +29,13 @@
 
 ### 2.2 什么是 JWT
 
-登录成功后，服务端签发一个**签名的令牌（token）**给客户端。之后客户端每次请求都带上 token，服务端验证签名即可知道「你是谁」，**无需在服务端存 session**——这就是无状态认证。
+登录成功后，服务端签发一个**签名的令牌（token）**给客户端。之后客户端每次请求都带上 token，服务端验证签名即可知道“你是谁”，**无需在服务端存 session**——这就是无状态认证。
 
 JWT 由三段组成，用 `.` 分隔：`Header.Payload.Signature`。签名防篡改，任何一段被改都会校验失败。
 
 ### 2.3 Spring Security 的过滤链
 
-Spring Security 的核心是一串「过滤器」。请求进来依次经过它们，决定是否放行。Spring Security 6 用 `SecurityFilterChain` Bean 来配置（**旧版的 `WebSecurityConfigurerAdapter` 已废弃，不要再用**）。
+Spring Security 的核心是一串“过滤器”。请求进来依次经过它们，决定是否放行。Spring Security 6 用 `SecurityFilterChain` Bean 来配置（**旧版的 `WebSecurityConfigurerAdapter` 已废弃，不要再用**）。
 
 ---
 
@@ -298,9 +298,9 @@ mvn -pl 09-security -am spring-boot:run
 
 ### 8.2 课后练习（课后完成并提交）
 
-- **基础**：用 `BCryptPasswordEncoder` 把「123456」加密并打印，观察两次加密结果不同（加盐）。
+- **基础**：用 `BCryptPasswordEncoder` 把“123456”加密并打印，观察两次加密结果不同（加盐）。
 - **进阶**：实现一个 `UserDetailsService`，从数据库加载用户并校验密码。
-- **挑战**：给 JWT 加「角色」声明，并在过滤器里解析角色、配合 `hasRole` 完成 RBAC。
+- **挑战**：给 JWT 加“角色”声明，并在过滤器里解析角色、配合 `hasRole` 完成 RBAC。
 
 ---
 
@@ -308,7 +308,7 @@ mvn -pl 09-security -am spring-boot:run
 
 | 知识点 | 一句话回顾 |
 | --- | --- |
-| 认证 vs 授权 | 「你是谁」vs「你能做什么」 |
+| 认证 vs 授权 | “你是谁”vs“你能做什么” |
 | JWT | 三段式令牌，签名防篡改，无状态 |
 | `SecurityFilterChain` | Spring Security 6 的安全配置入口 |
 | BCrypt | 密码加盐哈希，绝不存明文 |

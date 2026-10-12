@@ -21,7 +21,7 @@
 
 ### 2.1 为什么要监控
 
-服务上线后，怎么知道它还活着？QPS 是多少？内存占了多少？「可观测性」就是给系统装仪表盘。Actuator 是 Spring Boot 自带的观测入口。
+服务上线后，怎么知道它还活着？QPS 是多少？内存占了多少？“可观测性”就是给系统装仪表盘。Actuator 是 Spring Boot 自带的观测入口。
 
 ### 2.2 Actuator 端点
 
@@ -34,7 +34,7 @@
 
 ### 2.3 Micrometer 是什么
 
-一套「指标门面」，屏蔽底层监控系统差异。你只需用 Micrometer 记录指标，底层是 Prometheus 还是别的，改依赖即可（和 SLF4J 之于日志是同一个思路）。
+一套“指标门面”，屏蔽底层监控系统差异。你只需用 Micrometer 记录指标，底层是 Prometheus 还是别的，改依赖即可（和 SLF4J 之于日志是同一个思路）。
 
 ---
 
@@ -71,7 +71,7 @@ management:
 
 ### 步骤 1：暴露端点
 
-配置见「环境准备」。启动后访问 `http://localhost:8013/actuator/health`，应返回：
+配置见“环境准备”。启动后访问 `http://localhost:8013/actuator/health`，应返回：
 
 ```json
 {"status":"UP"}
@@ -149,7 +149,7 @@ public class ApiController {
 
 讲解：
 
-- `Counter` 只增不减的计数器，适合统计「调用次数」；
+- `Counter` 只增不减的计数器，适合统计“调用次数”；
 - 注册进 `MeterRegistry` 后，可通过 `/actuator/metrics/api.hello.requests` 查询。
 
 ### 步骤 4：对接 Prometheus
@@ -205,7 +205,7 @@ mvn -pl 13-actuator -am spring-boot:run
 | # | 练习 | 验证点 |
 | --- | --- | --- |
 | 1 | 访问 `/actuator/health` | 返回 UP |
-| 2 | 自定义一个「内存」健康指标 | health 里出现该 detail |
+| 2 | 自定义一个“内存”健康指标 | health 里出现该 detail |
 | 3 | 访问 3 次 `/api/hello` 再查计数 | 计数为 3 |
 
 ### 8.2 课后练习（课后完成并提交）
