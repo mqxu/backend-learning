@@ -406,7 +406,7 @@ public class AppProperties {
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 02-config -am spring-boot:run
+mvn -pl 02-config spring-boot:run
 ```
 
 | 接口 | 期望现象 |
@@ -419,7 +419,7 @@ mvn -pl 02-config -am spring-boot:run
 **切换环境验证**：
 
 ```bash
-mvn -pl 02-config -am spring-boot:run \
+mvn -pl 02-config spring-boot:run \
   -Dspring-boot.run.arguments=--spring.profiles.active=prod
 ```
 

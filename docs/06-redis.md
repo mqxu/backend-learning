@@ -248,7 +248,7 @@ public class LockController {
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 06-redis -am spring-boot:run
+mvn -pl 06-redis spring-boot:run
 ```
 
 | 操作 | 请求 | 期望 |

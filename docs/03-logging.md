@@ -393,7 +393,7 @@ ${AnsiColor.DEFAULT}
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 03-logging -am spring-boot:run
+mvn -pl 03-logging spring-boot:run
 ```
 
 访问 `GET /log/demo`，观察控制台输出应包含：

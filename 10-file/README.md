@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 10-file -am spring-boot:run
+mvn -pl 10-file spring-boot:run
 ```
 
 端口：`8010`

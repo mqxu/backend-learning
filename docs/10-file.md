@@ -249,7 +249,7 @@ minioClient.putObject(PutObjectArgs.builder()
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 10-file -am spring-boot:run
+mvn -pl 10-file spring-boot:run
 ```
 
 ```bash

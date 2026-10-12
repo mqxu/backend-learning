@@ -192,7 +192,7 @@ public void cronTask() {
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 08-schedule -am spring-boot:run
+mvn -pl 08-schedule spring-boot:run
 ```
 
 观察控制台：每 5 秒打印一次 `fixedRate`、`fixedDelay` 日志。

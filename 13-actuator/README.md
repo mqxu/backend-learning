@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 13-actuator -am spring-boot:run
+mvn -pl 13-actuator spring-boot:run
 ```
 
 端口：`8013`

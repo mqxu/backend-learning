@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 09-security -am spring-boot:run
+mvn -pl 09-security spring-boot:run
 ```
 
 端口：`8009`

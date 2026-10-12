@@ -77,7 +77,7 @@ backend-learning
 mvn clean install
 
 # 运行指定模块（以 01-quickstart 为例）
-mvn -pl 01-quickstart -am spring-boot:run
+mvn -pl 01-quickstart spring-boot:run
 ```
 
 各模块默认端口按模块序号规划（`8001`、`8002` …），避免冲突。

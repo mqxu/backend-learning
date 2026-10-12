@@ -34,7 +34,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 06-redis -am spring-boot:run
+mvn -pl 06-redis spring-boot:run
 ```
 
 端口：`8006`

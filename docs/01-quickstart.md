@@ -269,7 +269,7 @@ server:
 在仓库根目录执行：
 
 ```bash
-mvn -pl 01-quickstart -am spring-boot:run
+mvn -pl 01-quickstart spring-boot:run
 ```
 
 看到 `Tomcat started on port 8001` 即启动成功，然后验证：

@@ -265,7 +265,7 @@ http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilt
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 09-security -am spring-boot:run
+mvn -pl 09-security spring-boot:run
 ```
 
 1. 直接访问受保护接口 → 返回 401 未认证；

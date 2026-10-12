@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 12-test -am spring-boot:run
+mvn -pl 12-test spring-boot:run
 ```
 
 端口：`8012`

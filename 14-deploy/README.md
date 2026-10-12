@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 14-deploy -am spring-boot:run
+mvn -pl 14-deploy spring-boot:run
 ```
 
 端口：`8014`

@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 07-mq -am spring-boot:run
+mvn -pl 07-mq spring-boot:run
 ```
 
 端口：`8007`

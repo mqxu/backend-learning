@@ -169,7 +169,7 @@ public class OpenApiConfig {
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 11-doc -am spring-boot:run
+mvn -pl 11-doc spring-boot:run
 ```
 
 浏览器访问：

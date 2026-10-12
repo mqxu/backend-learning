@@ -82,7 +82,7 @@ public class UserController {
 在仓库根目录执行：
 
 ```bash
-mvn -pl 01-quickstart -am spring-boot:run
+mvn -pl 01-quickstart spring-boot:run
 ```
 
 默认端口为 `8001`，验证接口：

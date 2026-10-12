@@ -32,7 +32,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 11-doc -am spring-boot:run
+mvn -pl 11-doc spring-boot:run
 ```
 
 端口：`8011`

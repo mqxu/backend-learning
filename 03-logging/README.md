@@ -35,7 +35,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 03-logging -am spring-boot:run
+mvn -pl 03-logging spring-boot:run
 ```
 
 端口：`8003`

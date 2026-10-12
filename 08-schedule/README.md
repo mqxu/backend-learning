@@ -33,7 +33,7 @@
 ## 运行方式
 
 ```bash
-mvn -pl 08-schedule -am spring-boot:run
+mvn -pl 08-schedule spring-boot:run
 ```
 
 端口：`8008`

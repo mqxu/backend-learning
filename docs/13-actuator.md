@@ -175,7 +175,7 @@ public class ApiController {
 ## 6. 运行与验证
 
 ```bash
-mvn -pl 13-actuator -am spring-boot:run
+mvn -pl 13-actuator spring-boot:run
 ```
 
 | 请求 | 期望 |
