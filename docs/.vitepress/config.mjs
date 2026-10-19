@@ -30,6 +30,12 @@ export default defineConfig({
           { text: '13 应用监控', link: '/13-actuator' },
           { text: '14 部署与 CI/CD', link: '/14-deploy' }
         ]
+      },
+      {
+        text: '实战案例',
+        items: [
+          { text: '短信验证码登录（含 Vue 3 前端）', link: '/sms-login' }
+        ]
       }
     ],
     outline: { label: '本页目录', level: [2, 3] },

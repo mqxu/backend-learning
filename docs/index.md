@@ -40,3 +40,9 @@ features:
 | 12 | [测试](/12-test) | JUnit5、MockMvc |
 | 13 | [应用监控](/13-actuator) | Actuator、Micrometer |
 | 14 | [部署与 CI/CD](/14-deploy) | Docker、Compose、Actions |
+
+## 实战案例
+
+| 案例 | 涉及技术 | 内容 |
+| --- | --- | --- |
+| [短信验证码登录](/sms-login) | Redis、JWT、Spring Boot、Vue 3、Element Plus | 验证码发送与限流、JWT 签发与校验、前端倒计时与路由守卫，附完整前后端代码与实测返回 |

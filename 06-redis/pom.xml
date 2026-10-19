@@ -11,4 +11,81 @@
 
     <artifactId>06-redis</artifactId>
 
+    <properties>
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
+        <redisson.version>4.8.0</redisson.version>
+        <cloopen.version>1.0.4</cloopen.version>
+        <jjwt.version>0.13.0</jjwt.version>
+    </properties>
+
+    <dependencies>
+        <!-- Redis 客户端与 Spring Data Redis 抽象，底层默认用 Lettuce -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Lettuce 的 pool 配置由 commons-pool2 提供，缺了它池参数会静默失效 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
+        <!--
+          缓存抽象：Boot 4 把缓存自动配置拆成独立的 spring-boot-cache 模块，
+          spring-boot-starter-data-redis 不再附带它，用 @Cacheable 必须显式引入
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!-- 分布式锁：Redisson，4.x 起自带 Boot 4 专用自动配置 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>${redisson.version}</version>
+        </dependency>
+
+        <!-- 数据源：延续 05-mybatis 的组合，给缓存提供一个真实的数据库做对照 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- 容联云短信 SDK -->
+        <dependency>
+            <groupId>com.cloopen</groupId>
+            <artifactId>java-sms-sdk</artifactId>
+            <version>${cloopen.version}</version>
+        </dependency>
+
+
+        <!-- JWT 签名与校验。api 是编译期接口，impl 与 jackson 只在运行期需要 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
 </project>
