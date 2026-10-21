@@ -6,8 +6,8 @@ spring:
     name: 15-toolkit 工具库实战
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 50MB
+      max-file-size: 20MB     # 上传的单个文件大小
+      max-request-size: 50MB  # 单次请求最大容量
 
 toolkit:
   # 各案例的临时文件目录，启动时自动创建

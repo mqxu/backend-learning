@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import top.mqxu.toolkit.common.BusinessException;
+import top.mqxu.toolkit.common.ErrorCode;
 import top.mqxu.toolkit.common.Result;
 import top.mqxu.toolkit.dto.CreateCustomerRequest;
 import top.mqxu.toolkit.dto.CustomerView;
@@ -53,8 +55,10 @@ public class SensitiveDataController {
     @PostMapping("/{id}/verify-password")
     public Result<Boolean> verifyPassword(@PathVariable String id,
                                           @RequestBody PasswordRequest request) {
-        boolean matched = sensitiveDataService.verifyPassword(id, request.password());
-        return matched ? Result.ok("密码正确", true) : Result.fail(41062, "密码错误");
+        if (!sensitiveDataService.verifyPassword(id, request.password())) {
+            throw new BusinessException(ErrorCode.PASSWORD_WRONG);
+        }
+        return Result.ok("密码正确", true);
     }
 
     public record PasswordRequest(String password) {

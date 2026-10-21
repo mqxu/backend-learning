@@ -51,7 +51,8 @@ public enum ErrorCode {
     SIGN_REPLAY(41054, "重复请求"),
 
     // 案例 9：敏感数据
-    CUSTOMER_NOT_FOUND(41061, "客户不存在");
+    CUSTOMER_NOT_FOUND(41061, "客户不存在"),
+    PASSWORD_WRONG(41062, "密码错误");
 
     private final Integer code;
     private final String message;

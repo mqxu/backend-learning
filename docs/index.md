@@ -4,7 +4,7 @@ layout: home
 hero:
   name: 后端工程化开发
   text: Spring Boot 多模块学习仓库
-  tagline: 从快速入门到部署上线，14 个模块打通后端工程链路
+  tagline: 从快速入门到部署上线，15 个模块打通后端工程链路
   actions:
     - theme: brand
       text: 开始学习
@@ -15,7 +15,7 @@ hero:
 
 features:
   - title: 循序渐进
-    details: 按 01~14 模块递进，每个模块都可独立运行，配有独立教程
+    details: 按 01~15 模块递进，每个模块都可独立运行，配有独立教程
   - title: 官方规范
     details: 遵循 Spring 官方文档与阿里巴巴 Java 开发手册
   - title: 动手实战
@@ -40,6 +40,7 @@ features:
 | 12 | [测试](/12-test) | JUnit5、MockMvc |
 | 13 | [应用监控](/13-actuator) | Actuator、Micrometer |
 | 14 | [部署与 CI/CD](/14-deploy) | Docker、Compose、Actions |
+| 15 | [工具库实战](/15-toolkit) | Hutool、验证码、二维码、Excel、分片上传 |
 
 ## 实战案例
 

@@ -27,6 +27,7 @@
 | 12 | [12-test](12-test/README.md) | 测试 | 🚧 骨架 | [教程](docs/12-test.md) |
 | 13 | [13-actuator](13-actuator/README.md) | 应用监控 | 🚧 骨架 | [教程](docs/13-actuator.md) |
 | 14 | [14-deploy](14-deploy/README.md) | 部署与 CI/CD | 🚧 骨架 | [教程](docs/14-deploy.md) |
+| 15 | [15-toolkit](15-toolkit/README.md) | 工具库实战 | ✅ 完成 | [教程](docs/15-toolkit.md) |
 
 ## 模块详解
 
@@ -46,6 +47,7 @@
 | **12-test** | 质量保障：JUnit5、MockMvc、集成测试与覆盖率 |
 | **13-actuator** | 可观测性：健康检查、指标采集、Prometheus 对接 |
 | **14-deploy** | 交付上线：Docker 镜像、Compose 编排、CI/CD 流水线 |
+| **15-toolkit** | 常见需求落地：验证码、扫码登录、海报、短链、Excel、分片上传、上传安全、开放接口签名、敏感数据、系统面板、接口巡检、文本清洗 |
 
 ## 目录结构
 
@@ -67,7 +69,8 @@ backend-learning
 ├── 11-doc/                 # 接口文档
 ├── 12-test/                # 测试
 ├── 13-actuator/            # 应用监控
-└── 14-deploy/              # 部署与 CI/CD
+├── 14-deploy/              # 部署与 CI/CD
+└── 15-toolkit/             # 工具库实战（Hutool）
 ```
 
 ## 快速开始

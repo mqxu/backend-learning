@@ -28,7 +28,8 @@ export default defineConfig({
           { text: '11 接口文档', link: '/11-doc' },
           { text: '12 测试', link: '/12-test' },
           { text: '13 应用监控', link: '/13-actuator' },
-          { text: '14 部署与 CI/CD', link: '/14-deploy' }
+          { text: '14 部署与 CI/CD', link: '/14-deploy' },
+          { text: '15 工具库实战', link: '/15-toolkit' }
         ]
       },
       {
