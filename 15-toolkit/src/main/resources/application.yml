@@ -1,0 +1,37 @@
+server:
+  port: 8015
+
+spring:
+  application:
+    name: 15-toolkit 工具库实战
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+
+toolkit:
+  # 各案例的临时文件目录，启动时自动创建
+  work-dir: ${java.io.tmpdir}/toolkit-demo
+  captcha:
+    expire-seconds: 60
+  qr-login:
+    expire-seconds: 120
+  short-link:
+    expire-seconds: 604800
+    base-url: http://127.0.0.1:8015
+  sign:
+    app-id: toolkit-demo
+    app-secret: 3f2a9c1e5b7d4086a1c3e5f7092b4d68
+    tolerance-seconds: 300
+  crypto:
+    aes-key: 4f8b2d6a1c9e3570
+  chunk:
+    chunk-size: 1048576
+    expire-seconds: 3600
+  inspect:
+    timeout-millis: 3000
+    max-concurrency: 8
+
+logging:
+  level:
+    top.mqxu.toolkit: info

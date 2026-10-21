@@ -1,0 +1,17 @@
+spring:
+  # 配置数据源
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/backend_learning?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # 日期格式化
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8 # 时区，东八区
+
+# mp 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true  # 开启驼峰命名
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 打印sql

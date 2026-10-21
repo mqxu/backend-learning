@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统状态面板</title>
+    <style>
+        :root {
+            --bg: #0b1220;
+            --card: #131c2e;
+            --line: #1f2b42;
+            --text: #e6edf7;
+            --muted: #8b9bb4;
+            --accent: #38bdf8;
+            --ok: #34d399;
+            --warn: #fbbf24;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px 24px 48px;
+            background: radial-gradient(circle at 15% 0%, #152442 0%, var(--bg) 45%);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+        }
+
+        header {
+            max-width: 1080px;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        button {
+            background: #1b2942;
+            color: var(--text);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+        }
+
+        button:hover {
+            border-color: var(--accent);
+            background: #22334f;
+        }
+
+        main {
+            max-width: 1080px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .card {
+            background: linear-gradient(160deg, #16233a 0%, var(--card) 100%);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .card.wide {
+            grid-column: span 3;
+        }
+
+        .card-title {
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: .5px;
+            margin-bottom: 14px;
+        }
+
+        .metric {
+            font-size: 34px;
+            font-weight: 600;
+            line-height: 1.1;
+        }
+
+        .metric small {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 400;
+            margin-left: 4px;
+        }
+
+        .detail {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+            word-break: break-all;
+        }
+
+        .bar {
+            margin-top: 16px;
+            height: 8px;
+            background: #0d1626;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .bar span {
+            display: block;
+            height: 100%;
+            width: 0;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #22d3ee, #3b82f6);
+            transition: width .6s ease;
+        }
+
+        .disk {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1.4fr;
+            gap: 16px;
+            align-items: center;
+            padding: 14px 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .disk:first-of-type {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .disk-name {
+            font-size: 14px;
+        }
+
+        .disk-name small {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .disk-size {
+            color: var(--muted);
+            font-size: 13px;
+            text-align: right;
+        }
+
+        .footer {
+            max-width: 1080px;
+            margin: 20px auto 0;
+            color: var(--muted);
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 860px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            .card.wide {
+                grid-column: span 1;
+            }
+
+            .disk {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .disk-size {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>系统状态面板</h1>
+        <div class="subtitle">数据来自 OshiUtil 与 ManagementFactory，每 5 秒自动刷新</div>
+    </div>
+    <div class="actions">
+        <span id="updated">加载中</span>
+        <button onclick="load()">刷新</button>
+    </div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="card-title">CPU</div>
+        <div class="metric"><span id="cpuUsage">--</span><small>%</small></div>
+        <div class="bar"><span id="cpuBar"></span></div>
+        <div class="detail">
+            <div id="cpuModel">--</div>
+            <div><span id="cpuCores">--</span> 个逻辑核心</div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-title">物理内存</div>
+        <div class="metric"><span id="memUsage">--</span><small>%</small></div>
+        <div class="bar"><span id="memBar"></span></div>
+        <div class="detail">
+            <div>已用 <span id="memUsed">--</span></div>
+            <div>总量 <span id="memTotal">--</span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-title">JVM 堆</div>
+        <div class="metric"><span id="heapUsage">--</span><small>%</small></div>
+        <div class="bar"><span id="heapBar"></span></div>
+        <div class="detail">
+            <div>已用 <span id="heapUsed">--</span> / 上限 <span id="heapMax">--</span></div>
+            <div><span id="threads">--</span> 个线程，运行 <span id="uptime">--</span></div>
+        </div>
+    </section>
+
+    <section class="card wide">
+        <div class="card-title">磁盘</div>
+        <div id="disks"></div>
+    </section>
+</main>
+
+<div class="footer">
+    <span id="osInfo">--</span>
+    <span>15-toolkit</span>
+</div>
+
+<script>
+    const $ = (id) => document.getElementById(id);
+
+    function formatBytes(bytes) {
+        if (!bytes) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        return (bytes / Math.pow(1024, index)).toFixed(1) + ' ' + units[index];
+    }
+
+    function colorOf(value) {
+        if (value >= 85) return 'linear-gradient(90deg, #f87171, #ef4444)';
+        if (value >= 60) return 'linear-gradient(90deg, #fbbf24, #f59e0b)';
+        return 'linear-gradient(90deg, #22d3ee, #3b82f6)';
+    }
+
+    function setBar(barId, value) {
+        const bar = $(barId);
+        bar.style.width = Math.min(100, Math.max(0, value)) + '%';
+        bar.style.background = colorOf(value);
+    }
+
+    function renderDisks(disks) {
+        const box = $('disks');
+        if (!disks || disks.length === 0) {
+            box.innerHTML = '<div class="detail">没有读到磁盘信息</div>';
+            return;
+        }
+        box.innerHTML = disks.map((disk) => `
+            <div class="disk">
+                <div class="disk-name">${disk.name}<small>${disk.mount}</small></div>
+                <div class="disk-size">${formatBytes(disk.used)} / ${formatBytes(disk.total)}</div>
+                <div class="bar" style="margin-top:0">
+                    <span style="width:${Math.min(100, disk.usage)}%;background:${colorOf(disk.usage)}"></span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function load() {
+        try {
+            const response = await fetch('/toolkit/system');
+            const {data} = await response.json();
+
+            $('cpuUsage').textContent = data.cpu.usage.toFixed(1);
+            $('cpuModel').textContent = data.cpu.model || 'unknown';
+            $('cpuCores').textContent = data.cpu.cores;
+            setBar('cpuBar', data.cpu.usage);
+
+            $('memUsage').textContent = data.memory.usage.toFixed(1);
+            $('memUsed').textContent = formatBytes(data.memory.used);
+            $('memTotal').textContent = formatBytes(data.memory.total);
+            setBar('memBar', data.memory.usage);
+
+            const heapUsage = data.jvm.heapMax > 0 ? data.jvm.heapUsed * 100 / data.jvm.heapMax : 0;
+            $('heapUsage').textContent = heapUsage.toFixed(1);
+            $('heapUsed').textContent = formatBytes(data.jvm.heapUsed);
+            $('heapMax').textContent = formatBytes(data.jvm.heapMax);
+            $('threads').textContent = data.jvm.threads;
+            $('uptime').textContent = Math.floor(data.jvm.uptimeSeconds / 60) + ' 分钟';
+            setBar('heapBar', heapUsage);
+
+            renderDisks(data.disks);
+
+            $('osInfo').textContent =
+                `${data.os.name} ${data.os.version} · ${data.os.arch} · Java ${data.jvm.javaVersion}`;
+            $('updated').textContent = '更新于 ' + new Date().toLocaleTimeString();
+        } catch (error) {
+            $('updated').textContent = '读取失败：' + error.message;
+        }
+    }
+
+    load();
+    setInterval(load, 5000);
+</script>
+</body>
+</html>

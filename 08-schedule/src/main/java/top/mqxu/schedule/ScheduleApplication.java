@@ -2,6 +2,7 @@ package top.mqxu.schedule;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author mqxu
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @description ScheduleApplication
  **/
 @SpringBootApplication
+@EnableScheduling
 public class ScheduleApplication {
     public static void main(String[] args) {
         SpringApplication.run(ScheduleApplication.class, args);

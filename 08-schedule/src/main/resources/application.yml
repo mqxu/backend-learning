@@ -4,3 +4,25 @@ server:
 spring:
   application:
     name: 08-定时任务
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 16422802@qq.com  # 发送方邮箱
+    password: wybiridinuuebhad  # QQ邮箱SMTP授权码（不是登录密码）
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+# 2. 天气API配置（使用「和风天气」免费API，需自行注册获取key）
+weather:
+  api:
+    key: 8931b281dace4010a62fd2c19931d8aa  # 和风天气API密钥，前面已申请并复制
+    city: 101190101					  # 南京的城市ID（可查和风天气城市列表）
+    url: https://devapi.qweather.com/v7/weather/3d
+# 3. 接收邮件列表
+email:
+  recipients: 16422802@qq.com,xxxx@qq.com # 多个收件人用逗号分隔
