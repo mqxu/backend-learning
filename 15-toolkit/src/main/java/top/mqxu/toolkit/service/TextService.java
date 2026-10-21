@@ -4,6 +4,7 @@ import cn.hutool.core.util.DesensitizedUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.dfa.FoundWord;
+import cn.hutool.dfa.SensitiveProcessor;
 import cn.hutool.dfa.SensitiveUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
@@ -76,10 +77,18 @@ public class TextService {
                 .distinct()
                 .toList();
 
-        String filtered = SensitiveUtil.sensitiveFilter(source, true,
-                word -> "*".repeat(word.getWord().length()));
-        String highlighted = SensitiveUtil.sensitiveFilter(source, true,
-                word -> "<mark>" + word.getWord() + "</mark>");
+        String filtered = SensitiveUtil.sensitiveFilter(source, true, new SensitiveProcessor() {
+            @Override
+            public String process(FoundWord word) {
+                return "*".repeat(word.getWord().length());
+            }
+        });
+        String highlighted = SensitiveUtil.sensitiveFilter(source, true, new SensitiveProcessor() {
+            @Override
+            public String process(FoundWord word) {
+                return "<mark>" + word.getWord() + "</mark>";
+            }
+        });
 
         return new SensitiveResult(hits, filtered, highlighted);
     }

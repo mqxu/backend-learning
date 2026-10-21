@@ -35,7 +35,8 @@ public class PosterService {
     public byte[] render(MultipartFile file, String title, String price, String qrContent) {
         BufferedImage source = loadSource(file);
         BufferedImage canvas = fit(source);
-        canvas = ImgUtil.toBufferedImage(Img.from(canvas).round(24).getImg());
+        // round 的参数是圆角半径占短边的比例，不是像素值
+        canvas = ImgUtil.toBufferedImage(Img.from(canvas).round(0.03).getImg());
 
         Graphics2D g = canvas.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

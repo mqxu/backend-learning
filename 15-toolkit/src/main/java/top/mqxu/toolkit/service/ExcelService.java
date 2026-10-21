@@ -295,7 +295,7 @@ public class ExcelService {
     private void colorStatusColumn(ExcelWriter writer, int dataSize) {
         Map<String, CellStyle> styles = new HashMap<>();
         styles.put("已支付", fillStyle(writer, IndexedColors.LIGHT_GREEN, IndexedColors.DARK_GREEN));
-        styles.put("待支付", fillStyle(writer, IndexedColors.LIGHT_ORANGE, IndexedColors.DARK_ORANGE));
+        styles.put("待支付", fillStyle(writer, IndexedColors.LIGHT_ORANGE, IndexedColors.ORANGE));
         styles.put("已取消", fillStyle(writer, IndexedColors.GREY_25_PERCENT, IndexedColors.GREY_50_PERCENT));
 
         Sheet sheet = writer.getSheet();

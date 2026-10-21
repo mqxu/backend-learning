@@ -1,7 +1,7 @@
 # 05-mybatis · 数据访问
 > 📖 详细教程：[docs/05-mybatis.md](../docs/05-mybatis.md)
 
-> 状态：✅ 已实现（数据类型建表 / 数据初始化 / 通用 CRUD / 自动填充 / 逻辑删除 / 乐观锁 / Lambda 条件构造器 / 分页 / 连接池 / 事务 / 练习参考答案）
+> 状态：✅ 已实现（数据类型建表 / 数据初始化 / 通用 CRUD / 自动填充 / 逻辑删除 / 乐观锁 / Lambda 条件构造器 / 分页 / 连接池 / 事务 / 学生成绩多表查询案例 / 练习参考答案）
 
 打通数据库持久化，并用一张用户表把 MySQL 常用数据类型、MyBatis-Plus 的常用特性完整走一遍。第 8 节的随堂练习与课后练习在本模块内都有参考实现和配套测试。
 
@@ -40,15 +40,18 @@
     │   │   │   ├── CourseController.java           # 练习：批量操作用
     │   │   │   ├── ProductController.java          # 练习：库存
     │   │   │   ├── OrderController.java            # 练习：下单事务
+    │   │   │   ├── StudentController.java          # 学生成绩案例的十个接口
     │   │   │   └── DiagnosticsController.java      # 连接池实验，仅 pool1 profile
     │   │   ├── service
     │   │   │   ├── UserService.java
     │   │   │   ├── CourseService.java
     │   │   │   ├── ProductService.java
     │   │   │   ├── OrderService.java
-    │   │   │   └── impl/                           # 四个实现类
-    │   │   ├── mapper/                             # UserMapper / CourseMapper / ProductMapper / OrderMapper
-    │   │   ├── entity/                             # User / Course / Product / Order
+    │   │   │   ├── StudentService.java             # 学生成绩案例
+    │   │   │   └── impl/                           # 对应实现类
+    │   │   ├── mapper/                             # User / Course / Product / Order / Student / Score
+    │   │   ├── entity/                             # User / Course / Product / Order / Student / Score
+    │   │   ├── vo/ScoreSheetVO.java                # 成绩单的返回结构
     │   │   ├── dto/UserQuery.java
     │   │   ├── config/MybatisPlusConfig.java       # 分页插件 + 乐观锁插件
     │   │   └── config/MyMetaObjectHandler.java     # 字段自动填充
@@ -64,8 +67,30 @@
         ├── UserApiTest.java              # 接口层
         ├── PracticeTest.java             # 随堂练习五题
         ├── HomeworkTest.java             # 课后练习四题
-        └── OrderApiTest.java             # 商品与订单接口
+        ├── OrderApiTest.java             # 商品与订单接口
+        └── StudentCaseTest.java          # 学生成绩案例，13 条
 ```
+
+## 学生成绩案例
+
+`t_student`、`t_score` 与已有的 `t_course` 组成一个新手向的完整案例：单表查询 → 条件查询 → 分页 → 分组统计 → 多表查询（分步查与 join 两种写法）。
+
+教程：[docs/05-mybatis-case.md](../docs/05-mybatis-case.md)，代码在 `entity/Student`、`entity/Score`、`vo/ScoreSheetVO`、`mapper/ScoreMapper`、`service/impl/StudentServiceImpl`、`controller/StudentController`，验证用例 `StudentCaseTest`。
+
+接口一览（端口 8005）：
+
+| 操作 | 请求 |
+| --- | --- |
+| 全部学生 | `GET /students` |
+| 按 id 查 | `GET /students/{id}` |
+| 按班级查 | `GET /students/class?className=软件2301` |
+| 姓名模糊查 | `GET /students/search?name=张` |
+| 年龄区间 | `GET /students/age-range?minAge=19&maxAge=20` |
+| 分页 | `GET /students/page?current=1&size=2` |
+| 只要姓名 | `GET /students/names` |
+| 分组统计 | `GET /students/statistics` |
+| 成绩单（分步查） | `GET /students/{id}/scores` |
+| 成绩单（join） | `GET /students/{id}/scores?mode=join` |
 
 ## 运行方式
 
@@ -126,7 +151,7 @@ mvn -pl 05-mybatis -Pdruid spring-boot:run -Dspring-boot.run.arguments="--spring
 mvn -pl 05-mybatis test
 ```
 
-57 个用例，连本地 MySQL（`application.yml` 里的数据源），每条用例前清空自己涉及的表，跑之前确保 MySQL 已启动。跑完库里是空的，恢复示例数据：
+70 个用例（57 条原有 + 13 条学生成绩案例），连本地 MySQL（`application.yml` 里的数据源），每条用例前清空自己涉及的表，跑之前确保 MySQL 已启动。跑完库里是空的，恢复示例数据：
 
 ```bash
 mysql -uroot -p123456 -D backend_learning --default-character-set=utf8mb4 < src/main/resources/schema.sql

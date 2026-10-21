@@ -6,6 +6,7 @@ import cn.hutool.captcha.AbstractCaptcha;
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.captcha.generator.MathGenerator;
+import cn.hutool.core.math.Calculator;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.PostConstruct;
@@ -75,7 +76,23 @@ public class CaptchaService {
                 + ";base64," + captcha.getImageBase64();
 
         return new CaptchaResponse(captchaId, image,
-                properties.getCaptcha().getExpireSeconds(), style);
+                properties.getCaptcha().getExpireSeconds(), style,
+                debugAnswer(style, captcha));
+    }
+
+    /**
+     * 调试开关打开时返回可直接提交的答案。
+     * 算术验证码的 code 是算式本身（例如 3*7=），要算出结果才和提交值一致
+     */
+    private String debugAnswer(String style, AbstractCaptcha captcha) {
+        if (!properties.getCaptcha().isDebugCode()) {
+            return null;
+        }
+        String raw = captcha.getCode();
+        if (!"math".equals(style)) {
+            return raw;
+        }
+        return String.valueOf((int) Calculator.conversion(StrUtil.removeSuffix(raw, "=")));
     }
 
     /**

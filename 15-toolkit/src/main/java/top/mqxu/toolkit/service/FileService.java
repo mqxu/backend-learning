@@ -43,10 +43,17 @@ public class FileService {
         String extension = StrUtil.nullToEmpty(FileUtil.extName(originalName)).toLowerCase();
         String realType = StrUtil.nullToEmpty(FileTypeUtil.getType(new ByteArrayInputStream(bytes)));
 
-        boolean allowed = ALLOWED.contains(realType.toLowerCase());
-        String remark = sameType(extension, realType)
-                ? "扩展名与文件头一致"
-                : "扩展名是 " + extension + "，文件头实际是 " + realType;
+        // 白名单只看真实类型还不够，扩展名和文件头对不上的一律拒绝
+        boolean allowed = ALLOWED.contains(realType.toLowerCase()) && sameType(extension, realType);
+
+        String remark;
+        if (StrUtil.isBlank(realType)) {
+            remark = "扩展名是 " + extension + "，无法识别文件类型";
+        } else if (sameType(extension, realType)) {
+            remark = "扩展名与文件头一致";
+        } else {
+            remark = "扩展名是 " + extension + "，文件头实际是 " + realType;
+        }
 
         return new FileCheckResult(originalName, extension, realType,
                 bytes.length, DigestUtil.md5Hex(bytes), allowed, remark);
@@ -130,8 +137,8 @@ public class FileService {
     }
 
     private String safeName(String fileName) {
-        String name = StrUtil.subAfter(StrUtil.nullToEmpty(fileName), "/", true);
-        name = StrUtil.subAfter(name, "\\", true);
+        // FileUtil.getName 会把 / 和 \ 两种分隔符都处理掉，比手写 subAfter 稳妥
+        String name = FileUtil.getName(StrUtil.nullToEmpty(fileName));
         if (StrUtil.isBlank(name) || name.contains("..")) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "文件名不合法");
         }

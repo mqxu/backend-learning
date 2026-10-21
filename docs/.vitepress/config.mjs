@@ -32,6 +32,13 @@ export default defineConfig({
         ]
       },
       {
+        text: '专题补充',
+        items: [
+          { text: '学生成绩查询案例（新手向）', link: '/05-mybatis-case' },
+          { text: 'MyBatis-Plus 进阶：查询与多表', link: '/05-mybatis-advanced' }
+        ]
+      },
+      {
         text: '实战案例',
         items: [
           { text: '短信验证码登录（含 Vue 3 前端）', link: '/sms-login' }

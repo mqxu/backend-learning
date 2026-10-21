@@ -183,8 +183,8 @@ public class ChunkService {
         if (StrUtil.isBlank(fileName)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "fileName 不能为空");
         }
-        String name = StrUtil.subAfter(fileName, "/", true);
-        name = StrUtil.subAfter(name, "\\", true);
+        // 只留文件名本身，去掉浏览器或攻击者塞进来的路径部分
+        String name = FileUtil.getName(fileName);
         if (StrUtil.isBlank(name) || name.contains("..")) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "文件名不合法");
         }

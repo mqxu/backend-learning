@@ -14,6 +14,8 @@ toolkit:
   work-dir: ${java.io.tmpdir}/toolkit-demo
   captcha:
     expire-seconds: 60
+    # 练习环境打开，响应里会带答案，方便 curl 直接验证；线上必须设成 false
+    debug-code: true
   qr-login:
     expire-seconds: 120
   short-link:

@@ -35,6 +35,12 @@ public class ToolkitProperties {
          * 验证码有效期（秒）
          */
         private long expireSeconds = 60;
+
+        /**
+         * 调试开关，打开后响应里带上答案，方便 curl 验证。
+         * 只用于本地练习，线上必须关掉
+         */
+        private boolean debugCode = false;
     }
 
     @Data
