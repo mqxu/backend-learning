@@ -209,6 +209,7 @@ section ul li code{color:var(--text)}
   <p class="side-sub">20 步，前后端分离的认证与授权</p>
   <nav id="toc">
   <a href="#before">开始之前</a>
+  <a href="#concept">先认识 Spring Security</a>
   <a href="#how">每一步的套路</a>
   <a href="#order">顺序总览</a>
   <a href="#s01">01 建模块，先把依赖版本定死</a>
@@ -266,6 +267,7 @@ section ul li code{color:var(--text)}
   </div>
 <p>这份文档按顺序做完，会得到一个能跑的前后端分离鉴权模块：学生交任务、教师批改、管理员管账号，登录用 JWT，权限分到权限点，越权返回真实的 403。</p>
 <p>它不是讲解稿。每一步都给完整文件内容，照着建、照着贴，中间不跳步。所有代码都是从仓库里这份可运行的实现里取的，不是示意。</p>
+<p>唯一的例外是第一节的框架介绍：先花十分钟把 Spring Security 的过滤器链和几个名词看清楚，后面每一步才知道自己在填哪个坑。</p>
 </section>
 
 <section id="before">
@@ -286,6 +288,102 @@ section ul li code{color:var(--text)}
 <p>后端依赖版本由父 POM 的 Spring Boot 4.1.1 管住，模块里只写三个：MyBatis-Plus 3.5.17、jjwt 0.13.0、MySQL 驱动。前端是 Vue 3.5.44、vue-router 4.6.4、axios 1.21.0、Vite 8.3.5、TypeScript 5.9.3、vue-tsc 3.3.13。</p>
 </section>
 
+<section id="concept">
+<h2>先认识 Spring Security</h2>
+<div class="sec-rule"></div>
+<p>在动手之前花十分钟把框架的骨架看清楚，后面每一步才知道自己在填哪个坑。</p>
+<h3>它到底是什么</h3>
+<p>一句话：Spring Security 是一条挂在 <code class="i">DispatcherServlet</code> 前面的过滤器链，加上一套认证与授权的抽象。</p>
+<p>请求进 Tomcat 之后，先经过这条链，再进 Spring MVC。链上的每个过滤器各管一件事：把令牌换成身份、按 URL 判断权限、处理跨域、写 401 和 403 的响应。框架把这些顺序编排好了，我们只需要往几个固定的坑位里填东西。</p>
+<p>为什么不用自己写 <code class="i">HandlerInterceptor</code>：拦截器只能拦到进 Controller 的请求，静态资源和错误页拦不到；会话管理、密码编码、方法级权限注解、异常出口、CSRF 与 CORS，全都要自己造一遍，顺序还容易错。Security 把这一整套做完了，代价是要先弄懂它的名词。</p>
+<h3>六个名词</h3>
+<div class="tw"><table>
+<thead><tr>
+<th>名词</th>
+<th>是什么</th>
+<th>本模块对应的类</th>
+</tr></thead><tbody>
+<tr><td><code class="i">SecurityContextHolder</code></td><td>存放当前请求身份的地方，默认用 ThreadLocal</td><td>过滤器校验通过后把 <code class="i">SecurityUser</code> 放进去</td></tr>
+<tr><td><code class="i">Authentication</code></td><td>一次认证的结果，含身份、凭据、权限</td><td><code class="i">UsernamePasswordAuthenticationToken</code></td></tr>
+<tr><td><code class="i">AuthenticationManager</code></td><td>认证的总入口，把请求交给合适的 Provider</td><td><code class="i">SecurityConfig</code> 里构造的 <code class="i">ProviderManager</code></td></tr>
+<tr><td><code class="i">UserDetailsService</code></td><td>按用户名取用户的接口，由我们实现</td><td><code class="i">AccountUserDetailsService</code></td></tr>
+<tr><td><code class="i">UserDetails</code></td><td>框架认识的用户形状</td><td><code class="i">SecurityUser</code></td></tr>
+<tr><td><code class="i">GrantedAuthority</code></td><td>一条权限字符串，<code class="i">ROLE_ADMIN</code> 或 <code class="i">task:review</code></td><td><code class="i">Role.authorities()</code> 摊平出来的</td></tr>
+</tbody></table></div>
+<p>另外三个是出口，出错时才用到：</p>
+<div class="tw"><table>
+<thead><tr>
+<th>名词</th>
+<th>什么时候被调用</th>
+<th>本模块对应的类</th>
+</tr></thead><tbody>
+<tr><td><code class="i">AuthenticationEntryPoint</code></td><td>没有身份就来访问受保护资源</td><td><code class="i">RestAuthenticationEntryPoint</code>，回 401</td></tr>
+<tr><td><code class="i">AccessDeniedHandler</code></td><td>有身份但权限不够</td><td><code class="i">RestAccessDeniedHandler</code>，回 403</td></tr>
+<tr><td><code class="i">SecurityFilterChain</code></td><td>不是出口，是整条链的配置</td><td><code class="i">SecurityConfig#securityFilterChain</code></td></tr>
+</tbody></table></div>
+<h3>一次请求穿过什么</h3>
+<div class="code"><pre data-lang="text"><code>请求
+  ↓
+FilterChainProxy（Security 的入口，本身就是一个 Servlet Filter）
+  ├─ JwtAuthenticationFilter    我们写的：解析 Bearer 令牌，查库，放进上下文
+  ├─ AuthorizationFilter        按 URL 规则判断，比如 /admin/** 要 ADMIN
+  │    ├─ 没有身份 → AuthenticationEntryPoint → 401
+  │    └─ 权限不够 → AccessDeniedHandler → 403
+  ↓
+DispatcherServlet → Controller
+  └─ @PreAuthorize              方法调用前判断
+       └─ 不通过 → AccessDeniedException → 全局异常处理器 → 403</code></pre></div>
+<p>这张图解释了这个模块里两处容易混的地方：</p>
+<ul><li>401 和 403 之所以要写两个类，是因为它们发生在两个不同位置，一个是链上的出口，一个是注解抛异常后的兜底。</li><li><code class="i">@PreAuthorize</code> 的拒绝不经过 <code class="i">AccessDeniedHandler</code>，它抛的是 <code class="i">AccessDeniedException</code>，由 <code class="i">@RestControllerAdvice</code> 接住。</li></ul>
+<h3>认证和授权是两件事</h3>
+<div class="tw"><table>
+<thead><tr>
+<th></th>
+<th>认证 Authentication</th>
+<th>授权 Authorization</th>
+</tr></thead><tbody>
+<tr><td>回答的问题</td><td>你是谁</td><td>你能做什么</td></tr>
+<tr><td>失败返回</td><td>401</td><td>403</td></tr>
+<tr><td>前端该做什么</td><td>清登录态，跳登录页</td><td>只提示，不动登录态</td></tr>
+<tr><td>本模块哪里做</td><td>登录接口 + 令牌过滤器</td><td>URL 规则 + <code class="i">@PreAuthorize</code></td></tr>
+<tr><td>出口</td><td><code class="i">RestAuthenticationEntryPoint</code></td><td><code class="i">RestAccessDeniedHandler</code> 与全局异常处理器</td></tr>
+</tbody></table></div>
+<p>把这两件事混在一起，最典型的后果是前端把所有失败都当“登录过期”，学生点了一个没权限的按钮就被踢下线。</p>
+<h3>默认配置为什么不能直接用</h3>
+<p>只把 <code class="i">spring-boot-starter-security</code> 加进依赖、什么都不配，Boot 会自动做六件事。这些默认值是为传统服务端渲染页面准备的，前后端分离下每一条都要改。</p>
+<div class="tw"><table>
+<thead><tr>
+<th>默认行为</th>
+<th>对 API 的影响</th>
+<th>本模块怎么改</th>
+</tr></thead><tbody>
+<tr><td>生成随机密码并打印在启动日志</td><td>每个请求都要 Basic 认证</td><td>换成自己的 <code class="i">UserDetailsService</code> 与 <code class="i">AuthenticationManager</code></td></tr>
+<tr><td>开启表单登录，未认证时 302 跳 <code class="i">/login</code></td><td>前端拿到一段 HTML，不是 JSON</td><td><code class="i">formLogin</code> 关掉，配 <code class="i">AuthenticationEntryPoint</code></td></tr>
+<tr><td>开启 CSRF 校验</td><td>所有 POST 返回 403</td><td>纯 Bearer 令牌、不用 cookie，<code class="i">csrf</code> 关掉</td></tr>
+<tr><td>每个请求创建 HttpSession</td><td>与无状态令牌冲突，还会占内存</td><td><code class="i">SessionCreationPolicy.STATELESS</code></td></tr>
+<tr><td>所有请求都要求认证</td><td>登录接口也被拦，形成死循环</td><td><code class="i">permitAll</code> 放行登录与 <code class="i">/public/**</code></td></tr>
+<tr><td>默认 403 错误页</td><td>前端解析不了</td><td><code class="i">AccessDeniedHandler</code> 输出统一 JSON</td></tr>
+</tbody></table></div>
+<h3>这个模块用到的扩展点</h3>
+<p>搭的时候会发现，要写的类不多，而且每个都对应表里一行。先看清这张表，后面 20 步就是在填它。</p>
+<div class="tw"><table>
+<thead><tr>
+<th>想改什么</th>
+<th>扩展什么</th>
+<th>本模块的类</th>
+</tr></thead><tbody>
+<tr><td>从哪查用户</td><td>实现 <code class="i">UserDetailsService</code></td><td><code class="i">AccountUserDetailsService</code></td></tr>
+<tr><td>密码怎么存、怎么比</td><td>提供 <code class="i">PasswordEncoder</code></td><td><code class="i">BCryptPasswordEncoder</code></td></tr>
+<tr><td>哪些路径放行、哪些要角色</td><td>配置 <code class="i">SecurityFilterChain</code></td><td><code class="i">SecurityConfig</code></td></tr>
+<tr><td>请求里的令牌怎么变成身份</td><td>写一个 <code class="i">OncePerRequestFilter</code></td><td><code class="i">JwtAuthenticationFilter</code></td></tr>
+<tr><td>未认证时回什么</td><td>实现 <code class="i">AuthenticationEntryPoint</code></td><td><code class="i">RestAuthenticationEntryPoint</code></td></tr>
+<tr><td>权限不足时回什么</td><td>实现 <code class="i">AccessDeniedHandler</code></td><td><code class="i">RestAccessDeniedHandler</code></td></tr>
+<tr><td>方法上限制谁能调</td><td><code class="i">@EnableMethodSecurity</code> 加 <code class="i">@PreAuthorize</code></td><td><code class="i">TaskController</code>、<code class="i">UserAdminController</code></td></tr>
+<tr><td>登录时校验账号密码</td><td>用 <code class="i">AuthenticationManager</code></td><td><code class="i">AuthService</code></td></tr>
+</tbody></table></div>
+<p>框架负责流程，我们只负责两件事：数据从哪来，规则是什么。</p>
+</section>
+
 <section id="how">
 <h2>每一步的套路</h2>
 <div class="sec-rule"></div>
@@ -304,6 +402,7 @@ section ul li code{color:var(--text)}
 <th>步骤</th>
 <th>做完能干什么</th>
 </tr></thead><tbody>
+<tr><td>准备</td><td>认识 Spring Security</td><td>知道框架在做什么，后面每一步能对上号</td></tr>
 <tr><td>骨架</td><td>01 至 02</td><td>模块能启动，连上 MySQL，表和数据都在</td></tr>
 <tr><td>地基</td><td>03 至 05</td><td>有统一响应、有 Mapper、账号能装成 UserDetails</td></tr>
 <tr><td>安全链</td><td>06 至 08</td><td>能签发令牌、能解析令牌、未登录返回 401</td></tr>

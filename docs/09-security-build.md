@@ -4,6 +4,8 @@
 
 它不是讲解稿。每一步都给完整文件内容，照着建、照着贴，中间不跳步。所有代码都是从仓库里这份可运行的实现里取的，不是示意。
 
+唯一的例外是第一节的框架介绍：先花十分钟把 Spring Security 的过滤器链和几个名词看清楚，后面每一步才知道自己在填哪个坑。
+
 ## 开始之前
 
 | 需要 | 版本 | 说明 |
@@ -15,6 +17,100 @@
 | 浏览器 | Chrome / Edge 新版 | 无特殊要求 |
 
 后端依赖版本由父 POM 的 Spring Boot 4.1.1 管住，模块里只写三个：MyBatis-Plus 3.5.17、jjwt 0.13.0、MySQL 驱动。前端是 Vue 3.5.44、vue-router 4.6.4、axios 1.21.0、Vite 8.3.5、TypeScript 5.9.3、vue-tsc 3.3.13。
+
+## 先认识 Spring Security
+
+在动手之前花十分钟把框架的骨架看清楚，后面每一步才知道自己在填哪个坑。
+
+### 它到底是什么
+
+一句话：Spring Security 是一条挂在 `DispatcherServlet` 前面的过滤器链，加上一套认证与授权的抽象。
+
+请求进 Tomcat 之后，先经过这条链，再进 Spring MVC。链上的每个过滤器各管一件事：把令牌换成身份、按 URL 判断权限、处理跨域、写 401 和 403 的响应。框架把这些顺序编排好了，我们只需要往几个固定的坑位里填东西。
+
+为什么不用自己写 `HandlerInterceptor`：拦截器只能拦到进 Controller 的请求，静态资源和错误页拦不到；会话管理、密码编码、方法级权限注解、异常出口、CSRF 与 CORS，全都要自己造一遍，顺序还容易错。Security 把这一整套做完了，代价是要先弄懂它的名词。
+
+### 六个名词
+
+| 名词 | 是什么 | 本模块对应的类 |
+| --- | --- | --- |
+| `SecurityContextHolder` | 存放当前请求身份的地方，默认用 ThreadLocal | 过滤器校验通过后把 `SecurityUser` 放进去 |
+| `Authentication` | 一次认证的结果，含身份、凭据、权限 | `UsernamePasswordAuthenticationToken` |
+| `AuthenticationManager` | 认证的总入口，把请求交给合适的 Provider | `SecurityConfig` 里构造的 `ProviderManager` |
+| `UserDetailsService` | 按用户名取用户的接口，由我们实现 | `AccountUserDetailsService` |
+| `UserDetails` | 框架认识的用户形状 | `SecurityUser` |
+| `GrantedAuthority` | 一条权限字符串，`ROLE_ADMIN` 或 `task:review` | `Role.authorities()` 摊平出来的 |
+
+另外三个是出口，出错时才用到：
+
+| 名词 | 什么时候被调用 | 本模块对应的类 |
+| --- | --- | --- |
+| `AuthenticationEntryPoint` | 没有身份就来访问受保护资源 | `RestAuthenticationEntryPoint`，回 401 |
+| `AccessDeniedHandler` | 有身份但权限不够 | `RestAccessDeniedHandler`，回 403 |
+| `SecurityFilterChain` | 不是出口，是整条链的配置 | `SecurityConfig#securityFilterChain` |
+
+### 一次请求穿过什么
+
+```text
+请求
+  ↓
+FilterChainProxy（Security 的入口，本身就是一个 Servlet Filter）
+  ├─ JwtAuthenticationFilter    我们写的：解析 Bearer 令牌，查库，放进上下文
+  ├─ AuthorizationFilter        按 URL 规则判断，比如 /admin/** 要 ADMIN
+  │    ├─ 没有身份 → AuthenticationEntryPoint → 401
+  │    └─ 权限不够 → AccessDeniedHandler → 403
+  ↓
+DispatcherServlet → Controller
+  └─ @PreAuthorize              方法调用前判断
+       └─ 不通过 → AccessDeniedException → 全局异常处理器 → 403
+```
+
+这张图解释了这个模块里两处容易混的地方：
+
+- 401 和 403 之所以要写两个类，是因为它们发生在两个不同位置，一个是链上的出口，一个是注解抛异常后的兜底。
+- `@PreAuthorize` 的拒绝不经过 `AccessDeniedHandler`，它抛的是 `AccessDeniedException`，由 `@RestControllerAdvice` 接住。
+
+### 认证和授权是两件事
+
+| | 认证 Authentication | 授权 Authorization |
+| --- | --- | --- |
+| 回答的问题 | 你是谁 | 你能做什么 |
+| 失败返回 | 401 | 403 |
+| 前端该做什么 | 清登录态，跳登录页 | 只提示，不动登录态 |
+| 本模块哪里做 | 登录接口 + 令牌过滤器 | URL 规则 + `@PreAuthorize` |
+| 出口 | `RestAuthenticationEntryPoint` | `RestAccessDeniedHandler` 与全局异常处理器 |
+
+把这两件事混在一起，最典型的后果是前端把所有失败都当“登录过期”，学生点了一个没权限的按钮就被踢下线。
+
+### 默认配置为什么不能直接用
+
+只把 `spring-boot-starter-security` 加进依赖、什么都不配，Boot 会自动做六件事。这些默认值是为传统服务端渲染页面准备的，前后端分离下每一条都要改。
+
+| 默认行为 | 对 API 的影响 | 本模块怎么改 |
+| --- | --- | --- |
+| 生成随机密码并打印在启动日志 | 每个请求都要 Basic 认证 | 换成自己的 `UserDetailsService` 与 `AuthenticationManager` |
+| 开启表单登录，未认证时 302 跳 `/login` | 前端拿到一段 HTML，不是 JSON | `formLogin` 关掉，配 `AuthenticationEntryPoint` |
+| 开启 CSRF 校验 | 所有 POST 返回 403 | 纯 Bearer 令牌、不用 cookie，`csrf` 关掉 |
+| 每个请求创建 HttpSession | 与无状态令牌冲突，还会占内存 | `SessionCreationPolicy.STATELESS` |
+| 所有请求都要求认证 | 登录接口也被拦，形成死循环 | `permitAll` 放行登录与 `/public/**` |
+| 默认 403 错误页 | 前端解析不了 | `AccessDeniedHandler` 输出统一 JSON |
+
+### 这个模块用到的扩展点
+
+搭的时候会发现，要写的类不多，而且每个都对应表里一行。先看清这张表，后面 20 步就是在填它。
+
+| 想改什么 | 扩展什么 | 本模块的类 |
+| --- | --- | --- |
+| 从哪查用户 | 实现 `UserDetailsService` | `AccountUserDetailsService` |
+| 密码怎么存、怎么比 | 提供 `PasswordEncoder` | `BCryptPasswordEncoder` |
+| 哪些路径放行、哪些要角色 | 配置 `SecurityFilterChain` | `SecurityConfig` |
+| 请求里的令牌怎么变成身份 | 写一个 `OncePerRequestFilter` | `JwtAuthenticationFilter` |
+| 未认证时回什么 | 实现 `AuthenticationEntryPoint` | `RestAuthenticationEntryPoint` |
+| 权限不足时回什么 | 实现 `AccessDeniedHandler` | `RestAccessDeniedHandler` |
+| 方法上限制谁能调 | `@EnableMethodSecurity` 加 `@PreAuthorize` | `TaskController`、`UserAdminController` |
+| 登录时校验账号密码 | 用 `AuthenticationManager` | `AuthService` |
+
+框架负责流程，我们只负责两件事：数据从哪来，规则是什么。
 
 ## 每一步的套路
 
@@ -33,6 +129,7 @@
 
 | 阶段 | 步骤 | 做完能干什么 |
 | --- | --- | --- |
+| 准备 | 认识 Spring Security | 知道框架在做什么，后面每一步能对上号 |
 | 骨架 | 01 至 02 | 模块能启动，连上 MySQL，表和数据都在 |
 | 地基 | 03 至 05 | 有统一响应、有 Mapper、账号能装成 UserDetails |
 | 安全链 | 06 至 08 | 能签发令牌、能解析令牌、未登录返回 401 |

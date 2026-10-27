@@ -1,7 +1,7 @@
 # 09-security · 认证与授权
 
 > 📖 详细教程：[docs/09-security.md](../docs/09-security.md)
-> 🧱 从零搭建：[docs/09-security-build.md](../docs/09-security-build.md)（20 步）· 投影版 [build.html](build.html)
+> 🧱 从零搭建：[docs/09-security-build.md](../docs/09-security-build.md)（先讲框架，再 20 步）· 投影版 [build.html](build.html)
 > 🖥 案例讲义：[lecture.html](lecture.html)，浏览器直接打开
 
 > 状态：✅ 后端 22 个接口测试通过（真实 MySQL），前端 TypeScript 工程 `npm run typecheck` 通过
