@@ -24,10 +24,21 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * 业务异常的状态码分两类：越权给真实的 403，其余沿用本仓库约定返回 200 + code。
+     * <p>
+     * 前端拦截器靠状态码决定要不要跳登录、要不要提示无权限。
+     * 把越权藏在 200 里，前端会把“你不能看”当成成功响应处理。
+     */
     @ExceptionHandler(BusinessException.class)
-    public Result<Void> handleBusiness(BusinessException e) {
+    public ResponseEntity<Result<Void>> handleBusiness(BusinessException e) {
         log.warn("业务异常：{}", e.getMessage());
-        return Result.fail(e.getErrorCode());
+        HttpStatus status = switch (e.getErrorCode()) {
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            default -> HttpStatus.OK;
+        };
+        return ResponseEntity.status(status).body(Result.fail(e.getErrorCode()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

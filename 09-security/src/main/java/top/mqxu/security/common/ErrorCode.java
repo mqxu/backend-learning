@@ -22,7 +22,12 @@ public enum ErrorCode {
     ACCOUNT_DISABLED(30002, "账号已被禁用"),
     USER_NOT_FOUND(30003, "用户不存在"),
     USERNAME_EXISTS(30004, "用户名已存在"),
-    CANNOT_DELETE_SELF(30005, "不能删除当前登录账号");
+    CANNOT_DELETE_SELF(30005, "不能删除当前登录账号"),
+
+    // 实训任务相关
+    TASK_NOT_FOUND(30010, "任务不存在"),
+    TASK_DUPLICATED(30011, "同一任务已提交，等待批改"),
+    TASK_ALREADY_REVIEWED(30012, "该任务已批改，不能重复批改");
 
     private final Integer code;
     private final String message;

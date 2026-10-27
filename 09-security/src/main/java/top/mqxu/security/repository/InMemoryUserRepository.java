@@ -30,11 +30,15 @@ public class InMemoryUserRepository {
 
     /**
      * 初始账号。密码在这里即时加密，库里从不出现明文
+     * <p>
+     * 三个角色各一个，另加一个禁用账号用来演示“密码对了但账号被停用”
      */
     private void seed(PasswordEncoder passwordEncoder) {
         save(new UserAccount("admin", passwordEncoder.encode("admin123"), "系统管理员", Set.of(Role.ADMIN), true));
-        save(new UserAccount("teacher", passwordEncoder.encode("teacher123"), "陶老师", Set.of(Role.USER), true));
-        save(new UserAccount("guest", passwordEncoder.encode("guest123"), "访客", Set.of(Role.USER), false));
+        save(new UserAccount("teacher01", passwordEncoder.encode("teacher123"), "陶老师", Set.of(Role.TEACHER), true));
+        save(new UserAccount("student01", passwordEncoder.encode("student123"), "朱彦清", Set.of(Role.STUDENT), true));
+        save(new UserAccount("student02", passwordEncoder.encode("student123"), "李思远", Set.of(Role.STUDENT), true));
+        save(new UserAccount("guest", passwordEncoder.encode("guest123"), "已停用学生", Set.of(Role.STUDENT), false));
     }
 
     public Optional<UserAccount> findByUsername(String username) {
