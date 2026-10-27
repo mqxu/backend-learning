@@ -340,12 +340,12 @@ class SecurityApiTest {
         mockMvc.perform(withToken(post("/admin/users"), adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"student03","password": "NewStu#2026","nickname":"王雨桐","roles":["STUDENT"]}
+                                {"username":"student99","password": "NewStu#2026","nickname":"新加的同学","roles":["STUDENT"]}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roles", hasItem("STUDENT")));
 
-        String token = tokenOf("student03", "NewStu#2026");
+        String token = tokenOf("student99", "NewStu#2026");
         assertThat(token).isNotBlank();
 
         mockMvc.perform(withToken(get("/api/tasks/mine"), token))

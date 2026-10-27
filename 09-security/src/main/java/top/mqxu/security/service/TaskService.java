@@ -71,6 +71,9 @@ public class TaskService {
 
     /**
      * 全部提交，给教师批改用，权限点已在 Controller 上校验
+     * <p>
+     * 现在一次返回全量，前端在本地做筛选与统计。数据量上来要换成分页，
+     * 那时统计得单独出一个聚合接口，不能拿当前页的数据算平均分。
      */
     public List<TaskView> listAll() {
         return taskMapper.selectAllRows().stream().map(TaskView::of).toList();

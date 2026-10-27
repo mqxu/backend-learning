@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { createUser, deleteUser, listUsers } from '../api'
 import { notify } from '../store/toast'
 import type { CreateUserPayload, RoleCode, UserProfile } from '../types/api'
@@ -12,6 +12,8 @@ interface UserForm {
   role: RoleCode
 }
 
+type Filter = 'ALL' | RoleCode
+
 const users = ref<UserProfile[]>([])
 const form = reactive<UserForm>({
   username: '',
@@ -20,6 +22,24 @@ const form = reactive<UserForm>({
   role: 'STUDENT',
 })
 const creating = ref(false)
+const filter = ref<Filter>('ALL')
+const keyword = ref('')
+
+const stats = computed(() => ({
+  total: users.value.length,
+  students: users.value.filter((user) => user.roles.includes('STUDENT')).length,
+  teachers: users.value.filter((user) => user.roles.includes('TEACHER')).length,
+  disabled: users.value.filter((user) => !user.enabled).length,
+}))
+
+const visible = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  return users.value.filter((user) => {
+    if (filter.value !== 'ALL' && !user.roles.includes(filter.value)) return false
+    if (!kw) return true
+    return [user.username, user.nickname].some((text) => text.toLowerCase().includes(kw))
+  })
+})
 
 async function load(): Promise<void> {
   users.value = await listUsers()
@@ -58,6 +78,25 @@ async function onDelete(user: UserProfile): Promise<void> {
 
 <template>
   <div class="container">
+    <div class="stats">
+      <div class="stat">
+        <div class="k">账号总数</div>
+        <div class="v">{{ stats.total }}<small>个</small></div>
+      </div>
+      <div class="stat">
+        <div class="k">学生</div>
+        <div class="v">{{ stats.students }}<small>个</small></div>
+      </div>
+      <div class="stat">
+        <div class="k">教师</div>
+        <div class="v">{{ stats.teachers }}<small>个</small></div>
+      </div>
+      <div class="stat amber">
+        <div class="k">停用</div>
+        <div class="v">{{ stats.disabled }}<small>个</small></div>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="card">
         <h2>新增账号</h2>
@@ -65,11 +104,11 @@ async function onDelete(user: UserProfile): Promise<void> {
         <form @submit.prevent="onCreate">
           <div class="field">
             <label for="username">用户名</label>
-            <input id="username" v-model.trim="form.username" placeholder="student03" />
+            <input id="username" v-model.trim="form.username" placeholder="student11" />
           </div>
           <div class="field">
             <label for="nickname">姓名</label>
-            <input id="nickname" v-model.trim="form.nickname" placeholder="王雨桐" />
+            <input id="nickname" v-model.trim="form.nickname" placeholder="马嘉懿" />
           </div>
           <div class="field">
             <label for="password">初始密码</label>
@@ -92,7 +131,26 @@ async function onDelete(user: UserProfile): Promise<void> {
       <div class="card">
         <h2>账号列表</h2>
         <p class="hint">响应里没有密码字段，出参对象压根不带它</p>
-        <table>
+
+        <div class="toolbar">
+          <div class="tabs">
+            <button :class="{ on: filter === 'ALL' }" @click="filter = 'ALL'">
+              全部<span class="n">{{ stats.total }}</span>
+            </button>
+            <button :class="{ on: filter === 'STUDENT' }" @click="filter = 'STUDENT'">
+              学生<span class="n">{{ stats.students }}</span>
+            </button>
+            <button :class="{ on: filter === 'TEACHER' }" @click="filter = 'TEACHER'">
+              教师<span class="n">{{ stats.teachers }}</span>
+            </button>
+            <button :class="{ on: filter === 'ADMIN' }" @click="filter = 'ADMIN'">管理员</button>
+          </div>
+          <input v-model="keyword" class="search" placeholder="按用户名或姓名搜" />
+          <span class="count">筛出 {{ visible.length }} 个</span>
+        </div>
+
+        <div v-if="!visible.length" class="empty">没有符合条件的账号</div>
+        <table v-else>
           <thead>
             <tr>
               <th>用户名</th>
@@ -103,7 +161,7 @@ async function onDelete(user: UserProfile): Promise<void> {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in users" :key="user.username">
+            <tr v-for="user in visible" :key="user.username">
               <td class="mono">{{ user.username }}</td>
               <td>{{ user.nickname }}</td>
               <td>{{ user.roles.join(' / ') }}</td>
