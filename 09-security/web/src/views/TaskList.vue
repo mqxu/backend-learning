@@ -1,35 +1,37 @@
-<script setup>
-import { onMounted, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive, ref } from 'vue'
 import { myTasks, submitTask, taskDetail } from '../api'
+import type { SubmitTaskPayload, TaskView } from '../types/api'
 
-const tasks = ref([])
-const form = ref({ title: '', content: '' })
+const tasks = ref<TaskView[]>([])
+const form = reactive<SubmitTaskPayload>({ title: '', content: '' })
 const submitting = ref(false)
-const detail = ref(null)
+const detail = ref<TaskView | null>(null)
 
-async function load() {
+async function load(): Promise<void> {
   tasks.value = await myTasks()
 }
 
 onMounted(load)
 
-async function onSubmit() {
-  if (!form.value.title || !form.value.content) return
+async function onSubmit(): Promise<void> {
+  if (!form.title || !form.content) return
   submitting.value = true
   try {
-    await submitTask(form.value)
-    form.value = { title: '', content: '' }
+    await submitTask({ title: form.title, content: form.content })
+    form.title = ''
+    form.content = ''
     await load()
   } finally {
     submitting.value = false
   }
 }
 
-async function openDetail(task) {
+async function openDetail(task: TaskView): Promise<void> {
   detail.value = await taskDetail(task.id)
 }
 
-function formatTime(value) {
+function formatTime(value: string | null): string {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : ''
 }
 </script>
@@ -114,5 +116,7 @@ function formatTime(value) {
   margin-bottom: 12px;
   font-size: 13.5px;
 }
-.sub-card div + div { margin-top: 4px; }
+.sub-card div + div {
+  margin-top: 4px;
+}
 </style>

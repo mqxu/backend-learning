@@ -1,36 +1,54 @@
-<script setup>
-import { onMounted, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive, ref } from 'vue'
 import { createUser, deleteUser, listUsers } from '../api'
 import { notify } from '../store/toast'
+import type { CreateUserPayload, RoleCode, UserProfile } from '../types/api'
 
-const users = ref([])
-const form = ref({ username: '', password: 'student123', nickname: '', role: 'STUDENT' })
+/** 表单只让选一个角色，提交时再包成数组，所以不用 CreateUserPayload 的 roles 字段 */
+interface UserForm {
+  username: string
+  password: string
+  nickname: string
+  role: RoleCode
+}
+
+const users = ref<UserProfile[]>([])
+const form = reactive<UserForm>({
+  username: '',
+  password: 'Student#2026',
+  nickname: '',
+  role: 'STUDENT',
+})
 const creating = ref(false)
 
-async function load() {
+async function load(): Promise<void> {
   users.value = await listUsers()
 }
 
 onMounted(load)
 
-async function onCreate() {
+async function onCreate(): Promise<void> {
   creating.value = true
   try {
-    await createUser({
-      username: form.value.username,
-      password: form.value.password,
-      nickname: form.value.nickname,
-      roles: [form.value.role],
-    })
+    const payload: CreateUserPayload = {
+      username: form.username,
+      password: form.password,
+      nickname: form.nickname,
+      roles: [form.role],
+    }
+    await createUser(payload)
     notify('账号已创建')
-    form.value = { username: '', password: 'student123', nickname: '', role: 'STUDENT' }
+    form.username = ''
+    form.nickname = ''
+    form.password = 'Student#2026'
+    form.role = 'STUDENT'
     await load()
   } finally {
     creating.value = false
   }
 }
 
-async function onDelete(user) {
+async function onDelete(user: UserProfile): Promise<void> {
   if (!window.confirm(`确定删除 ${user.username}？`)) return
   await deleteUser(user.username)
   notify('已删除')
@@ -115,5 +133,8 @@ select {
   font-size: inherit;
   outline: none;
 }
-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(47, 92, 246, .1); }
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 92, 246, 0.1);
+}
 </style>

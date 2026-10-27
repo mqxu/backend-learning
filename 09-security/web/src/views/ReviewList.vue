@@ -1,31 +1,31 @@
-<script setup>
-import { onMounted, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive, ref } from 'vue'
 import { allTasks, reviewTask } from '../api'
 import { notify } from '../store/toast'
+import type { ReviewTaskPayload, TaskView } from '../types/api'
 
-const tasks = ref([])
-const editing = ref(null)
-const form = ref({ score: 90, comment: '' })
+const tasks = ref<TaskView[]>([])
+const editing = ref<TaskView | null>(null)
+const form = reactive<ReviewTaskPayload>({ score: 90, comment: '' })
 const saving = ref(false)
 
-async function load() {
+async function load(): Promise<void> {
   tasks.value = await allTasks()
 }
 
 onMounted(load)
 
-function startReview(task) {
+function startReview(task: TaskView): void {
   editing.value = task
-  form.value = { score: task.score ?? 90, comment: task.comment ?? '' }
+  form.score = task.score ?? 90
+  form.comment = task.comment ?? ''
 }
 
-async function onSubmit() {
+async function onSubmit(): Promise<void> {
+  if (!editing.value) return
   saving.value = true
   try {
-    await reviewTask(editing.value.id, {
-      score: Number(form.value.score),
-      comment: form.value.comment,
-    })
+    await reviewTask(editing.value.id, { score: Number(form.score), comment: form.comment })
     notify('批改已保存，学生那边立刻能看到')
     editing.value = null
     await load()
@@ -34,7 +34,7 @@ async function onSubmit() {
   }
 }
 
-function formatTime(value) {
+function formatTime(value: string | null): string {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : ''
 }
 </script>
@@ -55,7 +55,7 @@ function formatTime(value) {
             <th style="width: 90px">状态</th>
             <th style="width: 64px">分数</th>
             <th style="width: 150px">提交时间</th>
-            <th style="width: 72px"></th>
+            <th style="width: 76px"></th>
           </tr>
         </thead>
         <tbody>
@@ -65,7 +65,10 @@ function formatTime(value) {
               {{ task.title }}
               <div v-if="task.comment" class="muted" style="font-size: 12.5px">评语：{{ task.comment }}</div>
             </td>
-            <td>{{ task.ownerNickname }}<div class="muted mono" style="font-size: 12px">{{ task.owner }}</div></td>
+            <td>
+              {{ task.ownerNickname }}
+              <div class="muted mono" style="font-size: 12px">{{ task.owner }}</div>
+            </td>
             <td>
               <span class="tag" :class="task.status === 'REVIEWED' ? 'tag-done' : 'tag-wait'">
                 {{ task.statusText }}
@@ -74,7 +77,9 @@ function formatTime(value) {
             <td class="score">{{ task.score ?? '—' }}</td>
             <td class="mono">{{ formatTime(task.submittedAt) }}</td>
             <td>
-              <button v-if="task.status !== 'REVIEWED'" class="btn btn-sm" @click="startReview(task)">批改</button>
+              <button v-if="task.status !== 'REVIEWED'" class="btn btn-sm" @click="startReview(task)">
+                批改
+              </button>
             </td>
           </tr>
         </tbody>
@@ -87,7 +92,7 @@ function formatTime(value) {
       <form @submit.prevent="onSubmit">
         <div class="field" style="max-width: 160px">
           <label for="score">分数（0 到 100）</label>
-          <input id="score" v-model="form.score" type="number" min="0" max="100" />
+          <input id="score" v-model.number="form.score" type="number" min="0" max="100" />
         </div>
         <div class="field">
           <label for="comment">评语</label>

@@ -36,6 +36,7 @@ build/
 
 ### Node / VitePress ###
 node_modules/
+dist/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 docs/.vitepress/*.timestamp-*
