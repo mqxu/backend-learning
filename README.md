@@ -21,7 +21,7 @@
 | 06 | [06-redis](06-redis/README.md) | 缓存与分布式锁 | 🚧 骨架 | [教程](docs/06-redis.md) |
 | 07 | [07-mq](07-mq/README.md) | 消息队列 | 🚧 骨架 | [教程](docs/07-mq.md) |
 | 08 | [08-schedule](08-schedule/README.md) | 定时任务 | 🚧 骨架 | [教程](docs/08-schedule.md) |
-| 09 | [09-security](09-security/README.md) | 认证与授权 | 🚧 骨架 | [教程](docs/09-security.md) |
+| 09 | [09-security](09-security/README.md) | 认证与授权 | ✅ 完成 | [教程](docs/09-security.md) |
 | 10 | [10-file](10-file/README.md) | 文件上传下载 | 🚧 骨架 | [教程](docs/10-file.md) |
 | 11 | [11-doc](11-doc/README.md) | 接口文档 | 🚧 骨架 | [教程](docs/11-doc.md) |
 | 12 | [12-test](12-test/README.md) | 测试 | 🚧 骨架 | [教程](docs/12-test.md) |
