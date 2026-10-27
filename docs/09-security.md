@@ -26,10 +26,14 @@
 | 账号 | 密码 | 角色 | 说明 |
 | --- | --- | --- | --- |
 | admin | Admin#2026 | ADMIN | 全部提交 + 账号管理 |
-| teacher01 | Teacher#2026 | TEACHER | 看全部、能批改 |
-| student01 | Student#2026 | STUDENT | 预置一条待批改任务 |
-| student02 | Student#2026 | STUDENT | 预置一条已批改任务，用于演示越权 |
-| guest | Guest#2026 | STUDENT | 停用账号，登录返回 30002 |
+| teacher01 | Teacher#2026 | TEACHER | 看全部、能批改（陶老师） |
+| teacher02 | Teacher#2026 | TEACHER | 第二个教师账号（沈老师） |
+| student01 | Student#2026 | STUDENT | 朱彦清，3 条提交，实训一待批改 |
+| student02 | Student#2026 | STUDENT | 李思远，3 条提交，id=2 用于演示越权 |
+| student03 至 student10 | Student#2026 | STUDENT | 王雨桐、陈子豪、周欣怡、吴俊杰、徐嘉宁、孙浩然、郑雅琪、黄泽宇 |
+| guest | Guest#2026 | STUDENT | 往届旁听生，已停用，登录返回 30002 |
+
+种子数据共 14 个账号、28 条提交，其中 11 条待批改、17 条已批改，平均分 83.4。提交时间用 `NOW() - INTERVAL n HOUR` 写，每次重启都相对当前时刻。`id=1` 留成待批改，课堂上直接批改它。
 
 密码在 `data.sql` 里是 BCrypt 密文，明文只出现在讲义和 README 的账号表里。改密码要重新算哈希，不要手改那一列。
 
@@ -326,6 +330,26 @@ declare module 'vue-router' {
 }
 ```
 
+## 列表页的统计与筛选
+
+学生页顶部四个数字、教师页那句“待批改 11 份”，都是前端从列表结果里算的，后端没有统计接口：
+
+```ts
+const stats = computed(() => {
+  const reviewed = tasks.value.filter((task) => task.status === 'REVIEWED')
+  const total = reviewed.reduce((sum, task) => sum + (task.score ?? 0), 0)
+  return {
+    total: tasks.value.length,
+    pending: tasks.value.filter((task) => task.status === 'SUBMITTED').length,
+    average: reviewed.length ? (total / reviewed.length).toFixed(1) : '—',
+  }
+})
+```
+
+筛选同理，一个 `filter` 值加一次数组过滤，不重新请求接口。这么做前提是列表一次拿全量，几百条以内没问题，切筛选也不闪。
+
+列表一旦分页，这两件事都得挪走：平均分不能拿当前页算，第 2 页的数据也不在手里。那时统计要单独出聚合接口，筛选条件变成查询参数。`TaskService#listAll` 上留了这条注释。
+
 ## 数据归属
 
 “学生只能看自己的”有三种写法，只有一种是对的：
@@ -481,6 +505,6 @@ public void withdraw(Long id, SecurityUser user) {
 - 没有刷新令牌，令牌有效期 120 分钟，到期只能重新登录。
 - 没有登出黑名单，退出只清前端存储，令牌在到期前仍然可用。
 - 没有登录失败限流，登录接口可以被反复试。
-- 列表不分页，数据量小时够用。
+- 列表不分页，28 条数据一次返回，筛选与统计都在前端算；数据量上去要改成后端分页加聚合接口。
 - 前端只做了菜单与路由级权限，没做按钮级控制。
 - `schema.sql` 每次启动重建表，数据不能留存；生产环境应换 Flyway。

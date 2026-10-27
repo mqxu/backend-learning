@@ -20,10 +20,15 @@
 | 账号 | 密码 | 角色 | 说明 |
 | --- | --- | --- | --- |
 | admin | Admin#2026 | ADMIN | 全部提交 + 账号管理 |
-| teacher01 | Teacher#2026 | TEACHER | 看全部、能批改 |
-| student01 | Student#2026 | STUDENT | 预置一条待批改任务 |
-| student02 | Student#2026 | STUDENT | 预置一条已批改任务，用于演示越权 |
-| guest | Guest#2026 | STUDENT | 停用账号，登录返回 30002 |
+| teacher01 | Teacher#2026 | TEACHER | 看全部、能批改（陶老师） |
+| teacher02 | Teacher#2026 | TEACHER | 第二个教师账号（沈老师） |
+| student01 | Student#2026 | STUDENT | 朱彦清，3 条提交，其中实训一待批改 |
+| student02 | Student#2026 | STUDENT | 李思远，3 条提交，用于演示越权 |
+| student03 | Student#2026 | STUDENT | 王雨桐 |
+| student04 至 student10 | Student#2026 | STUDENT | 陈子豪、周欣怡、吴俊杰、徐嘉宁、孙浩然、郑雅琪、黄泽宇 |
+| guest | Guest#2026 | STUDENT | 往届旁听生，已停用，登录返回 30002 |
+
+种子数据是 14 个账号、28 条提交（11 条待批改、17 条已批改，平均分 83.4），提交时间散布在最近 10 天。学生页和教师页打开就有内容，统计条不是全零。`student03` 及以上留给种子数据，测试新增账号用的是 `student99`，两边不抢用户名。
 
 ## 数据库
 
@@ -37,6 +42,8 @@
 | `sec_task` | 实训任务，归属用 `owner_id` 指向 `sec_user` |
 
 `schema.sql` 每次启动先删后建，`data.sql` 灌演示数据（主键写死，测试引用任务 id 才稳定）。改表结构不用手工 ALTER，重启即可；真实项目该换 Flyway 做版本化迁移。
+
+任务数据的时间用 `NOW() - INTERVAL n HOUR` 写，每次重启都相对当前时间，页面上的"提交于 2 小时前"不会变成几个月前。`id=1` 特意留成待批改，课堂演示时教师登录后批改这一条，学生刷新就能看到分数。
 
 权限点留在 `Role` 枚举里而不是建表，理由：角色与用户的绑定是运行期数据，天天变；权限点是代码资产，跟着接口一起评审、一起提交，放枚举比放表更容易 review。要改成配置化时，加 `sec_permission` 与 `sec_role_permission` 两张表即可，`Role.authorities()` 换成查库。
 
@@ -149,7 +156,7 @@ dto / vo    入参校验对象 / 接口出参白名单
     ├── src/api/index.ts   接口清单，每个方法都有返回类型
     ├── src/store/         auth.ts（令牌读写）、toast.ts
     ├── src/router/        index.ts（路由与守卫，meta 有类型）
-    ├── src/views/         Login、TaskList、ReviewList、Users
+    ├── src/views/         Login、TaskList、ReviewList、Users（统计条 + 筛选都在页面里算）
     ├── src/App.vue        顶栏菜单按角色显示
     ├── tsconfig.json      strict 模式
     └── vite.config.ts     代理配置
@@ -246,7 +253,7 @@ npm run build        # 先 typecheck 再打包
 
 ## 已知边界
 
-没有刷新令牌，有效期 120 分钟到期需重新登录；没有登出黑名单，退出只清前端存储，令牌到期前仍可用；没有登录失败次数限制。前端只做了菜单与路由级权限，没做按钮级控制。数据量小，没有分页。
+没有刷新令牌，有效期 120 分钟到期需重新登录；没有登出黑名单，退出只清前端存储，令牌到期前仍可用；没有登录失败次数限制。前端只做了菜单与路由级权限，没做按钮级控制。列表接口一次返回全量，筛选、搜索和顶部统计都在前端算；真上分页时这三件事要挪到后端，`TaskService` 与两个页面都留了注释提醒。
 
 ## 避坑
 

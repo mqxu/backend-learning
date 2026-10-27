@@ -203,6 +203,7 @@ pre code{font-family:inherit;color:var(--text)}
     <a href="#s4-2" class="lv2">401 与 403 分开处理</a>
     <a href="#s4-types" class="lv2">类型怎么串起来</a>
     <a href="#s4-3" class="lv2">路由守卫</a>
+    <a href="#s4-4" class="lv2">统计与筛选</a>
     <a href="#s5">数据归属</a>
     <a href="#s6">权限点</a>
     <a href="#s7">起项目联调</a>
@@ -228,6 +229,7 @@ pre code{font-family:inherit;color:var(--text)}
     <span class="chip"><b>90</b> 分钟</span>
     <span class="chip">一个案例贯穿</span>
     <span class="chip">后端 <b>22</b> 个测试</span>
+    <span class="chip">种子数据 <b>14</b> 个账号 · <b>28</b> 条提交</span>
     <span class="chip">前端 <b>TypeScript</b></span>
     <span class="chip">Spring Boot <b>4.1.1</b> · Security <b>7.1.1</b> · MyBatis-Plus <b>3.5.17</b> · MySQL <b>8.4</b></span>
     <span class="chip">Vue <b>3.5</b> · TS <b>5.9</b> · Vite <b>8</b> · axios <b>1.21</b></span>
@@ -287,7 +289,7 @@ pre code{font-family:inherit;color:var(--text)}
         <tr>
           <td><b>学生</b><br><span class="mono muted">student01</span></td>
           <td>登录 → 看我的提交 → 提交一条新任务</td>
-          <td>只有自己的一条；提交成功后状态是“待批改”</td>
+          <td>只有自己的 3 条；提交成功后状态是“待批改”，顶部统计跟着变</td>
           <td><span class="st st-200">200</span></td>
         </tr>
         <tr>
@@ -298,8 +300,8 @@ pre code{font-family:inherit;color:var(--text)}
         </tr>
         <tr>
           <td><b>教师</b><br><span class="mono muted">teacher01</span></td>
-          <td>登录 → 看到全班两条提交 → 给第一条打分 88</td>
-          <td>列表里立刻变成“已批改 88 分”</td>
+          <td>登录 → 看到全班 28 条提交、11 条待批改 → 给第一条打分 88</td>
+          <td>列表里立刻变成“已批改 88 分”，顶部“待批改”从 11 变 10</td>
           <td><span class="st st-200">200</span></td>
         </tr>
         <tr>
@@ -324,14 +326,16 @@ pre code{font-family:inherit;color:var(--text)}
     </table>
   </div>
 
-  <p>五个演示账号，密码在种子数据里用 BCrypt 加密后写死，课堂上直接登录：</p>
+  <p>种子数据有 14 个账号、28 条提交（11 条待批改、17 条已批改），提交时间散布在最近 10 天。下面这几个课堂演示用，密码在种子数据里用 BCrypt 加密后写死：</p>
   <div class="tw">
     <table>
       <thead><tr><th>账号</th><th>密码</th><th>角色</th><th>说明</th></tr></thead>
       <tbody>
-        <tr><td class="mono">student01</td><td class="mono">Student#2026</td><td>STUDENT</td><td>预置了一条待批改的任务</td></tr>
-        <tr><td class="mono">student02</td><td class="mono">Student#2026</td><td>STUDENT</td><td>预置了一条已批改的任务，用来演示越权</td></tr>
-        <tr><td class="mono">teacher01</td><td class="mono">Teacher#2026</td><td>TEACHER</td><td>能看全部、能批改</td></tr>
+        <tr><td class="mono">student01</td><td class="mono">Student#2026</td><td>STUDENT</td><td>3 条提交，其中“实训一”待批改，用来演示批改后立刻看到分数</td></tr>
+        <tr><td class="mono">student02</td><td class="mono">Student#2026</td><td>STUDENT</td><td>3 条提交，id=2 那条用来演示越权查看</td></tr>
+        <tr><td class="mono">student03</td><td class="mono">Student#2026</td><td>STUDENT</td><td>另有 student04 至 student10，都是学生，密码相同</td></tr>
+        <tr><td class="mono">teacher01</td><td class="mono">Teacher#2026</td><td>TEACHER</td><td>能看全部 28 条、能批改</td></tr>
+        <tr><td class="mono">teacher02</td><td class="mono">Teacher#2026</td><td>TEACHER</td><td>第二个教师账号，演示同一权限点换个人也行</td></tr>
         <tr><td class="mono">admin</td><td class="mono">Admin#2026</td><td>ADMIN</td><td>全部提交 + 账号管理</td></tr>
         <tr><td class="mono">guest</td><td class="mono">Guest#2026</td><td>STUDENT</td><td>登录直接失败，账号已停用</td></tr>
       </tbody>
@@ -670,6 +674,29 @@ export const myTasks = () =&gt; http.get&lt;TaskView[]&gt;('/api/tasks/mine')</c
   <div class="danger">
     <b>必须强调的一句话</b>
     <p>路由守卫只是体验层的拦截。有人改一下 localStorage 就能进页面，但进去以后接口全是 403，什么也拿不到。<b>权限判断永远在后端</b>，前端做的只是别让用户白点。</p>
+  </div>
+
+  <h3 id="s4-4">列表页的统计和筛选，先在前端算</h3>
+  <p>学生页顶上四个数字（已提交、待批改、已批改、平均分），教师页那句"待批改 11 份"，都不是后端算的。列表接口一次给全量，页面上从同一个数组里算出来：</p>
+  <div class="code"><pre data-lang="ts"><code>const stats = computed(() =&gt; {
+  const reviewed = tasks.value.filter((task) =&gt; task.status === 'REVIEWED')
+  const total = reviewed.reduce((sum, task) =&gt; sum + (task.score ?? 0), 0)
+  return {
+    total: tasks.value.length,
+    pending: tasks.value.filter((task) =&gt; task.status === 'SUBMITTED').length,
+    average: reviewed.length ? (total / reviewed.length).toFixed(1) : '—',
+  }
+})
+
+// 筛选就是一次数组过滤，不发新请求
+const visible = computed(() =&gt;
+  filter.value === 'ALL' ? tasks.value : tasks.value.filter((t) =&gt; t.status === filter.value),
+)</code></pre></div>
+  <p>这么写有两个好处：切筛选不闪、不加请求；后端不用为"统计"多开一个接口。代价是列表必须一次拿全，几百条以内没问题。</p>
+
+  <div class="warn">
+    <b>换成后端分页，这两件事都得跟着改</b>
+    <p>"平均分"不能拿当前页算，那不是全班平均分；筛选也不能只在本地做，第 2 页的数据根本不在手里。那时统计要单独出一个聚合接口，筛选条件要变成查询参数。代码里留了注释，讲的时候点一句就够。</p>
   </div>
 </section>
 
