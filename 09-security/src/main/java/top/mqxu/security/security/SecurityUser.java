@@ -3,44 +3,51 @@ package top.mqxu.security.security;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import top.mqxu.security.model.Account;
 import top.mqxu.security.model.Role;
-import top.mqxu.security.model.UserAccount;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author mqxu
  * @date 2026/10/28
  * @description UserDetails 实现，把账号的角色摊平成权限集合
+ * <p>
+ * Spring Security 不认识我们的 Account，只认 UserDetails，
+ * 这个类就是两者之间的适配层。换存储时它不用改。
  **/
 public class SecurityUser implements UserDetails {
 
-    private final UserAccount account;
+    private final Account account;
+
     private final List<GrantedAuthority> authorities;
 
-    public SecurityUser(UserAccount account) {
+    public SecurityUser(Account account) {
         this.account = account;
-        this.authorities = Role.authorities(account.getRoles()).stream()
+        this.authorities = Role.authorities(account.roles()).stream()
                 .map(SimpleGrantedAuthority::new)
                 .map(GrantedAuthority.class::cast)
                 .toList();
     }
 
-    public UserAccount account() {
+    public Account account() {
         return account;
     }
 
     /**
-     * 只取角色名，供登录响应与 @AuthenticationPrincipal 使用
+     * 用户 id。做数据归属判断时用它，别拿用户名当外键
+     */
+    public Long id() {
+        return account.id();
+    }
+
+    /**
+     * 只取角色名，供登录响应与页面菜单使用
      */
     public Set<String> roleNames() {
-        return account.getRoles().stream()
-                .map(Enum::name)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return account.roleNames();
     }
 
     @Override
@@ -50,12 +57,12 @@ public class SecurityUser implements UserDetails {
 
     @Override
     public String getPassword() {
-        return account.getPassword();
+        return account.password();
     }
 
     @Override
     public String getUsername() {
-        return account.getUsername();
+        return account.username();
     }
 
     @Override
@@ -75,6 +82,6 @@ public class SecurityUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return account.isEnabled();
+        return account.enabled();
     }
 }

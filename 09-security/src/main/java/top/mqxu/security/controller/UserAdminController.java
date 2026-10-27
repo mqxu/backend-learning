@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import top.mqxu.security.common.Result;
 import top.mqxu.security.dto.CreateUserRequest;
 import top.mqxu.security.security.SecurityUser;
-import top.mqxu.security.service.UserAdminService;
+import top.mqxu.security.service.UserService;
 import top.mqxu.security.vo.UserProfile;
 
 import java.util.List;
@@ -28,15 +28,15 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class UserAdminController {
 
-    private final UserAdminService userAdminService;
+    private final UserService userService;
 
-    public UserAdminController(UserAdminService userAdminService) {
-        this.userAdminService = userAdminService;
+    public UserAdminController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping
     public Result<List<UserProfile>> list() {
-        return Result.ok(userAdminService.list());
+        return Result.ok(userService.listProfiles());
     }
 
     /**
@@ -45,12 +45,12 @@ public class UserAdminController {
     @PostMapping
     @PreAuthorize("hasAuthority('user:write')")
     public Result<UserProfile> create(@Valid @RequestBody CreateUserRequest request) {
-        return Result.ok(userAdminService.create(request));
+        return Result.ok(userService.create(request));
     }
 
     @DeleteMapping("/{username}")
     public Result<Void> delete(@PathVariable String username, @AuthenticationPrincipal SecurityUser user) {
-        userAdminService.delete(username, user.getUsername());
+        userService.delete(username, user.getUsername());
         return Result.ok();
     }
 }

@@ -33,13 +33,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SecurityApiTest {
 
     private static final String ADMIN = "admin";
-    private static final String ADMIN_PASSWORD = "admin123";
+    private static final String ADMIN_PASSWORD = "Admin#2026";
 
     private static final String TEACHER = "teacher01";
-    private static final String TEACHER_PASSWORD = "teacher123";
+    private static final String TEACHER_PASSWORD = "Teacher#2026";
 
     private static final String STUDENT = "student01";
-    private static final String STUDENT_PASSWORD = "student123";
+    private static final String STUDENT_PASSWORD = "Student#2026";
 
     /**
      * 预置数据里 student02 的那条任务，用来验证越权查看
@@ -134,7 +134,7 @@ class SecurityApiTest {
     void loginWithDisabledAccount() throws Exception {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginBody("guest", "guest123")))
+                        .content(loginBody("guest", "Guest#2026")))
                 .andExpect(jsonPath("$.code").value(30002));
     }
 
@@ -340,12 +340,12 @@ class SecurityApiTest {
         mockMvc.perform(withToken(post("/admin/users"), adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"student03","password":"student123","nickname":"王雨桐","roles":["STUDENT"]}
+                                {"username":"student03","password": "NewStu#2026","nickname":"王雨桐","roles":["STUDENT"]}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roles", hasItem("STUDENT")));
 
-        String token = tokenOf("student03", "student123");
+        String token = tokenOf("student03", "NewStu#2026");
         assertThat(token).isNotBlank();
 
         mockMvc.perform(withToken(get("/api/tasks/mine"), token))

@@ -47,11 +47,12 @@ public class TaskController {
 
     /**
      * 我的提交：登录即可，不需要额外权限点。
-     * 注意 URL 里没有用户名，前端想查别人的也无从下手
+     * 注意 URL 里没有用户名，前端想查别人的也无从下手；
+     * 这里传的是令牌里的用户 id，不是用户名
      */
     @GetMapping("/mine")
     public Result<List<TaskView>> mine(@AuthenticationPrincipal SecurityUser user) {
-        return Result.ok(taskService.listMine(user.getUsername()));
+        return Result.ok(taskService.listMine(user.id()));
     }
 
     /**

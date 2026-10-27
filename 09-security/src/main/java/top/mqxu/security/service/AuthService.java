@@ -53,6 +53,6 @@ public class AuthService {
         JwtTokenService.IssuedToken issued = jwtTokenService.issue(user);
         log.info("用户 {} 登录成功，角色 {}", user.getUsername(), user.roleNames());
         return new LoginResponse(issued.token(), "Bearer", issued.expiresAt(),
-                user.getUsername(), user.account().getNickname(), user.roleNames());
+                user.getUsername(), user.account().nickname(), user.roleNames());
     }
 }
