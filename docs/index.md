@@ -34,7 +34,7 @@ features:
 | 06 | [缓存与分布式锁](/06-redis) | Redis、缓存抽象、Redisson |
 | 07 | [消息队列](/07-mq) | RabbitMQ、可靠性、死信 |
 | 08 | [定时任务](/08-schedule) | @Scheduled、cron |
-| 09 | [认证与授权](/09-security) | Spring Security、JWT、RBAC |
+| 09 | [认证与授权](/09-security) | Spring Security、JWT、RBAC；[从零搭建 20 步](/09-security-build) |
 | 10 | [文件上传下载](/10-file) | Multipart、MinIO |
 | 11 | [接口文档](/11-doc) | OpenAPI、knife4j |
 | 12 | [测试](/12-test) | JUnit5、MockMvc |
