@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 认证与授权 · 案例讲义</title>
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f7f8fb; --surface:#ffffff;
+  --border:#e4e8f0; --border-strong:#d3d9e6;
+  --text:#1b2333; --text-2:#48546a; --text-3:#7b8798;
+  --primary:#2f5cf6; --primary-soft:#eef2ff;
+  --amber:#b45309; --amber-soft:#fff7ed; --amber-border:#f3d9b5;
+  --red:#c0392b; --red-soft:#fdf2f1; --red-border:#f0cec9;
+  --green:#0f7b46; --green-soft:#f1fbf5; --green-border:#c6e8d6;
+  --code-bg:#f6f8fc; --code-head:#eef2f9;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px -16px rgba(16,24,40,.18);
+  --mono:"JetBrains Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --tk-kw:#a626a4; --tk-str:#3f8f4a; --tk-com:#8d95a5; --tk-num:#986801;
+  --tk-ann:#3a72c4; --tk-type:#b2791a; --tk-tag:#2f5cf6; --tk-attr:#a626a4;
+}
+[data-theme="dark"]{
+  --bg:#0f141b; --bg-soft:#151c25; --surface:#141b24;
+  --border:#26303d; --border-strong:#33404f;
+  --text:#e8edf5; --text-2:#b3bfd0; --text-3:#7d8b9e;
+  --primary:#7f9bff; --primary-soft:#1a2333;
+  --amber:#f0b429; --amber-soft:#221b10; --amber-border:#3d3018;
+  --red:#ff8b8b; --red-soft:#25161a; --red-border:#43222a;
+  --green:#5bd6a0; --green-soft:#10261c; --green-border:#1d4433;
+  --code-bg:#111923; --code-head:#16202c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.7);
+  --tk-kw:#c678dd; --tk-str:#98c379; --tk-com:#646c7a; --tk-num:#d19a66;
+  --tk-ann:#61afef; --tk-type:#e5c07b; --tk-tag:#7f9bff; --tk-attr:#c678dd;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.85;-webkit-font-smoothing:antialiased}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:60}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f5cf6,#6f8cff);transition:width .12s linear}
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr)}
+
+.side{position:sticky;top:0;height:100vh;overflow-y:auto;padding:26px 16px 40px 24px;border-right:1px solid var(--border);background:var(--bg-soft)}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+.side-brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.side-brand .dot{width:9px;height:9px;border-radius:50%;background:var(--primary);flex:none}
+.side-brand b{font-size:15px}
+.side-sub{font-size:12px;color:var(--text-3);margin:0 0 16px}
+.side nav{display:flex;flex-direction:column;gap:1px}
+.side a{display:block;color:var(--text-2);border-radius:7px;padding:5px 10px;font-size:14px;line-height:1.5}
+.side a:hover{background:var(--primary-soft);color:var(--primary);text-decoration:none}
+.side a.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.side a.lv2{font-size:13px;padding:3px 10px 3px 22px;color:var(--text-3)}
+.side-foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-3);line-height:1.8}
+kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--surface);color:var(--text-2)}
+
+main{padding:0 0 100px;min-width:0}
+.wrap{max-width:980px;padding:0 52px}
+
+.cover{padding:60px 0 40px;border-bottom:1px solid var(--border);position:relative}
+.cover::before{content:"";position:absolute;left:0;top:32px;width:52px;height:4px;border-radius:2px;background:linear-gradient(90deg,#2f5cf6,#7f9bff)}
+.eyebrow{font-size:12.5px;letter-spacing:2.2px;color:var(--primary);font-weight:600;margin:0 0 14px}
+.cover h1{font-size:44px;line-height:1.25;margin:0 0 10px;letter-spacing:-.5px}
+.cover .sub{font-size:18.5px;color:var(--text-2);margin:0 0 24px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12.5px;color:var(--text-2);background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:4px 12px}
+.chip b{color:var(--text)}
+
+section{padding-top:50px}
+h2{font-size:28px;line-height:1.4;margin:0 0 6px;letter-spacing:-.3px;display:flex;align-items:baseline;gap:12px}
+h2 .num{font-family:var(--mono);font-size:15px;color:var(--primary);background:var(--primary-soft);border-radius:7px;padding:3px 9px;flex:none;font-weight:600;letter-spacing:0}
+.sec-rule{height:1px;background:linear-gradient(90deg,var(--border-strong),transparent);margin:16px 0 24px}
+h3{font-size:20px;margin:34px 0 12px;line-height:1.5}
+p{margin:0 0 15px}
+.lead{font-size:17.5px;color:var(--text-2)}
+ul,ol{margin:0 0 16px;padding-left:24px}
+li{margin:5px 0}
+strong{font-weight:600}
+code.i{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1.5px 5px;color:#b13a5f;white-space:nowrap}
+[data-theme="dark"] code.i{color:#f0a0b8}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--text-3)}
+
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--border);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.7;background:var(--surface)}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+th{background:var(--bg-soft);font-weight:600;font-size:13.5px;color:var(--text-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg-soft)}
+td code,th code{font-family:var(--mono);font-size:13px}
+.nowrap{white-space:nowrap}
+
+.st{display:inline-block;font-family:var(--mono);font-size:12.5px;font-weight:600;border-radius:6px;padding:1px 8px;border:1px solid}
+.st-200{color:var(--green);background:var(--green-soft);border-color:var(--green-border)}
+.st-401{color:var(--amber);background:var(--amber-soft);border-color:var(--amber-border)}
+.st-403{color:var(--red);background:var(--red-soft);border-color:var(--red-border)}
+
+.code{margin:0 0 18px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--code-head);border-bottom:1px solid var(--border);font-size:11.5px;letter-spacing:1.2px;color:var(--text-3);text-transform:uppercase;font-weight:600}
+.code-h button{font-family:var(--sans);font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--text-3);background:transparent;border:1px solid var(--border-strong);border-radius:6px;padding:2px 9px;cursor:pointer}
+.code-h button:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-soft)}
+pre{margin:0;padding:15px 18px;overflow-x:auto;font-family:var(--mono);font-size:13.8px;line-height:1.72;tab-size:2}
+pre code{font-family:inherit;color:var(--text)}
+.tk-kw{color:var(--tk-kw)} .tk-str{color:var(--tk-str)} .tk-com{color:var(--tk-com);font-style:italic}
+.tk-num{color:var(--tk-num)} .tk-ann{color:var(--tk-ann)} .tk-type{color:var(--tk-type)}
+.tk-tag{color:var(--tk-tag)} .tk-attr{color:var(--tk-attr)}
+
+.note,.warn,.tip,.danger{border-radius:10px;padding:14px 18px;margin:0 0 18px;font-size:15.5px;line-height:1.8;border:1px solid;border-left-width:3px}
+.note{background:var(--primary-soft);border-color:var(--border);border-left-color:var(--primary)}
+.warn{background:var(--amber-soft);border-color:var(--amber-border);border-left-color:var(--amber)}
+.tip{background:var(--green-soft);border-color:var(--green-border);border-left-color:var(--green)}
+.danger{background:var(--red-soft);border-color:var(--red-border);border-left-color:var(--red)}
+.note b,.warn b,.tip b,.danger b{display:block;font-size:13px;letter-spacing:1px;margin-bottom:3px}
+.note b{color:var(--primary)} .warn b{color:var(--amber)} .tip b{color:var(--green)} .danger b{color:var(--red)}
+.note p:last-child,.warn p:last-child,.tip p:last-child,.danger p:last-child{margin-bottom:0}
+
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.card{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--surface);box-shadow:var(--shadow)}
+.card .k{font-family:var(--mono);font-size:12px;color:var(--primary);font-weight:600;letter-spacing:1px}
+.card h5{margin:5px 0 6px;font-size:16px;font-weight:600}
+.card p{margin:0;font-size:14.5px;color:var(--text-2);line-height:1.7}
+
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 20px}
+.vs-card{border-radius:12px;padding:18px 20px;border:1px solid}
+.vs-card .big{font-family:var(--mono);font-size:38px;line-height:1;font-weight:700}
+.vs-card .ttl{font-size:16px;font-weight:600;margin:8px 0 2px}
+.vs-card .ask{font-size:13.5px;opacity:.85;margin:0 0 10px}
+.vs-card dl{margin:0;font-size:13.5px}
+.vs-card dt{font-size:11.5px;letter-spacing:1px;opacity:.7;margin-top:8px}
+.vs-card dd{margin:1px 0 0;font-family:var(--mono);font-size:13px;word-break:break-all}
+.vs-401{background:var(--amber-soft);border-color:var(--amber-border);color:var(--amber)}
+.vs-403{background:var(--red-soft);border-color:var(--red-border);color:var(--red)}
+
+.flow{margin:0 0 20px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+.flow .row{display:grid;grid-template-columns:30px 1fr;border-bottom:1px solid var(--border)}
+.flow .row:last-child{border-bottom:none}
+.flow .idx{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--text-3);background:var(--bg-soft);border-right:1px solid var(--border)}
+.flow .body{padding:10px 15px}
+.flow .name{font-family:var(--mono);font-size:14px;font-weight:600}
+.flow .desc{font-size:13.5px;color:var(--text-2);margin:1px 0 0}
+.flow .row.ours{background:var(--primary-soft)}
+.flow .row.ours .name{color:var(--primary)}
+.flow .row.ours .idx{color:var(--primary);background:transparent}
+
+.step{display:grid;grid-template-columns:30px 1fr;margin:0 0 14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+.step .n{display:flex;align-items:center;justify-content:center;background:var(--bg-soft);border-right:1px solid var(--border);font-family:var(--mono);font-size:13px;font-weight:600;color:var(--primary)}
+.step .c{padding:12px 16px}
+.step .c h5{margin:0 0 3px;font-size:15.5px;font-weight:600}
+.step .c p{margin:0;font-size:14px;color:var(--text-2);line-height:1.7}
+
+.jwt{display:flex;gap:8px;align-items:stretch;overflow-x:auto;margin:0 0 18px}
+.jwt .seg{flex:1 1 0;min-width:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden}
+.jwt .seg .cap{font-size:11px;letter-spacing:1.2px;font-weight:600;padding:5px 10px;border-bottom:1px solid var(--border);background:var(--bg-soft);color:var(--text-3);white-space:nowrap}
+.jwt .seg .val{font-family:var(--mono);font-size:11.5px;line-height:1.6;padding:9px 10px;word-break:break-all;max-height:110px;overflow:auto}
+.jwt .seg1 .cap{color:var(--primary)} .jwt .seg2 .cap{color:var(--green)} .jwt .seg3 .cap{color:var(--amber)}
+.jwt .dot{align-self:center;font-family:var(--mono);font-size:22px;color:var(--text-3);flex:none}
+
+.foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--text-3)}
+.top{position:fixed;right:24px;bottom:24px;width:40px;height:40px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-2);font-size:17px;cursor:pointer;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+.top.show{opacity:1;pointer-events:auto}
+
+@media (max-width:1180px){
+  .layout{grid-template-columns:1fr}
+  .side{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .side nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .wrap{padding:0 26px}
+  .cover h1{font-size:34px}
+}
+@media (max-width:720px){ .cards,.vs{grid-template-columns:1fr} .wrap{padding:0 18px} }
+@media print{
+  .side,.progress,.top,.code-h button{display:none!important}
+  .layout{display:block}
+  body{font-size:10.5pt;line-height:1.65}
+  .wrap{max-width:none;padding:0}
+  section{padding-top:18pt}
+  h2{font-size:16pt} h3{font-size:12.5pt}
+  .code,.tw,.note,.warn,.tip,.danger,.vs,.flow,.step,.card,.jwt{break-inside:avoid}
+  pre{font-size:8.6pt;white-space:pre-wrap;word-break:break-all}
+  @page{margin:14mm 12mm}
+}
+</style>
+</head>
+<body>
+<div class="progress"><i id="pbar"></i></div>
+
+<div class="layout">
+<aside class="side">
+  <div class="side-brand"><span class="dot"></span><b>09 · 认证与授权</b></div>
+  <p class="side-sub">案例：实训任务提交与批改</p>
+  <nav id="toc">
+    <a href="#s0">案例与问题</a>
+    <a href="#s1">先看效果</a>
+    <a href="#s2">登录与令牌</a>
+    <a href="#s2-1" class="lv2">令牌里装了什么</a>
+    <a href="#s2-2" class="lv2">前端存在哪里</a>
+    <a href="#s3">后端怎么认出你</a>
+    <a href="#s4">前端三件事</a>
+    <a href="#s4-1" class="lv2">请求拦截器</a>
+    <a href="#s4-2" class="lv2">401 与 403 分开处理</a>
+    <a href="#s4-3" class="lv2">路由守卫</a>
+    <a href="#s5">数据归属</a>
+    <a href="#s6">权限点</a>
+    <a href="#s7">起项目联调</a>
+    <a href="#s8">代码地图</a>
+    <a href="#s9">排错表</a>
+    <a href="#s10">课堂练习</a>
+    <a href="#s11">小结</a>
+  </nav>
+  <div class="side-foot">
+    <kbd>←</kbd> <kbd>→</kbd> 切换章节<br>
+    <kbd>T</kbd> 明暗主题 · <kbd>P</kbd> 打印
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<header class="cover">
+  <p class="eyebrow">后端工程化开发 · 模块 09</p>
+  <h1>认证与授权</h1>
+  <p class="sub">跟着一个真实案例，把前后端分离的登录链路走通</p>
+  <div class="chips">
+    <span class="chip"><b>90</b> 分钟</span>
+    <span class="chip">一个案例贯穿</span>
+    <span class="chip">后端 <b>22</b> 个测试</span>
+    <span class="chip">前端 <b>4</b> 个页面</span>
+    <span class="chip">Spring Boot <b>4.1.1</b> · Security <b>7.1.1</b> · jjwt <b>0.13.0</b></span>
+    <span class="chip">Vue <b>3.5</b> · Vite <b>8</b> · axios <b>1.21</b></span>
+  </div>
+</header>
+
+<section id="s0">
+  <h2><span class="num">00</span>案例与问题</h2>
+  <div class="sec-rule"></div>
+  <p class="lead">这次不做“权限管理后台”，做一个每门实训课都在用的小系统：<b>学生交任务，教师批改，管理员管账号</b>。</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="k">学生</div>
+      <h5>提交与查看</h5>
+      <p>提交实训任务，只能看到自己交的东西和自己的分数。</p>
+    </div>
+    <div class="card">
+      <div class="k">教师</div>
+      <h5>批改</h5>
+      <p>看到全班提交，打分写评语。学生交完立刻能看到。</p>
+    </div>
+    <div class="card">
+      <div class="k">管理员</div>
+      <h5>账号</h5>
+      <p>新增学生账号、停用账号，管理接口教师也进不去。</p>
+    </div>
+    <div class="card">
+      <div class="k">前端</div>
+      <h5>四个页面</h5>
+      <p>登录、我的提交、待批改、账号管理，按角色只显示该看到的菜单。</p>
+    </div>
+  </div>
+
+  <p>不用鉴权时，这个系统长这样就够跑了：接口直接暴露，谁拿到地址谁就能改分。教师能改，学生也能改；学生 A 改一下编号，就能看到 B 的评语。</p>
+  <p>本节要解决的是三件事，必须同时成立：</p>
+
+  <div class="step"><div class="n">1</div><div class="c"><h5>后端要知道“你是谁”</h5><p>每个请求都得能查出调用者是 student01 还是 teacher01，不能靠前端自己说。</p></div></div>
+  <div class="step"><div class="n">2</div><div class="c"><h5>后端要知道“你能做什么”</h5><p>学生不能批改，教师不能进管理接口，管理员两个都能做。</p></div></div>
+  <div class="step"><div class="n">3</div><div class="c"><h5>前端要知道“出事了怎么办”</h5><p>没登录跳登录页，没权限只提示。这三件事没做好，接口再对，体验也是坏的。</p></div></div>
+
+  <div class="note">
+    <b>本节的顺序</b>
+    <p>先看跑起来的效果，再一层一层拆开：登录拿令牌 → 后端认令牌 → 前端带令牌 → 按归属限数据 → 按权限点限操作 → 联调排错。每一层都能在浏览器和终端里当场验证。</p>
+  </div>
+</section>
+
+<section id="s1">
+  <h2><span class="num">01</span>先看效果，再看代码</h2>
+  <div class="sec-rule"></div>
+  <p>课程一开始先跑三条路径，学生先看到结果，后面每一步都知道自己在拼什么。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:88px">角色</th><th>他做的事</th><th>看到的</th><th style="width:88px">接口结果</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>学生</b><br><span class="mono muted">student01</span></td>
+          <td>登录 → 看我的提交 → 提交一条新任务</td>
+          <td>只有自己的一条；提交成功后状态是“待批改”</td>
+          <td><span class="st st-200">200</span></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>把地址里的任务编号改成 2（别人的）</td>
+          <td>提示没有权限，页面不显示内容</td>
+          <td><span class="st st-403">403</span></td>
+        </tr>
+        <tr>
+          <td><b>教师</b><br><span class="mono muted">teacher01</span></td>
+          <td>登录 → 看到全班两条提交 → 给第一条打分 88</td>
+          <td>列表里立刻变成“已批改 88 分”</td>
+          <td><span class="st st-200">200</span></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>想自己交一条任务</td>
+          <td>页面上没有提交入口，直接调接口也不行</td>
+          <td><span class="st st-403">403</span></td>
+        </tr>
+        <tr>
+          <td><b>管理员</b><br><span class="mono muted">admin</span></td>
+          <td>看账号列表 → 新建一个学生</td>
+          <td>列表里没有密码字段；新账号能直接登录</td>
+          <td><span class="st st-200">200</span></td>
+        </tr>
+        <tr>
+          <td><b>谁都不登录</b></td>
+          <td>直接访问任务列表</td>
+          <td>被带回登录页，登录后回到原来的页面</td>
+          <td><span class="st st-401">401</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>五个演示账号，密码在种子数据里用 BCrypt 加密后写死，课堂上直接登录：</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>账号</th><th>密码</th><th>角色</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">student01</td><td class="mono">student123</td><td>STUDENT</td><td>预置了一条待批改的任务</td></tr>
+        <tr><td class="mono">student02</td><td class="mono">student123</td><td>STUDENT</td><td>预置了一条已批改的任务，用来演示越权</td></tr>
+        <tr><td class="mono">teacher01</td><td class="mono">teacher123</td><td>TEACHER</td><td>能看全部、能批改</td></tr>
+        <tr><td class="mono">admin</td><td class="mono">admin123</td><td>ADMIN</td><td>全部提交 + 账号管理</td></tr>
+        <tr><td class="mono">guest</td><td class="mono">guest123</td><td>STUDENT</td><td>登录直接失败，账号已停用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tip">
+    <b>这一节只做一件事</b>
+    <p>让学生记住三条：学生只能看自己的、教师能批改、管理员能管账号。后面所有代码都是为了让这三条成立。</p>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="num">02</span>登录那一下发生了什么</h2>
+  <div class="sec-rule"></div>
+  <p>整条链路只有两个动作：<b>登录换令牌</b>，然后<b>每个请求带着令牌</b>。先把这两个动作看清楚，后面所有代码都是围绕它们展开。</p>
+
+  <div class="flow">
+    <div class="row"><div class="idx">1</div><div class="body"><div class="name">浏览器</div><div class="desc">POST /auth/login，提交用户名与明文密码（走 HTTPS 才安全）</div></div></div>
+    <div class="row"><div class="idx">2</div><div class="body"><div class="name">AuthService</div><div class="desc">交给 AuthenticationManager 校验，BCrypt 比对密文、顺带检查账号是否停用</div></div></div>
+    <div class="row"><div class="idx">3</div><div class="body"><div class="name">JwtTokenService</div><div class="desc">校验通过后签发令牌，写入用户名与有效期</div></div></div>
+    <div class="row"><div class="idx">4</div><div class="body"><div class="name">浏览器</div><div class="desc">拿到令牌存起来，跳到首页；此后每个请求由拦截器自动加上请求头</div></div></div>
+  </div>
+
+  <p>后端这一侧的代码只有一句要记住：<b>不自己比对密码</b>。</p>
+  <div class="code"><pre data-lang="java"><code>Authentication authentication;
+try {
+    authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.username(), request.password()));
+} catch (DisabledException e) {
+    throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);   // 30002
+} catch (AuthenticationException e) {
+    // 密码错、用户不存在都给同一个提示，防止被用来试探哪些账号存在
+    throw new BusinessException(ErrorCode.BAD_CREDENTIALS);    // 30001
+}
+
+SecurityUser user = (SecurityUser) authentication.getPrincipal();
+JwtTokenService.IssuedToken issued = jwtTokenService.issue(user);
+return new LoginResponse(issued.token(), "Bearer", issued.expiresAt(),
+        user.getUsername(), user.account().getNickname(), user.roleNames());</code></pre></div>
+
+  <p>登录成功真实返回（字段完整，只截了令牌中段）：</p>
+  <div class="code"><pre data-lang="json"><code>{
+  "code": 200,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiYWNrZW5kLWxlYXJuaW5nIiwic3ViIjoic3R1ZGVudDAxIiwi...",
+    "tokenType": "Bearer",
+    "expiresAt": "2026-10-28T03:17:08Z",
+    "username": "student01",
+    "nickname": "朱彦清",
+    "roles": ["STUDENT"]
+  },
+  "message": "success"
+}</code></pre></div>
+
+  <h3 id="s2-1">令牌里装了什么</h3>
+  <p>把上面那个令牌拆成三段看。下面三段是真实值，你可以拿去任意 Base64 解码工具核对。</p>
+
+  <div class="jwt">
+    <div class="seg seg1"><div class="cap">HEADER</div><div class="val">eyJhbGciOiJIUzI1NiJ9</div></div>
+    <div class="dot">.</div>
+    <div class="seg seg2"><div class="cap">PAYLOAD</div><div class="val">eyJpc3MiOiJiYWNrZW5kLWxlYXJuaW5nIiwic3ViIjoic3R1ZGVudDAxIiwiaWF0IjoxNzkzMTIxNDI4LCJleHAiOjE3OTMxMjg2MjgsInJvbGVzIjpbIlNUVURFTlQiXX0</div></div>
+    <div class="dot">.</div>
+    <div class="seg seg3"><div class="cap">SIGNATURE</div><div class="val">共 43 个字符，由前两段加密钥算出，不能反推</div></div>
+  </div>
+
+  <div class="code"><pre data-lang="json"><code>第一段解码：{"alg":"HS256"}
+第二段解码：{"iss":"backend-learning","sub":"student01","iat":1793121428,"exp":1793128628,"roles":["STUDENT"]}</code></pre></div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>含义</th><th>为什么要有</th></tr></thead>
+      <tbody>
+        <tr><td><code>sub</code></td><td>用户名 student01</td><td>后端靠它知道“你是谁”</td></tr>
+        <tr><td><code>exp</code></td><td>过期时刻</td><td>解析时自动校验，过期直接失败，不用自己写判断</td></tr>
+        <tr><td><code>iss</code></td><td>签发方 backend-learning</td><td>防止别的系统用同一个密钥签的令牌混进来</td></tr>
+        <tr><td><code>roles</code></td><td>角色</td><td>只给前端显示菜单用，不参与后端鉴权</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="danger">
+    <b>两个必须当场讲清的点</b>
+    <p><b>载荷是明文</b>，只是 Base64 编码，不是加密。任何人拿到令牌都能读到里面写了什么，所以密码、身份证号不能放进去。</p>
+    <p><b>角色放进去不等于用它鉴权</b>。令牌签发后改不了，管理员把某人降级后，旧令牌里还写着 TEACHER。本模块的做法是令牌只带身份，权限每次请求按用户名回查数据库，改角色立刻生效。</p>
+  </div>
+
+  <h3 id="s2-2">前端存在哪里</h3>
+  <p>存 localStorage，刷新页面不掉登录。三个函数就够，不需要为这点事引状态管理库：</p>
+  <div class="code"><pre data-lang="js"><code>const TOKEN_KEY = 'demo_token'
+const USER_KEY = 'demo_user'
+
+export const auth = reactive({
+  token: localStorage.getItem(TOKEN_KEY) || '',
+  user: JSON.parse(localStorage.getItem(USER_KEY) || 'null'),
+})
+
+export function saveLogin(data) {
+  auth.token = data.token
+  auth.user = { username: data.username, nickname: data.nickname, roles: data.roles }
+  localStorage.setItem(TOKEN_KEY, data.token)
+  localStorage.setItem(USER_KEY, JSON.stringify(auth.user))
+}
+
+export function clearLogin() {
+  auth.token = ''
+  auth.user = null
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+}</code></pre></div>
+
+  <p>为什么不存 cookie：令牌走请求头，浏览器不会自动带上，天然不受 CSRF 影响。代价是脚本能读到它，所以必须防 XSS，这是作业里要讨论的一条。</p>
+
+  <div class="tip">
+    <b>课堂验证</b>
+    <p>打开浏览器控制台执行 <code>localStorage.getItem('demo_token')</code>，能看到令牌；点右上角退出，再执行一次，返回 null。让学生亲眼看到“登录态就是一个字符串”。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">03</span>之后每个请求，后端怎么认出你</h2>
+  <div class="sec-rule"></div>
+  <p>拿到了令牌，请求头里带上 <code class="i">Authorization: Bearer eyJ...</code>。后端要在进入 Controller 之前把它换成一个“已认证的身份”。这件事由一个自己写的过滤器完成。</p>
+
+  <div class="flow">
+    <div class="row"><div class="idx">→</div><div class="body"><div class="name">请求进来</div><div class="desc">带 Authorization 请求头</div></div></div>
+    <div class="row ours"><div class="idx">1</div><div class="body"><div class="name">JwtAuthenticationFilter</div><div class="desc">取请求头 → 验签 → 按用户名回查账号 → 写入 SecurityContext</div></div></div>
+    <div class="row"><div class="idx">2</div><div class="body"><div class="name">AuthorizationFilter</div><div class="desc">判断这条 URL 要不要放行，此时身份已经在上下文里</div></div></div>
+    <div class="row"><div class="idx">3</div><div class="body"><div class="name">Controller</div><div class="desc">@PreAuthorize 再看权限点，@AuthenticationPrincipal 直接拿到当前用户</div></div></div>
+  </div>
+
+  <div class="code"><pre data-lang="java"><code>public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String token = resolveToken(request);
+        if (token != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {
+            String username = tokenService.parseUsername(token);   // 验签 + 校验过期与签发方
+            UserDetails user = userDetailsService.loadUserByUsername(username);
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (JwtException | UsernameNotFoundException e) {
+            // 令牌无效只清空上下文，不在这里写响应
+            SecurityContextHolder.clearContext();
+        }
+        filterChain.doFilter(request, response);
+    }
+}</code></pre></div>
+
+  <p>加进过滤链只有一行，位置很关键：</p>
+  <div class="code"><pre data-lang="java"><code>.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)</code></pre></div>
+  <p>必须排在授权判断之前。排后面的话，判断权限时 <code class="i">SecurityContext</code> 还是空的，所有请求都会被当成未登录。</p>
+
+  <div class="note">
+    <b>一个容易被问到的选择</b>
+    <p>令牌无效时不在这里返回 401，而是清空上下文继续往下走。让后面的授权判断拒绝这个匿名请求，401 由 <code class="i">RestAuthenticationEntryPoint</code> 统一输出。要是在过滤器里也写一份响应，同一个错误就有两种格式，前端得写两套判断。</p>
+  </div>
+
+  <p>验证一下，两个请求的差别只有请求头：</p>
+  <div class="code"><pre data-lang="bash"><code># 不带令牌
+curl -i http://localhost:8009/api/tasks/mine
+# HTTP/1.1 401
+# {"code":401,"data":null,"message":"未认证或令牌已失效"}
+
+# 带上令牌
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8009/api/tasks/mine
+# HTTP/1.1 200</code></pre></div>
+</section>
+
+<section id="s4">
+  <h2><span class="num">04</span>前端要做的三件事</h2>
+  <div class="sec-rule"></div>
+  <p>这一节是前后端分离里学生最容易漏掉的部分：接口写完了，前端每个页面各写一遍 <code class="i">if (res.status === 401)</code>，最后谁也不敢动。</p>
+  <p>做法是集中到一个文件 <code class="i">src/api/request.js</code>，四个页面都不再关心鉴权。</p>
+
+  <h3 id="s4-1">请求拦截器：把令牌带上</h3>
+  <div class="code"><pre data-lang="js"><code>const request = axios.create({ timeout: 10000 })
+
+request.interceptors.request.use((config) =&gt; {
+  if (auth.token) {
+    config.headers.Authorization = `Bearer ${auth.token}`
+  }
+  return config
+})</code></pre></div>
+  <p>页面里写 <code class="i">await myTasks()</code> 就够了，不用每次记得加请求头。登录接口本身没有令牌，<code class="i">if</code> 判断自动跳过。</p>
+
+  <h3 id="s4-2">401 和 403 必须分开处理</h3>
+  <div class="vs">
+    <div class="vs-card vs-401">
+      <div class="big">401</div>
+      <div class="ttl">没登录，或者登录过期</div>
+      <p class="ask">服务端不知道你是谁</p>
+      <dl>
+        <dt>触发</dt>
+        <dd>没带令牌 / 令牌过期 / 令牌被改</dd>
+        <dt>前端动作</dt>
+        <dd>清登录态，跳登录页，记住原来要去哪</dd>
+      </dl>
+    </div>
+    <div class="vs-card vs-403">
+      <div class="big">403</div>
+      <div class="ttl">登录了，但这件事你不能做</div>
+      <p class="ask">知道你是谁，权限不够</p>
+      <dl>
+        <dt>触发</dt>
+        <dd>学生调教师接口 / 看别人的数据</dd>
+        <dt>前端动作</dt>
+        <dd>只提示，绝不能把人踢下线</dd>
+      </dl>
+    </div>
+  </div>
+
+  <p>写反了会怎样：学生点了一个只有教师能点的按钮，直接被踢回登录页，重新登录进去还在那个页面，再点又被踢。学生只会觉得“系统坏了”。</p>
+
+  <div class="code"><pre data-lang="js"><code>request.interceptors.response.use(
+  (response) =&gt; {
+    // 业务失败也是 HTTP 200，靠 code 区分
+    const body = response.data
+    if (body.code === 200) return body.data
+    notify(body.message || '操作失败')
+    return Promise.reject(new Error(body.message))
+  },
+  (error) =&gt; {
+    const status = error.response?.status
+
+    if (status === 401) {
+      clearLogin()
+      const from = router.currentRoute.value.fullPath
+      router.push({ path: '/login', query: { redirect: from } })
+      notify('登录已失效，请重新登录')
+    } else if (status === 403) {
+      notify(error.response?.data?.message || '你没有权限做这个操作')   // 不动登录态
+    } else if (status) {
+      notify(`请求失败（${status}）`)
+    } else {
+      notify('连不上后端，确认 8009 是否已启动')
+    }
+    return Promise.reject(error)
+  }
+)</code></pre></div>
+
+  <div class="note">
+    <b>这里的两层判断要讲清</b>
+    <p>第一层是 HTTP 状态码，处理“没登录”“没权限”这类协议层的事；第二层是响应体里的 <code class="i">code</code>，处理“任务已批改”“用户名已存在”这类业务失败。后端约定业务失败仍返回 200，所以少了第二层判断，业务错误会被当成成功。</p>
+  </div>
+
+  <h3 id="s4-3">路由守卫：别让人手输地址进去</h3>
+  <div class="code"><pre data-lang="js"><code>router.beforeEach((to) =&gt; {
+  if (to.meta.public) return true
+
+  if (!auth.token) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.roles &amp;&amp; !hasAnyRole(to.meta.roles)) {
+    return homeOf()          // 角色不对回自己的首页，不要踢回登录页
+  }
+  return true
+})</code></pre></div>
+
+  <div class="danger">
+    <b>必须强调的一句话</b>
+    <p>路由守卫只是体验层的拦截。有人改一下 localStorage 就能进页面，但进去以后接口全是 403，什么也拿不到。<b>权限判断永远在后端</b>，前端做的只是别让用户白点。</p>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="num">05</span>数据归属：最容易出事的地方</h2>
+  <div class="sec-rule"></div>
+  <p>“学生只能看自己的”这句话，有三种实现方式，只有一种是对的。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:34%">做法</th><th>前端怎么写</th><th>后果</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>① 前端传用户名</b><br><span class="st st-403">错</span></td>
+          <td><code>GET /api/tasks?owner=student01</code></td>
+          <td>把参数改成 student02 就能看别人的，后端等于没鉴权</td>
+        </tr>
+        <tr>
+          <td><b>② 路径里带用户名</b><br><span class="st st-403">错</span></td>
+          <td><code>GET /api/tasks/mine/student01</code></td>
+          <td>改路径里的名字就行，一样能越权</td>
+        </tr>
+        <tr>
+          <td><b>③ 服务端从令牌取</b><br><span class="st st-200">对</span></td>
+          <td><code>GET /api/tasks/mine</code></td>
+          <td>URL 里没有身份，前端无处可改</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>代码就这么几行，关键在于参数是 <code class="i">SecurityUser</code> 而不是从前端来的字符串：</p>
+  <div class="code"><pre data-lang="java"><code>/**
+ * 我的提交：URL 里没有用户名，前端想查别人的也无从下手
+ */
+@GetMapping("/mine")
+public Result&lt;List&lt;TaskView&gt;&gt; mine(@AuthenticationPrincipal SecurityUser user) {
+    return Result.ok(taskService.listMine(user.getUsername()));
+}</code></pre></div>
+
+  <p>提交任务时同理，请求体里根本没有 owner 字段。前端就算硬塞一个进去，也不会被采纳：</p>
+  <div class="code"><pre data-lang="json"><code>// 前端发的（故意塞一个别人的用户名）
+{"title":"实训四：伪造归属","content":"试试改 owner","owner":"student02"}
+
+// 后端返回的
+{"id":4,"owner":"student01","ownerNickname":"朱彦清","statusText":"待批改"}</code></pre></div>
+  <p>这条已经写成测试用例 <code class="i">ownerCannotBeForgedByBody</code>，跑 <code class="i">mvn test</code> 就能验证。</p>
+
+  <h3>换个编号就能看别人的详情，怎么办</h3>
+  <p>详情接口 <code class="i">GET /api/tasks/{id}</code> 的编号一定可以被改，所以必须在服务端判断“这条记录归不归你”：</p>
+  <div class="code"><pre data-lang="java"><code>public TaskView detail(Long id, SecurityUser viewer) {
+    Task task = find(id);
+    if (!canView(task, viewer)) {
+        throw new BusinessException(ErrorCode.FORBIDDEN);
+    }
+    return TaskView.of(task);
+}
+
+/**
+ * 两种人能看：提交人本人，或者有批改权限的教师与管理员
+ */
+private boolean canView(Task task, SecurityUser viewer) {
+    if (task.getOwnerUsername().equals(viewer.getUsername())) return true;
+    return viewer.getAuthorities().stream()
+            .anyMatch(authority -&gt; authority.getAuthority().equals("task:review"));
+}</code></pre></div>
+
+  <p>实测（student01 的令牌，访问 student02 的任务）：</p>
+  <div class="code"><pre data-lang="bash"><code>curl -i -H "Authorization: Bearer $STUDENT_TOKEN" http://localhost:8009/api/tasks/2
+# HTTP/1.1 403
+# {"code":403,"data":null,"message":"无权访问该资源"}</code></pre></div>
+
+  <div class="warn">
+    <b>状态码必须是 403，不能是 200</b>
+    <p>很多项目把这类拒绝包装成 <code class="i">code: 500</code> 或 <code class="i">code: 403</code> 但 HTTP 200，前端拦截器会把响应当成成功处理，表格里就渲染出别人的数据。本模块在全局异常处理器里对越权单独给 403：</p>
+  </div>
+  <div class="code"><pre data-lang="java"><code>HttpStatus status = switch (e.getErrorCode()) {
+    case FORBIDDEN -&gt; HttpStatus.FORBIDDEN;
+    case UNAUTHORIZED -&gt; HttpStatus.UNAUTHORIZED;
+    default -&gt; HttpStatus.OK;      // 其余业务失败沿用 200 + code
+};
+return ResponseEntity.status(status).body(Result.fail(e.getErrorCode()));</code></pre></div>
+</section>
+
+<section id="s6">
+  <h2><span class="num">06</span>权限点：谁能做哪件事</h2>
+  <div class="sec-rule"></div>
+  <p>三个角色，各自的权限点写在一个枚举里，一眼能看完：</p>
+  <div class="code"><pre data-lang="java"><code>public enum Role {
+    STUDENT(Set.of("task:submit", "task:read")),
+    TEACHER(Set.of("task:review", "task:read")),
+    ADMIN(Set.of("user:read", "user:write", "task:read", "task:review"));
+}</code></pre></div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>接口</th><th>谁能调</th><th>写法</th><th>别人调的结果</th></tr></thead>
+      <tbody>
+        <tr><td class="nowrap"><code>POST /api/tasks</code></td><td>学生</td><td><code>hasAuthority('task:submit')</code></td><td>教师 <span class="st st-403">403</span></td></tr>
+        <tr><td class="nowrap"><code>GET /api/tasks</code></td><td>教师、管理员</td><td><code>hasAuthority('task:review')</code></td><td>学生 <span class="st st-403">403</span></td></tr>
+        <tr><td class="nowrap"><code>POST /api/tasks/{id}/review</code></td><td>教师、管理员</td><td><code>hasAuthority('task:review')</code></td><td>学生 <span class="st st-403">403</span></td></tr>
+        <tr><td class="nowrap"><code>GET /api/tasks/mine</code></td><td>登录即可</td><td>不加注解，只查自己</td><td>—</td></tr>
+        <tr><td class="nowrap"><code>GET /admin/users</code></td><td>管理员</td><td>URL 规则 <code>/admin/**</code></td><td>教师 <span class="st st-403">403</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>为什么接口绑权限点而不是绑角色：将来多一个“教务”，能看全部但不能批改，只要给角色配 <code class="i">task:read</code>，接口代码一行都不用改。绑角色的话，每个 <code class="i">@PreAuthorize</code> 都要改一遍。</p>
+
+  <div class="danger">
+    <b>两个必踩的坑</b>
+    <p><code class="i">hasRole("ADMIN")</code> 内部会拼成 <code class="i">ROLE_ADMIN</code> 去比对，所以权限集合里要有 <code class="i">ROLE_ADMIN</code>；<code class="i">hasAuthority("task:review")</code> 是原样比对，不能加前缀。这两个混用，会出现“配置看起来是对的，却永远 403”。</p>
+    <p>管理接口做了双重把关：URL 规则 <code class="i">/admin/**</code> 限管理员，Controller 上再写一次 <code class="i">@PreAuthorize</code>。有人把 URL 规则改宽时，第二道还在。</p>
+  </div>
+
+  <div class="tip">
+    <b>课堂验证</b>
+    <p>用教师令牌调提交接口，用学生令牌调批改接口，两个都应该 403。再让教师点开“待批改”页面，页面上根本没有提交入口：<b>前端不给入口，后端不给权限</b>，两层都要做。</p>
+  </div>
+</section>
+
+<section id="s7">
+  <h2><span class="num">07</span>把两个项目跑起来</h2>
+  <div class="sec-rule"></div>
+  <p>两个终端，两个命令：</p>
+  <div class="code"><pre data-lang="bash"><code># 终端一：后端，8009
+cd 09-security
+mvn spring-boot:run
+
+# 终端二：前端，5173
+cd 09-security/web
+npm install     # 第一次才需要
+npm run dev</code></pre></div>
+  <p>浏览器打开 <code class="i">http://localhost:5173</code>，用页面上的快捷按钮切换三个账号登录。</p>
+
+  <h3>跨域就靠这段代理</h3>
+  <div class="code"><pre data-lang="js"><code>server: {
+  port: 5173,
+  proxy: {
+    '/api':  { target: 'http://127.0.0.1:8009', changeOrigin: true },
+    '/auth': { target: 'http://127.0.0.1:8009', changeOrigin: true },
+  },
+}</code></pre></div>
+  <p>浏览器全程只访问 5173，请求由 Vite 转发给 8009，所以开发时根本不存在跨域。上线分离部署时没有这层代理，才需要后端那份 CORS 配置，本模块也一并写好了（<code class="i">SecurityConfig#corsConfigurationSource</code>）。</p>
+
+  <div class="warn">
+    <b>代理路径写错是最常见的第一天问题</b>
+    <p>前端请求 <code class="i">/api/tasks</code>，代理只配了 <code class="i">/tasks</code>，结果请求打到 5173 自己身上，返回一个 HTML 页面，前端解析 JSON 失败。现象是“接口没报错但拿不到数据”，看 Network 里请求地址就知道对不对。</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>现象</th><th>真正的原因</th><th>怎么确认</th></tr></thead>
+      <tbody>
+        <tr><td>页面一直转，控制台报 404</td><td>代理前缀和请求路径对不上</td><td>看 Network 里请求打到哪个端口</td></tr>
+        <tr><td>每个接口都 401</td><td>令牌没存上，或拦截器没读到</td><td>控制台查 <code>localStorage.getItem('demo_token')</code></td></tr>
+        <tr><td>登录也 401</td><td>后端没放行 <code>/auth/login</code></td><td>看 <code>permitAll</code> 是否写在 <code>anyRequest</code> 之前</td></tr>
+        <tr><td>一点就跳登录页</td><td>把 403 当成了 401 处理</td><td>看 Network 的状态码是 401 还是 403</td></tr>
+        <tr><td>页面能进但列表空白</td><td>接口 403，数据没返回</td><td>Network 里那条请求的响应体</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s8">
+  <h2><span class="num">08</span>代码地图</h2>
+  <div class="sec-rule"></div>
+  <p>学生拿到代码先看这张表，知道自己改哪个文件。后端 28 个类按职责分组，前端 12 个文件。</p>
+
+  <h3>后端 <span class="mono muted" style="font-size:14px">09-security/src/main/java/top/mqxu/security</span></h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:104px">包</th><th>文件</th><th>一句话</th></tr></thead>
+      <tbody>
+        <tr><td><code>config</code></td><td><code>SecurityConfig</code></td><td>过滤链、认证管理器、密码编码器、跨域</td></tr>
+        <tr><td></td><td><code>JwtProperties</code></td><td>密钥、签发方、有效期，启动时校验</td></tr>
+        <tr><td><code>security</code></td><td><code>JwtTokenService</code></td><td>签发与解析令牌，固定 HS256</td></tr>
+        <tr><td></td><td><code>JwtAuthenticationFilter</code></td><td>令牌换身份，写进 SecurityContext</td></tr>
+        <tr><td></td><td><code>SecurityUser</code></td><td>把我们自己的账号适配成 UserDetails</td></tr>
+        <tr><td></td><td><code>RestAuthenticationEntryPoint</code></td><td>没登录时回 401 的 JSON</td></tr>
+        <tr><td></td><td><code>RestAccessDeniedHandler</code></td><td>URL 级越权时回 403 的 JSON</td></tr>
+        <tr><td></td><td><code>RestErrorWriter</code></td><td>上面两个共用的写响应工具</td></tr>
+        <tr><td><code>model</code></td><td><code>Role</code></td><td>三个角色和权限点</td></tr>
+        <tr><td></td><td><code>UserAccount</code></td><td>账号实体，密码存密文</td></tr>
+        <tr><td></td><td><code>Task</code>、<code>TaskStatus</code></td><td>任务实体与状态</td></tr>
+        <tr><td><code>repository</code></td><td><code>InMemoryUserRepository</code></td><td>账号内存仓库与种子数据</td></tr>
+        <tr><td></td><td><code>TaskRepository</code></td><td>任务内存仓库，预置两条</td></tr>
+        <tr><td><code>service</code></td><td><code>AuthService</code></td><td>登录，换令牌</td></tr>
+        <tr><td></td><td><code>TaskService</code></td><td>提交、我的、全部、批改，含归属判断</td></tr>
+        <tr><td></td><td><code>AccountUserDetailsService</code></td><td>按用户名装账号</td></tr>
+        <tr><td></td><td><code>UserAdminService</code></td><td>账号增删查</td></tr>
+        <tr><td><code>controller</code></td><td><code>AuthController</code></td><td><code>/auth/login</code>、<code>/auth/me</code></td></tr>
+        <tr><td></td><td><code>TaskController</code></td><td>任务五条路径，注解上写着谁能调</td></tr>
+        <tr><td></td><td><code>UserAdminController</code></td><td><code>/admin/users</code></td></tr>
+        <tr><td></td><td><code>PublicController</code></td><td>放行接口，用来对比</td></tr>
+        <tr><td><code>common</code></td><td><code>Result</code>、<code>ErrorCode</code>、<code>BusinessException</code>、<code>GlobalExceptionHandler</code></td><td>统一响应、错误码、异常兜底</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>前端 <span class="mono muted" style="font-size:14px">09-security/web/src</span></h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:150px">文件</th><th>一句话</th><th>改它做什么</th></tr></thead>
+      <tbody>
+        <tr><td><code>api/request.js</code></td><td>拦截器：加令牌、处理 401/403</td><td>鉴权相关的坑都在这里</td></tr>
+        <tr><td><code>api/index.js</code></td><td>所有接口地址集中一处</td><td>后端改路径只改这里</td></tr>
+        <tr><td><code>store/auth.js</code></td><td>令牌与用户信息的读写</td><td>换存储位置（改成 sessionStorage）</td></tr>
+        <tr><td><code>router/index.js</code></td><td>路由表与守卫</td><td>加页面、改角色门槛</td></tr>
+        <tr><td><code>views/Login.vue</code></td><td>登录页</td><td>—</td></tr>
+        <tr><td><code>views/TaskList.vue</code></td><td>学生：提交与我的提交</td><td>—</td></tr>
+        <tr><td><code>views/ReviewList.vue</code></td><td>教师：全部提交与批改</td><td>—</td></tr>
+        <tr><td><code>views/Users.vue</code></td><td>管理员：账号管理</td><td>—</td></tr>
+        <tr><td><code>App.vue</code></td><td>顶栏菜单按角色显示</td><td>加菜单项</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="num">09</span>排错表</h2>
+  <div class="sec-rule"></div>
+  <p>按现象查，不按知识点查。这张表里的每一条都在课堂上真出现过。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:27%">现象</th><th>原因</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>未认证返回 302 跳到 /login</td><td><code>formLogin</code> 没关</td><td><code>formLogin(AbstractHttpConfigurer::disable)</code></td></tr>
+        <tr><td>401 响应体是空白 HTML</td><td>没配 entryPoint</td><td>指定自己的 <code>RestAuthenticationEntryPoint</code></td></tr>
+        <tr><td>登录接口也 401</td><td>没放行 <code>/auth/login</code>，或规则顺序写反</td><td><code>permitAll</code> 写在 <code>anyRequest</code> 之前</td></tr>
+        <tr><td>带令牌仍 401</td><td>令牌过期、被改、或签发与解析不是同一个密钥</td><td>解码看 <code>exp</code>；确认配置只有一个密钥</td></tr>
+        <tr><td>带令牌仍 403</td><td>角色没拿到对应权限点</td><td><code>GET /auth/me</code> 看 <code>authorities</code> 实际内容</td></tr>
+        <tr><td><code>hasRole</code> 永远不通过</td><td>权限集合里少了 <code>ROLE_</code> 前缀</td><td>统一用 <code>Role.authority()</code> 生成</td></tr>
+        <tr><td>启动报 WeakKeyException</td><td>密钥短于 32 字节</td><td>换长密钥，<code>@Size(min=32)</code> 会提前拦</td></tr>
+        <tr><td>令牌 Header 里是 HS384</td><td>用了 <code>signWith(key)</code> 单参数版</td><td>显式 <code>signWith(key, Jwts.SIG.HS256)</code></td></tr>
+        <tr><td>过滤器跑了两遍</td><td>它既是 Bean 又被加进链</td><td>去掉 <code>@Component</code>，配置类里 <code>new</code></td></tr>
+        <tr><td><code>@PreAuthorize</code> 不生效</td><td>少 <code>@EnableMethodSecurity</code></td><td>加在配置类上</td></tr>
+        <tr><td>越权返回 200 而不是 403</td><td>处理器返回了裸 <code>Result</code></td><td>用 <code>ResponseEntity.status(403)</code></td></tr>
+        <tr><td>前端一点就跳登录</td><td>把 403 也当成 401 处理</td><td>拦截器里分开两个分支</td></tr>
+        <tr><td>刷新页面掉登录</td><td>令牌只存了内存变量</td><td>存 localStorage，初始化时读回来</td></tr>
+        <tr><td>学生能看到别人的数据</td><td>用户名来自请求参数</td><td>改成从 <code>@AuthenticationPrincipal</code> 取</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>课堂练习</h2>
+  <div class="sec-rule"></div>
+  <p>每个练习都在 5 到 8 分钟内完成，改完当场能看到结果。</p>
+
+  <h3>练习一：让教师也能提交一条教学示范</h3>
+  <p>现在教师调 <code class="i">POST /api/tasks</code> 是 403。要求教师也能提交，但学生依旧不能批改。</p>
+  <div class="tip">
+    <b>参考答案</b>
+    <p>给 <code class="i">Role.TEACHER</code> 加 <code class="i">task:submit</code>，重启后教师就能提交。整个改动只碰一行枚举，接口代码没动，这正是权限点的价值。</p>
+    <p>顺便问一句：为什么不能直接把 <code class="i">@PreAuthorize</code> 改成 <code class="i">hasAnyAuthority('task:submit','task:review')</code>？能跑，但把“谁能提交”这条业务规则藏进了接口注解里，下次再变又要改代码。</p>
+  </div>
+
+  <h3>练习二：让学生能撤回自己还没被批改的任务</h3>
+  <p>加一个 <code class="i">DELETE /api/tasks/{id}</code>，只有本人、且状态是“待批改”时才能删。</p>
+  <div class="tip">
+    <b>参考答案</b>
+    <p>Controller 只要求登录，把判断放进 Service：</p>
+  </div>
+  <div class="code"><pre data-lang="java"><code>public void withdraw(Long id, SecurityUser user) {
+    Task task = find(id);
+    if (!task.getOwnerUsername().equals(user.getUsername())) {
+        throw new BusinessException(ErrorCode.FORBIDDEN);      // 不是本人的，403
+    }
+    if (task.getStatus() == TaskStatus.REVIEWED) {
+        throw new BusinessException(ErrorCode.TASK_ALREADY_REVIEWED);
+    }
+    taskRepository.delete(id);
+}</code></pre></div>
+  <p>检查三点：学生删别人的要 403；删已批改的要给业务提示；教师没有 <code class="i">task:submit</code>，是否允许教师删要明确写出来，别默认能删。</p>
+
+  <h3>练习三：把令牌有效期改成 1 分钟</h3>
+  <p>改配置 <code class="i">app.jwt.expire-minutes: 1</code>，登录后用页面点几个操作，等一分钟再点，观察前端反应。</p>
+  <div class="tip">
+    <b>预期现象</b>
+    <p>一分钟后的第一个请求返回 401，拦截器清登录态并跳到登录页，登录后回到原来的页面。这条练完，学生就真正理解 401 和“刷新令牌”为什么存在。</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>小结</h2>
+  <div class="sec-rule"></div>
+  <p>整个模块其实只有六个动作，串起来就是一条完整链路：</p>
+
+  <div class="step"><div class="n">1</div><div class="c"><h5>登录换令牌</h5><p>密码校验交给 <code class="i">AuthenticationManager</code>，通过后签发 JWT，里面只有身份和有效期。</p></div></div>
+  <div class="step"><div class="n">2</div><div class="c"><h5>前端存令牌</h5><p>存 localStorage，刷新页面不掉登录；退出就是清空。</p></div></div>
+  <div class="step"><div class="n">3</div><div class="c"><h5>每个请求带令牌</h5><p>axios 请求拦截器统一加 <code class="i">Authorization</code>，页面不用管。</p></div></div>
+  <div class="step"><div class="n">4</div><div class="c"><h5>后端过滤器认人</h5><p>验签、查过期、按用户名回查账号，写进 <code class="i">SecurityContext</code>，位置在授权判断之前。</p></div></div>
+  <div class="step"><div class="n">5</div><div class="c"><h5>按归属限数据，按权限点限操作</h5><p>归属从令牌取，不看参数；操作看 <code class="i">hasAuthority</code>，不看角色名。</p></div></div>
+  <div class="step"><div class="n">6</div><div class="c"><h5>前端分开处理 401 与 403</h5><p>401 跳登录并记住来处，403 只提示，绝不踢下线。</p></div></div>
+
+  <div class="note">
+    <b>三个可以被反复问到的判断</b>
+    <p><b>“为什么令牌里不放权限？”</b> 令牌签发后改不了，降级不生效。放身份、回查权限，代价是每个请求多一次查询。</p>
+    <p><b>“前端守卫都做了，后端还要判吗？”</b> 要。前端能被绕过，后端是唯一可信的一层。</p>
+    <p><b>“401 和 403 一定要分开吗？”</b> 一定要。混在一起，学生点一个没权限的按钮就会被踢下线，体验是坏的。</p>
+  </div>
+
+  <div class="tip">
+    <b>课后作业</b>
+    <p>一是把账号与任务换成 MyBatis-Plus 存库，要求 <code class="i">UserDetailsService</code> 与鉴权代码零改动；二是加刷新令牌，让改密码后旧令牌立刻失效，并写测试证明。</p>
+  </div>
+
+  <div class="foot">
+    后端工程化开发 · 模块 09 认证与授权 · 案例：实训任务提交与批改<br>
+    后端 <code class="i">09-security</code>（22 个测试用例）· 前端 <code class="i">09-security/web</code>（4 个页面）<br>
+    Spring Boot 4.1.1 / Spring Security 7.1.1 / jjwt 0.13.0 / Java 21 / Vue 3.5 / Vite 8 / axios 1.21
+  </div>
+</section>
+
+
+</div>
+</main>
+</div>
+
+<button class="top" id="toTop" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  var RULES = {
+    java: [
+      ["com", /\/\/[^\n]*|\/\*[\s\S]*?\*\//],
+      ["str", /"(?:\\\\.|[^"\\\\])*"/],
+      ["ann", /@[A-Za-z_][\w.]*/],
+      ["kw", /\b(?:public|private|protected|static|final|abstract|class|interface|enum|record|extends|implements|return|new|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|throws|void|int|long|short|byte|char|boolean|float|double|var|null|true|false|import|package|this|super|instanceof)\b/],
+      ["num", /\b\d[\d_]*(?:\.\d+)?[LlFfDd]?\b/],
+      ["type", /\b[A-Z][A-Za-z0-9_]*\b/]
+    ],
+    js: [
+      ["com", /\/\/[^\n]*|\/\*[\s\S]*?\*\//],
+      ["str", /'(?:\\\\.|[^'\\\\])*'|"(?:\\\\.|[^"\\\\])*"|`(?:\\\\.|[^`\\\\])*`/],
+      ["kw", /\b(?:import|from|export|default|const|let|var|function|return|if|else|for|while|try|catch|finally|throw|new|await|async|of|in|null|true|false|undefined|typeof)\b/],
+      ["num", /\b\d+(?:\.\d+)?\b/],
+      ["type", /\b[A-Z][A-Za-z0-9_]*\b/]
+    ],
+    bash: [
+      ["com", /#[^\n]*/],
+      ["str", /'[^'\n]*'|"[^"\n]*"/],
+      ["kw", /^\s*(?:curl|npm|mvn|git|cd|echo|export)\b/m],
+      ["num", /--?[A-Za-z][\w-]*/]
+    ],
+    json: [
+      ["attr", /"[^"\n]*"(?=\s*:)/],
+      ["str", /"[^"\n]*"/],
+      ["num", /\b-?\d+(?:\.\d+)?\b/],
+      ["kw", /\b(?:true|false|null)\b/]
+    ]
+  };
+
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function hl(code, lang){
+    var rules = RULES[lang];
+    if(!rules) return esc(code);
+    var src = "", i;
+    for(i=0;i<rules.length;i++){ src += (i?"|":"") + "(?<g" + i + ">" + rules[i][1].source + ")"; }
+    var re = new RegExp(src, "gm"), out = "", last = 0, m;
+    while((m = re.exec(code)) !== null){
+      if(m[0] === ""){ re.lastIndex++; continue; }
+      out += esc(code.slice(last, m.index));
+      var cls = "tk-unk", gi;
+      for(gi=0; gi<rules.length; gi++){ if(m.groups && m.groups["g"+gi] !== undefined){ cls = "tk-" + rules[gi][0]; break; } }
+      out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    return out + esc(code.slice(last));
+  }
+
+  var LABEL = { java:"Java", js:"JavaScript", bash:"Shell", json:"JSON", text:"", http:"" };
+
+  document.querySelectorAll("pre").forEach(function(pre){
+    var code = pre.querySelector("code");
+    if(!code) return;
+    var lang = pre.getAttribute("data-lang") || "text";
+    var raw = code.textContent;
+    if(RULES[lang]) code.innerHTML = hl(raw, lang);
+
+    var box = document.createElement("div");
+    box.className = "code";
+    pre.parentNode.insertBefore(box, pre);
+    box.appendChild(pre);
+
+    var head = document.createElement("div");
+    head.className = "code-h";
+    var lb = LABEL[lang] !== undefined ? LABEL[lang] : lang;
+    head.innerHTML = "<span>" + (lb || "CODE") + "</span>";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "复制";
+    btn.addEventListener("click", function(){
+      var done = function(){ btn.textContent = "已复制"; setTimeout(function(){ btn.textContent = "复制"; }, 1400); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(raw).then(done, fallback);
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement("textarea");
+        ta.value = raw; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try{ document.execCommand("copy"); done(); }catch(e){ btn.textContent = "复制失败"; }
+        document.body.removeChild(ta);
+      }
+    });
+    head.appendChild(btn);
+    box.insertBefore(head, pre);
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute("href").slice(1)); });
+  var activeIdx = -1;
+
+  function sync(){
+    var y = window.scrollY + 90, i, idx = 0;
+    for(i=0;i<targets.length;i++){ if(targets[i] && targets[i].offsetTop <= y) idx = i; }
+    if(idx === activeIdx) return;
+    activeIdx = idx;
+    links.forEach(function(a){ a.classList.remove("active"); });
+    if(links[idx]) links[idx].classList.add("active");
+  }
+
+  var pbar = document.getElementById("pbar"), toTop = document.getElementById("toTop");
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    pbar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0).toFixed(2) + "%";
+    toTop.classList.toggle("show", window.scrollY > 600);
+    sync();
+  }
+  window.addEventListener("scroll", onScroll, { passive:true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+  toTop.addEventListener("click", function(){ window.scrollTo({ top:0, behavior:"smooth" }); });
+
+  var secs = Array.prototype.slice.call(document.querySelectorAll("section[id]"));
+  document.addEventListener("keydown", function(e){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+    if(e.key === "ArrowRight" || e.key === "ArrowLeft"){
+      var y = window.scrollY + 100, cur = 0, i;
+      for(i=0;i<secs.length;i++){ if(secs[i].offsetTop <= y) cur = i; }
+      var next = e.key === "ArrowRight" ? Math.min(cur + 1, secs.length - 1) : Math.max(cur - 1, 0);
+      if(next !== cur){ e.preventDefault(); window.scrollTo({ top: secs[next].offsetTop - 12, behavior:"smooth" }); }
+    } else if(e.key === "t" || e.key === "T"){
+      document.documentElement.setAttribute("data-theme",
+        document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+    } else if(e.key === "p" || e.key === "P"){ window.print(); }
+  });
+})();
+</script>
+</body>
+</html>
