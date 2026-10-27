@@ -201,6 +201,7 @@ pre code{font-family:inherit;color:var(--text)}
     <a href="#s4">前端三件事</a>
     <a href="#s4-1" class="lv2">请求拦截器</a>
     <a href="#s4-2" class="lv2">401 与 403 分开处理</a>
+    <a href="#s4-types" class="lv2">类型怎么串起来</a>
     <a href="#s4-3" class="lv2">路由守卫</a>
     <a href="#s5">数据归属</a>
     <a href="#s6">权限点</a>
@@ -227,9 +228,9 @@ pre code{font-family:inherit;color:var(--text)}
     <span class="chip"><b>90</b> 分钟</span>
     <span class="chip">一个案例贯穿</span>
     <span class="chip">后端 <b>22</b> 个测试</span>
-    <span class="chip">前端 <b>4</b> 个页面</span>
-    <span class="chip">Spring Boot <b>4.1.1</b> · Security <b>7.1.1</b> · jjwt <b>0.13.0</b></span>
-    <span class="chip">Vue <b>3.5</b> · Vite <b>8</b> · axios <b>1.21</b></span>
+    <span class="chip">前端 <b>TypeScript</b></span>
+    <span class="chip">Spring Boot <b>4.1.1</b> · Security <b>7.1.1</b> · MyBatis-Plus <b>3.5.17</b> · MySQL <b>8.4</b></span>
+    <span class="chip">Vue <b>3.5</b> · TS <b>5.9</b> · Vite <b>8</b> · axios <b>1.21</b></span>
   </div>
 </header>
 
@@ -328,11 +329,11 @@ pre code{font-family:inherit;color:var(--text)}
     <table>
       <thead><tr><th>账号</th><th>密码</th><th>角色</th><th>说明</th></tr></thead>
       <tbody>
-        <tr><td class="mono">student01</td><td class="mono">student123</td><td>STUDENT</td><td>预置了一条待批改的任务</td></tr>
-        <tr><td class="mono">student02</td><td class="mono">student123</td><td>STUDENT</td><td>预置了一条已批改的任务，用来演示越权</td></tr>
-        <tr><td class="mono">teacher01</td><td class="mono">teacher123</td><td>TEACHER</td><td>能看全部、能批改</td></tr>
-        <tr><td class="mono">admin</td><td class="mono">admin123</td><td>ADMIN</td><td>全部提交 + 账号管理</td></tr>
-        <tr><td class="mono">guest</td><td class="mono">guest123</td><td>STUDENT</td><td>登录直接失败，账号已停用</td></tr>
+        <tr><td class="mono">student01</td><td class="mono">Student#2026</td><td>STUDENT</td><td>预置了一条待批改的任务</td></tr>
+        <tr><td class="mono">student02</td><td class="mono">Student#2026</td><td>STUDENT</td><td>预置了一条已批改的任务，用来演示越权</td></tr>
+        <tr><td class="mono">teacher01</td><td class="mono">Teacher#2026</td><td>TEACHER</td><td>能看全部、能批改</td></tr>
+        <tr><td class="mono">admin</td><td class="mono">Admin#2026</td><td>ADMIN</td><td>全部提交 + 账号管理</td></tr>
+        <tr><td class="mono">guest</td><td class="mono">Guest#2026</td><td>STUDENT</td><td>登录直接失败，账号已停用</td></tr>
       </tbody>
     </table>
   </div>
@@ -453,6 +454,45 @@ export function clearLogin() {
 <section id="s3">
   <h2><span class="num">03</span>之后每个请求，后端怎么认出你</h2>
   <div class="sec-rule"></div>
+  <p>令牌只写身份，权限每次回库查，所以先得把数据放好。四张表，与 05-mybatis 共用一个库，表名加 <code class="i">sec_</code> 前缀避免冲突。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>表</th><th>关键列</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>sec_role</code></td><td><code>code</code> 唯一</td><td>STUDENT / TEACHER / ADMIN</td></tr>
+        <tr><td><code>sec_user</code></td><td><code>username</code> 唯一、<code>password</code>、<code>enabled</code></td><td>账号，密码存 BCrypt 密文</td></tr>
+        <tr><td><code>sec_user_role</code></td><td>主键 <code>(user_id, role_id)</code></td><td>用户与角色多对多</td></tr>
+        <tr><td><code>sec_task</code></td><td><code>owner_id</code>、<code>status</code>、<code>score</code></td><td>任务，归属指向 <code>sec_user.id</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>两个设计点在课上值得说一句。<b>归属存 id 不存用户名</b>：用户名将来可能允许改，历史任务的提交人不能跟着变。<b>权限点没建表</b>：角色与用户的绑定是运行期数据，权限点是代码资产，跟着接口一起评审，放 <code class="i">Role</code> 枚举里改一行就能 review 出影响面。</p>
+
+  <p>单表增删改查交给 MyBatis-Plus，一行都不用写 SQL：</p>
+  <div class="code"><pre data-lang="java"><code>public interface UserMapper extends BaseMapper&lt;User&gt; {
+}
+
+// 按用户名查人，列名下划线自动转驼峰
+User user = userMapper.selectOne(
+        new LambdaQueryWrapper&lt;User&gt;().eq(User::getUsername, username));</code></pre></div>
+
+  <p>要显示提交人姓名的联表查询，老老实实写 SQL，比用条件构造器拼子查询好读：</p>
+  <div class="code"><pre data-lang="java"><code>String SELECT_COLUMNS = """
+        t.id, t.title, t.content, t.owner_id, t.status, t.score, t.comment,
+        t.submitted_at, t.reviewed_at,
+        u.username AS owner, u.nickname AS owner_nickname
+        """;
+
+@Select("SELECT " + SELECT_COLUMNS + FROM_JOIN + "WHERE t.owner_id = #{ownerId} ORDER BY t.submitted_at DESC")
+List&lt;TaskRow&gt; selectRowsByOwnerId(@Param("ownerId") Long ownerId);</code></pre></div>
+
+  <div class="note">
+    <b>分层上的一条规矩</b>
+    <p>实体不出 service。<code class="i">User</code> 只在 mapper 与 service 之间传，接口出参是 <code class="i">UserProfile</code>，密码不可能顺着实体漏出去。安全层再隔一层 <code class="i">Account</code>（用户 + 角色的领域对象），<code class="i">SecurityUser</code> 就不必知道表结构。</p>
+  </div>
+
   <p>拿到了令牌，请求头里带上 <code class="i">Authorization: Bearer eyJ...</code>。后端要在进入 Controller 之前把它换成一个“已认证的身份”。这件事由一个自己写的过滤器完成。</p>
 
   <div class="flow">
@@ -552,19 +592,19 @@ request.interceptors.request.use((config) =&gt; {
   <div class="code"><pre data-lang="js"><code>request.interceptors.response.use(
   (response) =&gt; {
     // 业务失败也是 HTTP 200，靠 code 区分
-    const body = response.data
-    if (body.code === 200) return body.data
+    const body = response.data as ApiResult&lt;unknown&gt;
+    if (body.code === 200) return body.data as never
     notify(body.message || '操作失败')
     return Promise.reject(new Error(body.message))
   },
-  (error) =&gt; {
+  (error: AxiosError&lt;ApiResult&lt;unknown&gt;&gt;) =&gt; {
     const status = error.response?.status
 
     if (status === 401) {
       clearLogin()
       const from = router.currentRoute.value.fullPath
       router.push({ path: '/login', query: { redirect: from } })
-      notify('登录已失效，请重新登录')
+      notify(error.response?.data?.message || '登录已失效，请重新登录')
     } else if (status === 403) {
       notify(error.response?.data?.message || '你没有权限做这个操作')   // 不动登录态
     } else if (status) {
@@ -579,6 +619,39 @@ request.interceptors.request.use((config) =&gt; {
   <div class="note">
     <b>这里的两层判断要讲清</b>
     <p>第一层是 HTTP 状态码，处理“没登录”“没权限”这类协议层的事；第二层是响应体里的 <code class="i">code</code>，处理“任务已批改”“用户名已存在”这类业务失败。后端约定业务失败仍返回 200，所以少了第二层判断，业务错误会被当成成功。</p>
+  </div>
+
+  <h3 id="s4-types">类型怎么串起来</h3>
+  <p>类型写在 <code class="i">src/types/api.ts</code>，一条条对着后端的 vo 与 dto 核过。改后端字段时先改这里，<code class="i">npm run typecheck</code> 会把所有用到的地方指出来。</p>
+  <div class="code"><pre data-lang="js"><code>export interface TaskView {
+  id: number
+  title: string
+  owner: string
+  status: TaskStatusCode            // 'SUBMITTED' | 'REVIEWED'
+  statusText: string
+  score: number | null              // 未批改时为空，不写 null 页面就会崩
+  comment: string | null
+  submittedAt: string
+  reviewedAt: string | null
+}</code></pre></div>
+
+  <p>拦截器把 <code class="i">Result</code> 拆成了 <code class="i">data</code>，但 axios 的类型仍认为返回完整响应。只在 <code class="i">http</code> 工具里收敛一次，页面里就都是实打实的类型：</p>
+  <div class="code"><pre data-lang="js"><code>async function unwrap&lt;T&gt;(promise: Promise&lt;unknown&gt;): Promise&lt;T&gt; {
+  return (await promise) as T
+}
+
+export const http = {
+  get: &lt;T&gt;(url: string) =&gt; unwrap&lt;T&gt;(request.get(url)),
+  post: &lt;T&gt;(url: string, data?: unknown) =&gt; unwrap&lt;T&gt;(request.post(url, data)),
+  del: &lt;T&gt;(url: string) =&gt; unwrap&lt;T&gt;(request.del(url)),
+}
+
+// 接口清单因此可以一行一个，返回值类型直接写在签名上
+export const myTasks = () =&gt; http.get&lt;TaskView[]&gt;('/api/tasks/mine')</code></pre></div>
+
+  <div class="tip">
+    <b>类型检查当成编译的一部分</b>
+    <p><code class="i">npm run build</code> 会先跑 <code class="i">vue-tsc --noEmit</code> 再打包。字段名写错、少了 null 判断、角色名写错，在打包这一步就过不去，不用等浏览器里白屏才发现。</p>
   </div>
 
   <h3 id="s4-3">路由守卫：别让人手输地址进去</h3>
@@ -634,7 +707,7 @@ request.interceptors.request.use((config) =&gt; {
  */
 @GetMapping("/mine")
 public Result&lt;List&lt;TaskView&gt;&gt; mine(@AuthenticationPrincipal SecurityUser user) {
-    return Result.ok(taskService.listMine(user.getUsername()));
+    return Result.ok(taskService.listMine(user.id()));   // id 来自令牌，不是请求参数
 }</code></pre></div>
 
   <p>提交任务时同理，请求体里根本没有 owner 字段。前端就算硬塞一个进去，也不会被采纳：</p>
@@ -648,18 +721,18 @@ public Result&lt;List&lt;TaskView&gt;&gt; mine(@AuthenticationPrincipal Security
   <h3>换个编号就能看别人的详情，怎么办</h3>
   <p>详情接口 <code class="i">GET /api/tasks/{id}</code> 的编号一定可以被改，所以必须在服务端判断“这条记录归不归你”：</p>
   <div class="code"><pre data-lang="java"><code>public TaskView detail(Long id, SecurityUser viewer) {
-    Task task = find(id);
-    if (!canView(task, viewer)) {
+    TaskRow row = findRow(id);
+    if (!canView(row, viewer)) {
         throw new BusinessException(ErrorCode.FORBIDDEN);
     }
-    return TaskView.of(task);
+    return TaskView.of(row);
 }
 
 /**
  * 两种人能看：提交人本人，或者有批改权限的教师与管理员
  */
-private boolean canView(Task task, SecurityUser viewer) {
-    if (task.getOwnerUsername().equals(viewer.getUsername())) return true;
+private boolean canView(TaskRow row, SecurityUser viewer) {
+    if (row.getOwnerId().equals(viewer.id())) return true;
     return viewer.getAuthorities().stream()
             .anyMatch(authority -&gt; authority.getAuthority().equals("task:review"));
 }</code></pre></div>
@@ -721,8 +794,8 @@ return ResponseEntity.status(status).body(Result.fail(e.getErrorCode()));</code>
 <section id="s7">
   <h2><span class="num">07</span>把两个项目跑起来</h2>
   <div class="sec-rule"></div>
-  <p>两个终端，两个命令：</p>
-  <div class="code"><pre data-lang="bash"><code># 终端一：后端，8009
+  <p>先确认 MySQL 已启动，数据源与 05-mybatis 一致，库会自动建。然后两个终端，两个命令：</p>
+  <div class="code"><pre data-lang="bash"><code># 终端一：后端，8009，启动时自动建表并灌演示数据
 cd 09-security
 mvn spring-boot:run
 
@@ -730,14 +803,15 @@ mvn spring-boot:run
 cd 09-security/web
 npm install     # 第一次才需要
 npm run dev</code></pre></div>
-  <p>浏览器打开 <code class="i">http://localhost:5173</code>，用页面上的快捷按钮切换三个账号登录。</p>
+  <p>浏览器打开 <code class="i">http://localhost:5173</code>，用页面上的快捷按钮切换三个账号登录。Vite 8 只监听 <code class="i">::1</code>，用 <code class="i">127.0.0.1:5173</code> 会连不上。</p>
 
   <h3>跨域就靠这段代理</h3>
   <div class="code"><pre data-lang="js"><code>server: {
   port: 5173,
   proxy: {
-    '/api':  { target: 'http://127.0.0.1:8009', changeOrigin: true },
-    '/auth': { target: 'http://127.0.0.1:8009', changeOrigin: true },
+    '/api':   { target: 'http://127.0.0.1:8009', changeOrigin: true },
+    '/auth':  { target: 'http://127.0.0.1:8009', changeOrigin: true },
+    '/admin': { target: 'http://127.0.0.1:8009', changeOrigin: true },
   },
 }</code></pre></div>
   <p>浏览器全程只访问 5173，请求由 Vite 转发给 8009，所以开发时根本不存在跨域。上线分离部署时没有这层代理，才需要后端那份 CORS 配置，本模块也一并写好了（<code class="i">SecurityConfig#corsConfigurationSource</code>）。</p>
@@ -745,6 +819,7 @@ npm run dev</code></pre></div>
   <div class="warn">
     <b>代理路径写错是最常见的第一天问题</b>
     <p>前端请求 <code class="i">/api/tasks</code>，代理只配了 <code class="i">/tasks</code>，结果请求打到 5173 自己身上，返回一个 HTML 页面，前端解析 JSON 失败。现象是“接口没报错但拿不到数据”，看 Network 里请求地址就知道对不对。</p>
+    <p>这份代码最初就漏了 <code class="i">/admin</code>：学生页、教师页都正常，只有管理员页面打开是空白，因为 <code class="i">/admin/users</code> 拿回来的是 <code class="i">index.html</code>。代理前缀必须和实际接口路径一条条对齐。</p>
   </div>
 
   <div class="tw">
@@ -764,55 +839,60 @@ npm run dev</code></pre></div>
 <section id="s8">
   <h2><span class="num">08</span>代码地图</h2>
   <div class="sec-rule"></div>
-  <p>学生拿到代码先看这张表，知道自己改哪个文件。后端 28 个类按职责分组，前端 12 个文件。</p>
+  <p>学生拿到代码先看这张表，知道自己改哪个文件。后端按分层排，前端按职责排。</p>
 
   <h3>后端 <span class="mono muted" style="font-size:14px">09-security/src/main/java/top/mqxu/security</span></h3>
   <div class="tw">
     <table>
-      <thead><tr><th style="width:104px">包</th><th>文件</th><th>一句话</th></tr></thead>
+      <thead><tr><th style="width:96px">包</th><th>文件</th><th>一句话</th></tr></thead>
       <tbody>
+        <tr><td>根</td><td><code>SecurityApplication</code></td><td>启动类，<code>@MapperScan</code> 扫 mapper 包</td></tr>
         <tr><td><code>config</code></td><td><code>SecurityConfig</code></td><td>过滤链、认证管理器、密码编码器、跨域</td></tr>
         <tr><td></td><td><code>JwtProperties</code></td><td>密钥、签发方、有效期，启动时校验</td></tr>
+        <tr><td><code>entity</code></td><td><code>User</code>（sec_user）</td><td>账号表映射，不出 service</td></tr>
+        <tr><td></td><td><code>Task</code>（sec_task）</td><td>任务表映射，归属是 ownerId</td></tr>
+        <tr><td><code>mapper</code></td><td><code>UserMapper</code></td><td>继承 BaseMapper，单表 CRUD 不用写 SQL</td></tr>
+        <tr><td></td><td><code>TaskMapper</code></td><td>BaseMapper + 三个联表 @Select</td></tr>
+        <tr><td></td><td><code>RoleMapper</code>、<code>UserRoleMapper</code></td><td>角色查询与用户角色关联（组合主键，手写注解 SQL）</td></tr>
+        <tr><td><code>model</code></td><td><code>Account</code></td><td>用户 + 角色的领域对象，安全层只认它</td></tr>
+        <tr><td></td><td><code>Role</code></td><td>三个角色与权限点</td></tr>
+        <tr><td></td><td><code>TaskStatus</code>、<code>TaskRow</code>、<code>UserRoleEntry</code></td><td>状态枚举、联表投影、关联查询结果</td></tr>
+        <tr><td><code>service</code></td><td><code>AuthService</code></td><td>登录，换令牌</td></tr>
+        <tr><td></td><td><code>UserService</code></td><td>按用户名取账号、账号列表、新增、删除（含事务）</td></tr>
+        <tr><td></td><td><code>TaskService</code></td><td>提交、我的、全部、批改，含归属判断</td></tr>
+        <tr><td></td><td><code>AccountUserDetailsService</code></td><td>把账号装成 UserDetails</td></tr>
         <tr><td><code>security</code></td><td><code>JwtTokenService</code></td><td>签发与解析令牌，固定 HS256</td></tr>
         <tr><td></td><td><code>JwtAuthenticationFilter</code></td><td>令牌换身份，写进 SecurityContext</td></tr>
-        <tr><td></td><td><code>SecurityUser</code></td><td>把我们自己的账号适配成 UserDetails</td></tr>
-        <tr><td></td><td><code>RestAuthenticationEntryPoint</code></td><td>没登录时回 401 的 JSON</td></tr>
-        <tr><td></td><td><code>RestAccessDeniedHandler</code></td><td>URL 级越权时回 403 的 JSON</td></tr>
-        <tr><td></td><td><code>RestErrorWriter</code></td><td>上面两个共用的写响应工具</td></tr>
-        <tr><td><code>model</code></td><td><code>Role</code></td><td>三个角色和权限点</td></tr>
-        <tr><td></td><td><code>UserAccount</code></td><td>账号实体，密码存密文</td></tr>
-        <tr><td></td><td><code>Task</code>、<code>TaskStatus</code></td><td>任务实体与状态</td></tr>
-        <tr><td><code>repository</code></td><td><code>InMemoryUserRepository</code></td><td>账号内存仓库与种子数据</td></tr>
-        <tr><td></td><td><code>TaskRepository</code></td><td>任务内存仓库，预置两条</td></tr>
-        <tr><td><code>service</code></td><td><code>AuthService</code></td><td>登录，换令牌</td></tr>
-        <tr><td></td><td><code>TaskService</code></td><td>提交、我的、全部、批改，含归属判断</td></tr>
-        <tr><td></td><td><code>AccountUserDetailsService</code></td><td>按用户名装账号</td></tr>
-        <tr><td></td><td><code>UserAdminService</code></td><td>账号增删查</td></tr>
-        <tr><td><code>controller</code></td><td><code>AuthController</code></td><td><code>/auth/login</code>、<code>/auth/me</code></td></tr>
-        <tr><td></td><td><code>TaskController</code></td><td>任务五条路径，注解上写着谁能调</td></tr>
-        <tr><td></td><td><code>UserAdminController</code></td><td><code>/admin/users</code></td></tr>
-        <tr><td></td><td><code>PublicController</code></td><td>放行接口，用来对比</td></tr>
+        <tr><td></td><td><code>SecurityUser</code></td><td><code>UserDetails</code> 适配，多带一个 <code>id()</code></td></tr>
+        <tr><td></td><td><code>RestAuthenticationEntryPoint</code>、<code>RestAccessDeniedHandler</code>、<code>RestErrorWriter</code></td><td>401 与 403 的 JSON 响应</td></tr>
+        <tr><td><code>controller</code></td><td><code>AuthController</code>、<code>TaskController</code>、<code>UserAdminController</code>、<code>PublicController</code></td><td>四组接口，注解上写着谁能调</td></tr>
         <tr><td><code>common</code></td><td><code>Result</code>、<code>ErrorCode</code>、<code>BusinessException</code>、<code>GlobalExceptionHandler</code></td><td>统一响应、错误码、异常兜底</td></tr>
+        <tr><td><code>dto</code> / <code>vo</code></td><td>登录、提交、批改、建号的入参；登录响应、账号视图、任务视图</td><td>入参校验与出参白名单</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h3>前端 <span class="mono muted" style="font-size:14px">09-security/web/src</span></h3>
+  <h3>前端 <span class="mono muted" style="font-size:14px">09-security/web</span></h3>
   <div class="tw">
     <table>
       <thead><tr><th style="width:150px">文件</th><th>一句话</th><th>改它做什么</th></tr></thead>
       <tbody>
-        <tr><td><code>api/request.js</code></td><td>拦截器：加令牌、处理 401/403</td><td>鉴权相关的坑都在这里</td></tr>
-        <tr><td><code>api/index.js</code></td><td>所有接口地址集中一处</td><td>后端改路径只改这里</td></tr>
-        <tr><td><code>store/auth.js</code></td><td>令牌与用户信息的读写</td><td>换存储位置（改成 sessionStorage）</td></tr>
-        <tr><td><code>router/index.js</code></td><td>路由表与守卫</td><td>加页面、改角色门槛</td></tr>
-        <tr><td><code>views/Login.vue</code></td><td>登录页</td><td>—</td></tr>
-        <tr><td><code>views/TaskList.vue</code></td><td>学生：提交与我的提交</td><td>—</td></tr>
-        <tr><td><code>views/ReviewList.vue</code></td><td>教师：全部提交与批改</td><td>—</td></tr>
-        <tr><td><code>views/Users.vue</code></td><td>管理员：账号管理</td><td>—</td></tr>
-        <tr><td><code>App.vue</code></td><td>顶栏菜单按角色显示</td><td>加菜单项</td></tr>
+        <tr><td><code>src/types/api.ts</code></td><td>与后端一一对应的类型</td><td>后端加字段先改这里</td></tr>
+        <tr><td><code>src/api/request.ts</code></td><td>拦截器：加令牌、401/403 分流、类型收敛</td><td>鉴权相关的坑都在这里</td></tr>
+        <tr><td><code>src/api/index.ts</code></td><td>接口清单，每个方法带返回类型</td><td>后端改路径只改这里</td></tr>
+        <tr><td><code>src/store/auth.ts</code></td><td>令牌与当前用户的读写</td><td>换存储位置</td></tr>
+        <tr><td><code>src/router/index.ts</code></td><td>路由表与守卫，<code>meta</code> 有类型</td><td>加页面、改角色门槛</td></tr>
+        <tr><td><code>src/views/</code></td><td>登录、我的提交、待批改、账号管理</td><td>业务页面</td></tr>
+        <tr><td><code>src/App.vue</code></td><td>顶栏菜单按角色显示</td><td>加菜单项</td></tr>
+        <tr><td><code>tsconfig.json</code></td><td>strict 模式，路径别名 <code>@/*</code></td><td>&mdash;</td></tr>
+        <tr><td><code>vite.config.ts</code></td><td>三个代理前缀</td><td>加接口前缀</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="tip">
+    <b>常用命令</b>
+    <p>后端 <code class="i">mvn -pl 09-security test</code>；前端 <code class="i">npm run typecheck</code> 只查类型，<code class="i">npm run build</code> 先查类型再打包。</p>
   </div>
 </section>
 
@@ -825,6 +905,10 @@ npm run dev</code></pre></div>
     <table>
       <thead><tr><th style="width:27%">现象</th><th>原因</th><th>处理</th></tr></thead>
       <tbody>
+        <tr><td>启动报 <code>Table 'sec_user' doesn't exist</code></td><td><code>spring.sql.init.mode</code> 没写 <code>always</code></td><td>MySQL 不是内嵌库，必须显式声明；再确认 schema.sql 在 classpath 根下</td></tr>
+        <tr><td>Mapper 注入失败</td><td>启动类漏了 <code>@MapperScan</code></td><td>加在 <code>SecurityApplication</code> 上，指向 mapper 包</td></tr>
+        <tr><td>管理接口返回一坨 HTML</td><td>Vite 代理漏配 <code>/admin</code></td><td>代理前缀与实际路径一一对齐</td></tr>
+        <tr><td><code>npm run typecheck</code> 报 axios 返回类型不对</td><td>拦截器改了运行时返回值，类型没跟上</td><td>在 <code>http</code> 工具里统一断言一次，别在页面里到处 <code>as</code></td></tr>
         <tr><td>未认证返回 302 跳到 /login</td><td><code>formLogin</code> 没关</td><td><code>formLogin(AbstractHttpConfigurer::disable)</code></td></tr>
         <tr><td>401 响应体是空白 HTML</td><td>没配 entryPoint</td><td>指定自己的 <code>RestAuthenticationEntryPoint</code></td></tr>
         <tr><td>登录接口也 401</td><td>没放行 <code>/auth/login</code>，或规则顺序写反</td><td><code>permitAll</code> 写在 <code>anyRequest</code> 之前</td></tr>
@@ -863,15 +947,19 @@ npm run dev</code></pre></div>
     <b>参考答案</b>
     <p>Controller 只要求登录，把判断放进 Service：</p>
   </div>
-  <div class="code"><pre data-lang="java"><code>public void withdraw(Long id, SecurityUser user) {
-    Task task = find(id);
-    if (!task.getOwnerUsername().equals(user.getUsername())) {
+  <div class="code"><pre data-lang="java"><code>@Transactional(rollbackFor = Exception.class)
+public void withdraw(Long id, SecurityUser user) {
+    Task task = taskMapper.selectById(id);
+    if (task == null) {
+        throw new BusinessException(ErrorCode.TASK_NOT_FOUND);
+    }
+    if (!task.getOwnerId().equals(user.id())) {
         throw new BusinessException(ErrorCode.FORBIDDEN);      // 不是本人的，403
     }
     if (task.getStatus() == TaskStatus.REVIEWED) {
         throw new BusinessException(ErrorCode.TASK_ALREADY_REVIEWED);
     }
-    taskRepository.delete(id);
+    taskMapper.deleteById(id);
 }</code></pre></div>
   <p>检查三点：学生删别人的要 403；删已批改的要给业务提示；教师没有 <code class="i">task:submit</code>，是否允许教师删要明确写出来，别默认能删。</p>
 
@@ -909,8 +997,9 @@ npm run dev</code></pre></div>
 
   <div class="foot">
     后端工程化开发 · 模块 09 认证与授权 · 案例：实训任务提交与批改<br>
-    后端 <code class="i">09-security</code>（22 个测试用例）· 前端 <code class="i">09-security/web</code>（4 个页面）<br>
-    Spring Boot 4.1.1 / Spring Security 7.1.1 / jjwt 0.13.0 / Java 21 / Vue 3.5 / Vite 8 / axios 1.21
+    后端 <code class="i">09-security</code>（22 个测试用例，MySQL）· 前端 <code class="i">09-security/web</code>（TypeScript，4 个页面）<br>
+    Spring Boot 4.1.1 / Security 7.1.1 / MyBatis-Plus 3.5.17 / MySQL 8.4 / jjwt 0.13.0 / Java 21<br>
+    Vue 3.5 / TypeScript 5.9 / Vite 8 / axios 1.21
   </div>
 </section>
 

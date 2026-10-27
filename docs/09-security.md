@@ -1,11 +1,11 @@
 # 09 · 认证与授权 —— 跟着实训任务案例走通前后端分离
 
 > - 难度：进阶
-> - 前置模块：04-web（统一响应、全局异常）
+> - 前置模块：04-web（统一响应、全局异常）、05-mybatis（MyBatis-Plus 与数据访问）
 > - 课时：90 分钟（含随堂练习），课后作业另计
-> - 对应代码：`09-security`（后端，22 个接口测试）、`09-security/web`（前端，4 个页面）
+> - 对应代码：`09-security`（后端，22 个接口测试）、`09-security/web`（前端，TypeScript）
 > - 投影版讲义：`09-security/lecture.html`，浏览器直接打开，带目录与打印样式
-> - 版本基线：Spring Boot 4.1.1、Spring Security 7.1.1、jjwt 0.13.0、Java 21、Vue 3.5、Vite 8、axios 1.21
+> - 版本基线：Spring Boot 4.1.1、Spring Security 7.1.1、MyBatis-Plus 3.5.17、MySQL 8.4、jjwt 0.13.0、Java 21、Vue 3.5、TypeScript 5.9、Vite 8、axios 1.21
 
 ---
 
@@ -19,26 +19,46 @@
 | 教师 TEACHER | 看全部提交、打分写评语 | 提交任务、进管理接口 |
 | 管理员 ADMIN | 全部提交、账号增删查 | — |
 
-要解决的三件事必须同时成立：后端知道你是谁、后端知道你能做什么、前端知道出事了怎么办。第二条和第三条是学生最容易漏的。
+要解决的三件事必须同时成立：后端知道你是谁、后端知道你能做什么、前端知道出事了怎么办。
 
-演示账号（密码在种子数据里用 BCrypt 加密后写死）：
+演示账号：
 
 | 账号 | 密码 | 角色 | 说明 |
 | --- | --- | --- | --- |
-| student01 | student123 | STUDENT | 预置一条待批改任务 |
-| student02 | student123 | STUDENT | 预置一条已批改任务，用于演示越权 |
-| teacher01 | teacher123 | TEACHER | 看全部、能批改 |
-| admin | admin123 | ADMIN | 全部提交 + 账号管理 |
-| guest | guest123 | STUDENT | 登录直接失败，账号已停用 |
+| admin | Admin#2026 | ADMIN | 全部提交 + 账号管理 |
+| teacher01 | Teacher#2026 | TEACHER | 看全部、能批改 |
+| student01 | Student#2026 | STUDENT | 预置一条待批改任务 |
+| student02 | Student#2026 | STUDENT | 预置一条已批改任务，用于演示越权 |
+| guest | Guest#2026 | STUDENT | 停用账号，登录返回 30002 |
+
+密码在 `data.sql` 里是 BCrypt 密文，明文只出现在讲义和 README 的账号表里。改密码要重新算哈希，不要手改那一列。
+
+## 数据库
+
+与 05-mybatis 共用 `backend_learning` 库，表加 `sec_` 前缀，两个模块的表不打架。
+
+| 表 | 关键列 | 说明 |
+| --- | --- | --- |
+| `sec_role` | `code` 唯一 | STUDENT / TEACHER / ADMIN |
+| `sec_user` | `username` 唯一、`password`、`enabled` | 账号，密码不可逆 |
+| `sec_user_role` | 主键 `(user_id, role_id)` | 用户与角色多对多 |
+| `sec_task` | `owner_id`、`status`、`score` | 任务，归属指向 `sec_user.id` |
+
+两个设计点值得在课上点一句。
+
+**归属用 id 不用用户名。** 用户名将来可能允许改，改了以后历史任务的“提交人”就跟着变；存 id 不会。页面要显示姓名时再 join 出来。
+
+**权限点没有建表。** 角色与用户的绑定是运行期数据，天天变；权限点是代码资产，跟着接口一起评审、一起提交。放在 `Role` 枚举里，改权限就是改一行代码，review 时一眼能看到影响面。要配置化时再加 `sec_permission` 与 `sec_role_permission` 两张表，把 `Role.authorities()` 换成查库即可。
+
+`schema.sql` 每次启动先删后建，`data.sql` 灌演示数据，主键写死，测试里引用任务 id 才稳定。真实项目该换成 Flyway 做版本化迁移，这一点在 14-deploy 里会再提。
 
 ## 跑起来
 
-两个终端。
+MySQL 先启动，数据源与 05-mybatis 一致，库会自动建。
 
 ```bash
-# 终端一：后端 8009
-cd 09-security
-mvn spring-boot:run
+# 终端一：后端 8009，启动时自动建表灌数据
+mvn -pl 09-security spring-boot:run
 
 # 终端二：前端 5173
 cd 09-security/web
@@ -46,25 +66,23 @@ npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:5173`，用页面上的快捷按钮切换账号。
+浏览器打开 `http://localhost:5173`。Vite 8 只监听 `::1`，用 `127.0.0.1:5173` 会连不上。
 
-开发期跨域靠 Vite 代理解决，浏览器全程只访问 5173：
+开发期跨域靠 Vite 代理，浏览器全程只访问 5173：
 
-```js
-server: {
-  port: 5173,
-  proxy: {
-    '/api':  { target: 'http://127.0.0.1:8009', changeOrigin: true },
-    '/auth': { target: 'http://127.0.0.1:8009', changeOrigin: true },
-  },
+```ts
+proxy: {
+  '/api': { target: 'http://127.0.0.1:8009', changeOrigin: true },
+  '/auth': { target: 'http://127.0.0.1:8009', changeOrigin: true },
+  '/admin': { target: 'http://127.0.0.1:8009', changeOrigin: true },
 }
 ```
+
+三个前缀必须和实际路径一一对上。少了 `/admin`，管理接口的请求会打到 Vite 自己身上，返回 `index.html`，前端解析 JSON 失败，页面看着像“接口没数据”——这个坑我在这份代码里也踩过一次，注释写在那儿了。
 
 上线分离部署时没有这层代理，才需要后端那份 CORS 配置（`SecurityConfig#corsConfigurationSource`）。
 
 ## 接口契约
-
-前端与后端之间只靠这张表和两个状态码沟通。
 
 | 方法 | 路径 | 谁能调 | 说明 |
 | --- | --- | --- | --- |
@@ -80,7 +98,61 @@ server: {
 | DELETE | `/admin/users/{username}` | 管理员 | 删除账号 |
 | GET | `/public/ping` | 公开 | 用来对比放行效果 |
 
-响应统一是 `Result`：成功时 `{"code":200,"data":...,"message":"success"}`。业务失败也是 HTTP 200，靠 `code` 区分；越权则必须是真实的 403。这个约定直接决定前端拦截器怎么写。
+响应统一是 `Result`：成功时 `{"code":200,"data":...,"message":"success"}`。业务失败也是 HTTP 200，靠 `code` 区分；越权则必须是真实的 403。
+
+## 数据访问怎么写
+
+`UserMapper` 与 `TaskMapper` 继承 `BaseMapper`，单表增删改查不用写 SQL：
+
+```java
+public interface UserMapper extends BaseMapper<User> {
+}
+```
+
+查询用条件构造器，列名靠 `map-underscore-to-camel-case` 自动转驼峰：
+
+```java
+User user = userMapper.selectOne(
+        new LambdaQueryWrapper<User>().eq(User::getUsername, username));
+```
+
+联表不硬套 Wrapper。任务要显示提交人姓名，三处查询都用同一个 join 片段：
+
+```java
+String SELECT_COLUMNS = """
+        t.id, t.title, t.content, t.owner_id, t.status, t.score, t.comment,
+        t.submitted_at, t.reviewed_at,
+        u.username AS owner, u.nickname AS owner_nickname
+        """;
+
+@Select("SELECT " + SELECT_COLUMNS + FROM_JOIN + "WHERE t.owner_id = #{ownerId} ORDER BY t.submitted_at DESC")
+List<TaskRow> selectRowsByOwnerId(@Param("ownerId") Long ownerId);
+```
+
+分层上有一条规矩：**实体不出 service**。`User` 只在 mapper 与 service 之间传，接口出参是 `UserProfile`，`password` 不可能顺着实体漏出去。安全层再隔一层 `Account`（用户 + 角色的领域对象），`SecurityUser` 就不必知道表结构。
+
+新增账号写两张表，用事务保证一致：
+
+```java
+@Transactional(rollbackFor = Exception.class)
+public UserProfile create(CreateUserRequest request) {
+    if (findByUsername(request.username()).isPresent()) {
+        throw new BusinessException(ErrorCode.USERNAME_EXISTS);
+    }
+    User user = new User();
+    user.setUsername(request.username());
+    user.setPassword(passwordEncoder.encode(request.password()));   // 明文只在这里出现一次
+    user.setNickname(request.nickname());
+    user.setEnabled(true);
+    userMapper.insert(user);
+
+    for (Role role : request.roles()) {
+        Long roleId = roleMapper.selectIdByCode(role.name());
+        userRoleMapper.insert(user.getId(), roleId);
+    }
+    ...
+}
+```
 
 ## 登录那一下
 
@@ -97,11 +169,6 @@ try {
     // 密码错与用户不存在给同一个提示，防止被用来试探账号是否存在
     throw new BusinessException(ErrorCode.BAD_CREDENTIALS);    // 30001
 }
-
-SecurityUser user = (SecurityUser) authentication.getPrincipal();
-JwtTokenService.IssuedToken issued = jwtTokenService.issue(user);
-return new LoginResponse(issued.token(), "Bearer", issued.expiresAt(),
-        user.getUsername(), user.account().getNickname(), user.roleNames());
 ```
 
 真实响应：
@@ -133,24 +200,9 @@ Payload   eyJpc3MiOiJiYWNrZW5kLWxlYXJuaW5nIiwic3ViIjoic3R1ZGVudDAxIiwiaWF0IjoxNz
 Signature 用前两段加密钥算出，不可反推
 ```
 
-`sub` 是身份，`exp` 由解析时自动校验，`iss` 防止别的系统用同密钥签的令牌混进来。`roles` 只给前端显示菜单用，不参与后端鉴权：令牌签发后改不了，管理员把某人降级后旧令牌里还写着旧角色。本模块的做法是令牌只带身份，权限每次请求按用户名回查。
-
-前端把令牌存 localStorage，三个函数读写：
-
-```js
-export function saveLogin(data) {
-  auth.token = data.token
-  auth.user = { username: data.username, nickname: data.nickname, roles: data.roles }
-  localStorage.setItem(TOKEN_KEY, data.token)
-  localStorage.setItem(USER_KEY, JSON.stringify(auth.user))
-}
-```
-
-不存 cookie 的理由：令牌走请求头，浏览器不会自动带上，天然不受 CSRF 影响；代价是脚本能读到它，必须防 XSS。
+`sub` 是身份，`exp` 由解析时自动校验，`iss` 防止别的系统用同密钥签的令牌混进来。`roles` 只给前端显示菜单用，不参与后端鉴权：令牌签发后改不了，管理员把某人降级后旧令牌里还写着旧角色。
 
 ## 后端怎么认出你
-
-自己写一个过滤器，在进入 Controller 之前把令牌换成身份：
 
 ```java
 protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -158,7 +210,7 @@ protected void doFilterInternal(HttpServletRequest request, HttpServletResponse 
     String token = resolveToken(request);
     if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         String username = tokenService.parseUsername(token);   // 验签 + 校验过期与签发方
-        UserDetails user = userDetailsService.loadUserByUsername(username);
+        UserDetails user = userDetailsService.loadUserByUsername(username);   // 这里回库
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -175,17 +227,15 @@ protected void doFilterInternal(HttpServletRequest request, HttpServletResponse 
 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 ```
 
-排在授权判断后面，判断权限时上下文还是空的，所有请求都会被当成未登录。
+因为换成真库，每个请求会多两条 SQL（查人、查角色），日志里看得到。这是“令牌只放身份”的代价，也是改角色能立刻生效的原因。
 
-令牌无效时不在这里返回 401，只清空上下文继续往下走，让授权判断拒绝这个匿名请求，401 由 `RestAuthenticationEntryPoint` 统一输出。要是在过滤器里也写一份响应，同一个错误就有两种格式。
+令牌无效时不在这里返回 401，只清空上下文继续往下走，让授权判断拒绝这个匿名请求，401 由 `RestAuthenticationEntryPoint` 统一输出。
 
 ## 前端三件事
 
-全部集中在 `src/api/request.js`，四个页面不再关心鉴权。
+全部集中在 `src/api/request.ts`，四个页面不再关心鉴权。
 
-请求拦截器加令牌：
-
-```js
+```ts
 request.interceptors.request.use((config) => {
   if (auth.token) {
     config.headers.Authorization = `Bearer ${auth.token}`
@@ -194,22 +244,23 @@ request.interceptors.request.use((config) => {
 })
 ```
 
-响应拦截器把 401 和 403 分开：
+响应拦截把 401 和 403 分开：
 
-```js
+```ts
 request.interceptors.response.use(
   (response) => {
-    const body = response.data
-    if (body.code === 200) return body.data
+    const body = response.data as ApiResult<unknown>
+    if (body.code === 200) return body.data as never
     notify(body.message || '操作失败')
-    return Promise.reject(new Error(body.message))
+    return Promise.reject(new Error(body.message || '操作失败'))
   },
-  (error) => {
+  (error: AxiosError<ApiResult<unknown>>) => {
     const status = error.response?.status
     if (status === 401) {
       clearLogin()
-      router.push({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
-      notify('登录已失效，请重新登录')
+      const from = router.currentRoute.value.fullPath
+      router.push({ path: '/login', query: from === '/login' ? {} : { redirect: from } })
+      notify(error.response?.data?.message || '登录已失效，请重新登录')
     } else if (status === 403) {
       notify(error.response?.data?.message || '你没有权限做这个操作')   // 不动登录态
     } else if (status) {
@@ -224,15 +275,55 @@ request.interceptors.response.use(
 
 写反的后果：学生点了一个只有教师能点的按钮，直接被踢回登录页，重新登录进去还在那个页面，再点又被踢。
 
-路由守卫只是体验层，改了 localStorage 就能进页面，但进去以后接口全是 403：
+## 类型怎么串起来
 
-```js
-router.beforeEach((to) => {
-  if (to.meta.public) return true
-  if (!auth.token) return { path: '/login', query: { redirect: to.fullPath } }
-  if (to.meta.roles && !hasAnyRole(to.meta.roles)) return homeOf()
-  return true
-})
+类型写在 `src/types/api.ts`，一条条对着后端的 vo 与 dto 核过。改后端字段时先改这里，`npm run typecheck` 会把所有用到的地方指出来。
+
+```ts
+export interface TaskView {
+  id: number
+  title: string
+  owner: string
+  status: TaskStatusCode
+  statusText: string
+  score: number | null
+  comment: string | null
+  submittedAt: string
+  reviewedAt: string | null
+}
+```
+
+拦截器把 `Result` 拆成了 `data`，但 axios 的类型仍认为返回完整响应，所以在 `http` 工具里统一收敛一次，页面里就都是实打实的类型：
+
+```ts
+async function unwrap<T>(promise: Promise<unknown>): Promise<T> {
+  return (await promise) as T
+}
+
+export const http = {
+  get: <T>(url: string) => unwrap<T>(request.get(url)),
+  post: <T>(url: string, data?: unknown) => unwrap<T>(request.post(url, data)),
+  del: <T>(url: string) => unwrap<T>(request.del(url)),
+}
+```
+
+接口清单因此可以一行一个，返回值类型直接写在签名上：
+
+```ts
+export const myTasks = () => http.get<TaskView[]>('/api/tasks/mine')
+export const reviewTask = (id: number, data: ReviewTaskPayload) =>
+  http.post<TaskView>(`/api/tasks/${id}/review`, data)
+```
+
+路由的 meta 也加了类型，角色名写错在编译期就报：
+
+```ts
+declare module 'vue-router' {
+  interface RouteMeta {
+    public?: boolean
+    roles?: RoleCode[]
+  }
+}
 ```
 
 ## 数据归属
@@ -246,30 +337,27 @@ router.beforeEach((to) => {
 | 服务端从令牌取 | `GET /api/tasks/mine` | URL 里没有身份，无处可改 |
 
 ```java
-/**
- * 我的提交：URL 里没有用户名，前端想查别人的也无从下手
- */
 @GetMapping("/mine")
 public Result<List<TaskView>> mine(@AuthenticationPrincipal SecurityUser user) {
-    return Result.ok(taskService.listMine(user.getUsername()));
+    return Result.ok(taskService.listMine(user.id()));   // id 来自令牌，不是请求参数
 }
 ```
 
-提交任务时请求体里也没有 owner 字段，前端硬塞一个进去不会被采纳（测试 `ownerCannotBeForgedByBody` 就是验证这条）。
+提交任务时请求体里也没有 owner 字段，前端硬塞一个 `"owner":"student02"` 不会被采纳（测试 `ownerCannotBeForgedByBody` 就是验证这条）。
 
-详情接口的编号一定可以被改，判断要放在服务端：
+详情接口的编号一定可以被改，判断放在服务端：
 
 ```java
 public TaskView detail(Long id, SecurityUser viewer) {
-    Task task = find(id);
-    if (!canView(task, viewer)) {
+    TaskRow row = findRow(id);
+    if (!canView(row, viewer)) {
         throw new BusinessException(ErrorCode.FORBIDDEN);
     }
-    return TaskView.of(task);
+    return TaskView.of(row);
 }
 
-private boolean canView(Task task, SecurityUser viewer) {
-    if (task.getOwnerUsername().equals(viewer.getUsername())) return true;
+private boolean canView(TaskRow row, SecurityUser viewer) {
+    if (row.getOwnerId().equals(viewer.id())) return true;
     return viewer.getAuthorities().stream()
             .anyMatch(authority -> authority.getAuthority().equals("task:review"));
 }
@@ -313,12 +401,12 @@ public Result<TaskView> submit(@Valid @RequestBody SubmitTaskRequest request,
 
 两个必踩的坑：
 
-- `hasRole("ADMIN")` 内部会拼成 `ROLE_ADMIN` 比对，权限集合里必须有这个前缀；`hasAuthority("task:review")` 是原样比对，不能加前缀。混用会出现“配置看起来对，却永远 403”。
-- 管理接口做了双重把关：URL 规则 `/admin/**` 限管理员，Controller 上再写一次 `@PreAuthorize`。有人把 URL 规则改宽时，第二道还在。
+- `hasRole("ADMIN")` 内部会拼成 `ROLE_ADMIN` 比对，权限集合里必须有这个前缀；`hasAuthority("task:review")` 是原样比对，不能加前缀。
+- 管理接口做了双重把关：URL 规则 `/admin/**` 限管理员，Controller 上再写一次 `@PreAuthorize`。
 
 ## 测试覆盖
 
-`mvn -pl 09-security test`，22 个用例，按链路分组：
+`mvn -pl 09-security test`，22 个用例，跑在真实 MySQL 上：
 
 | 分组 | 覆盖点 |
 | --- | --- |
@@ -327,62 +415,72 @@ public Result<TaskView> submit(@Valid @RequestBody SubmitTaskRequest request,
 | 教师权限 | 学生不能看全部、不能批改、教师能看到全部、批改后学生立刻能看分数、同一份不能批改两次、教师不能提交、分数越界被拦 |
 | 管理 | 教师进不了管理接口、管理员能看列表且响应无密码、新增学生能登录、不能删自己 |
 
+前端类型检查：
+
+```bash
+cd 09-security/web && npm run typecheck
+```
+
 ## 排错表
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
+| 启动报 `Table 'sec_user' doesn't exist` | `spring.sql.init.mode` 没写 always | MySQL 不是内嵌库，必须显式声明 |
+| 建表脚本没执行 | `schema-locations` 路径不对 | 放 `classpath:schema.sql` 并确认打包进 jar |
+| `/admin/users` 返回一坨 HTML | Vite 代理漏配 `/admin` | 代理前缀与实际路径一一对齐 |
+| 角色读出来是空集合 | `sec_user_role` 没数据或 join 写错 | 直接查库确认关联行在不在 |
 | 未认证返回 302 | `formLogin` 没关 | `formLogin(AbstractHttpConfigurer::disable)` |
-| 401 响应体是空白 HTML | 没配 entryPoint | 指定 `RestAuthenticationEntryPoint` |
+| 401 响应是空白 HTML | 没配 entryPoint | 指定 `RestAuthenticationEntryPoint` |
 | 登录接口也 401 | 没放行 `/auth/login`，或规则顺序写反 | `permitAll` 写在 `anyRequest` 之前 |
-| 带令牌仍 401 | 令牌过期、被改、签发与解析不是同一个密钥 | 解码看 `exp`；确认配置只有一个密钥 |
-| 带令牌仍 403 | 角色没拿到权限点 | `GET /auth/me` 看 `authorities` 实际内容 |
 | `hasRole` 永远不通过 | 少了 `ROLE_` 前缀 | 统一用 `Role.authority()` 生成 |
-| 启动报 WeakKeyException | 密钥短于 32 字节 | 换长密钥，`@Size(min = 32)` 提前拦 |
 | 令牌 Header 是 HS384 | 用了 `signWith(key)` 单参数版 | 显式 `signWith(key, Jwts.SIG.HS256)` |
 | 过滤器跑两遍 | 它既是 Bean 又被加进链 | 去掉 `@Component`，配置类里 `new` |
 | `@PreAuthorize` 不生效 | 少 `@EnableMethodSecurity` | 加在配置类上 |
 | 越权返回 200 而不是 403 | 处理器返回了裸 `Result` | 用 `ResponseEntity.status(403)` |
+| Mapper 注入失败 | 启动类没 `@MapperScan` | 加在 `SecurityApplication` 上 |
+| typecheck 报 axios 返回类型不对 | 拦截器改了运行时返回值，类型没跟上 | 在 `http` 工具里统一断言一次 |
 | 前端一点就跳登录 | 把 403 也当成 401 | 拦截器里分开两个分支 |
-| 刷新页面掉登录 | 令牌只存了内存变量 | 存 localStorage，初始化时读回来 |
-| 页面能进但列表空白 | 接口 403，数据没返回 | 看 Network 里那条请求的响应体 |
-| 请求打到 5173 返回 HTML | 代理前缀和请求路径对不上 | 对齐 `proxy` 配置与实际路径 |
 
 ## 课堂练习
 
-**让教师也能提交一条教学示范。** 现在教师调 `POST /api/tasks` 是 403，要求教师也能提交，学生依旧不能批改。
+**让教师也能提交一条教学示范。** 给 `Role.TEACHER` 加 `task:submit` 即可，只碰一行枚举，接口代码没动。顺势问：为什么不能把注解改成 `hasAnyAuthority('task:submit','task:review')`？能跑，但把业务规则藏进了接口注解里。
 
-给 `Role.TEACHER` 加 `task:submit` 即可，只碰一行枚举，接口代码没动。可以顺势问：为什么不能直接把注解改成 `hasAnyAuthority('task:submit','task:review')`？能跑，但把业务规则藏进了接口注解里，下次再变又要改代码。
-
-**让学生能撤回自己还没被批改的任务。** 加 `DELETE /api/tasks/{id}`，只有本人且状态为待批改时才能删。
+**让学生能撤回自己还没被批改的任务。** 加 `DELETE /api/tasks/{id}`：
 
 ```java
+@Transactional(rollbackFor = Exception.class)
 public void withdraw(Long id, SecurityUser user) {
-    Task task = find(id);
-    if (!task.getOwnerUsername().equals(user.getUsername())) {
+    Task task = taskMapper.selectById(id);
+    if (task == null) {
+        throw new BusinessException(ErrorCode.TASK_NOT_FOUND);
+    }
+    if (!task.getOwnerId().equals(user.id())) {
         throw new BusinessException(ErrorCode.FORBIDDEN);
     }
     if (task.getStatus() == TaskStatus.REVIEWED) {
         throw new BusinessException(ErrorCode.TASK_ALREADY_REVIEWED);
     }
-    taskRepository.delete(id);
+    taskMapper.deleteById(id);
 }
 ```
 
-检查三点：学生删别人的要 403；删已批改的要给业务提示；教师是否允许删要明确写出来，不要默认能删。
+检查三点：学生删别人的要 403；删已批改的要给业务提示；教师是否允许删要明确写出来。
 
-**把令牌有效期改成 1 分钟。** 改配置 `app.jwt.expire-minutes: 1`，登录后等一分钟再操作，观察前端反应：401 → 清登录态 → 跳登录页 → 登录后回到原页面。这条练完，学生就明白刷新令牌为什么存在。
+**把令牌有效期改成 1 分钟。** 改配置 `app.jwt.expire-minutes: 1`，登录后等一分钟再操作，观察前端反应：401 → 清登录态 → 跳登录页 → 登录后回到原页面。
 
 ## 课后作业
 
-**基础（20 分）登录失败次数限制。** 同一用户名连续失败 5 次锁定 10 分钟，锁定期间返回新业务码，成功后计数清零。要求说明换到 Redis 后 key 怎么设计、过期怎么处理。
+**基础（20 分）登录失败次数限制。** 同一用户连续失败 5 次锁定 10 分钟，锁定期间返回新业务码，成功后计数清零。要求说明换到 Redis 后 key 怎么设计。
 
-**进阶（30 分）账号与任务存数据库。** 用 MyBatis-Plus 建 `t_user`、`t_role`、`t_user_role`、`t_task`，替换两个内存仓库，要求 `UserDetailsService` 与鉴权代码零改动。这条是检验分层是否真的分开了。
+**进阶（30 分）任务列表分页。** 引入 `PaginationInnerInterceptor` 与 `mybatis-plus-jsqlparser`，把 `GET /api/tasks` 改成 `page`、`size` 参数，返回 `{ records, total }`；前端表格加分页。要求联表查询下分页仍正确（count 语句要能对上）。
 
-**挑战（30 分）刷新令牌与登出。** 改密码或点退出后旧令牌立刻失效。两条路线选一：令牌版本号存用户表，签发时写入、校验时比对；或者维护黑名单，登出时把 `jti` 放进去，过期时间与令牌剩余有效期一致。要求有测试证明改密码后旧令牌立即 401。
+**挑战（30 分）刷新令牌与登出。** 改密码或点退出后旧令牌立刻失效。两条路线选一：令牌版本号存用户表；或者维护黑名单，登出时把 `jti` 放进去。要求有测试证明改密码后旧令牌立即 401。
 
 ## 已知边界
 
 - 没有刷新令牌，令牌有效期 120 分钟，到期只能重新登录。
 - 没有登出黑名单，退出只清前端存储，令牌在到期前仍然可用。
-- 用户与任务存内存，重启即丢；种子数据每次启动重建。
-- 前端没有做按钮级权限控制，只做了菜单与路由级；需要时用 `hasRole` 判断后 `v-if`。
+- 没有登录失败限流，登录接口可以被反复试。
+- 列表不分页，数据量小时够用。
+- 前端只做了菜单与路由级权限，没做按钮级控制。
+- `schema.sql` 每次启动重建表，数据不能留存；生产环境应换 Flyway。
