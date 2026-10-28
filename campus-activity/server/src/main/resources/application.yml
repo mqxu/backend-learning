@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: campus-activity
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3308/campus_activity?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Campus@2026
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+
+campus:
+  # dev-mode=true 时允许用 mock openid 登录，不调用微信接口，方便本地与课堂演示
+  dev-mode: true
+  jwt:
+    secret: campus-activity-demo-secret-key-change-in-production-2026
+    access-token-hours: 2
+  wechat:
+    app-id: ${WX_APPID:}
+    app-secret: ${WX_SECRET:}
+  checkin:
+    secret: campus-checkin-demo-secret-2026
+    # 签到码时间片长度（秒），即二维码轮换周期
+    slice-seconds: 30
+    # 允许的时钟偏移，服务端接受最近 N 个时间片
+    tolerance-slices: 2
+    # 签到开放窗口：活动开始前 30 分钟，结束后 30 分钟
+    open-before-minutes: 30
+    close-after-minutes: 30
+
+logging:
+  level:
+    com.campus.activity: debug

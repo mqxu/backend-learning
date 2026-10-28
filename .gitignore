@@ -40,3 +40,6 @@ dist/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 docs/.vitepress/*.timestamp-*
+
+### 工具本地数据 ###
+.workbuddy/

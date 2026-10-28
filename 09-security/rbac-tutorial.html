@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBAC 交互式教程 · 从概念到 Spring Security 判定</title>
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f7f8fb; --surface:#ffffff;
+  --border:#e4e8f0; --border-strong:#d3d9e6;
+  --text:#1b2333; --text-2:#48546a; --text-3:#7b8798;
+  --primary:#2f5cf6; --primary-soft:#eef2ff;
+  --amber:#b45309; --amber-soft:#fff7ed; --amber-border:#f3d9b5;
+  --red:#c0392b; --red-soft:#fdf2f1; --red-border:#f0cec9;
+  --green:#0f7b46; --green-soft:#f1fbf5; --green-border:#c6e8d6;
+  --code-bg:#f6f8fc; --code-head:#eef2f9;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px -16px rgba(16,24,40,.18);
+  --mono:"JetBrains Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --tk-kw:#a626a4; --tk-str:#3f8f4a; --tk-com:#8d95a5; --tk-num:#986801; --tk-ann:#3a72c4;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.85;-webkit-font-smoothing:antialiased}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:60}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f5cf6,#6f8cff);transition:width .12s linear}
+
+.layout{display:grid;grid-template-columns:272px minmax(0,1fr)}
+.side{position:sticky;top:0;height:100vh;overflow-y:auto;padding:26px 16px 40px 24px;border-right:1px solid var(--border);background:var(--bg-soft)}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+.side-brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.side-brand .dot{width:9px;height:9px;border-radius:50%;background:var(--primary);flex:none}
+.side-brand b{font-size:15px}
+.side-sub{font-size:12px;color:var(--text-3);margin:0 0 16px}
+.side nav{display:flex;flex-direction:column;gap:1px}
+.side a{display:block;color:var(--text-2);border-radius:7px;padding:5px 10px;font-size:14px;line-height:1.5}
+.side a:hover{background:var(--primary-soft);color:var(--primary);text-decoration:none}
+.side a.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.side a.lv2{font-size:13px;padding:3px 10px 3px 22px;color:var(--text-3)}
+.side-foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-3);line-height:1.8}
+
+main{padding:0 0 120px;min-width:0}
+.wrap{max-width:1000px;padding:0 48px}
+
+.cover{padding:58px 0 36px;border-bottom:1px solid var(--border);position:relative}
+.cover::before{content:"";position:absolute;left:0;top:30px;width:52px;height:4px;border-radius:2px;background:linear-gradient(90deg,#2f5cf6,#7f9bff)}
+.eyebrow{font-size:12.5px;letter-spacing:2.2px;color:var(--primary);font-weight:600;margin:0 0 14px}
+.cover h1{font-size:42px;line-height:1.25;margin:0 0 10px;letter-spacing:-.5px}
+.cover .sub{font-size:18px;color:var(--text-2);margin:0 0 22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12.5px;color:var(--text-2);background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:4px 12px}
+.chip b{color:var(--text)}
+
+section{padding-top:46px}
+h2{font-size:27px;line-height:1.4;margin:0 0 6px;letter-spacing:-.3px;display:flex;align-items:baseline;gap:12px}
+h2 .num{font-family:var(--mono);font-size:15px;color:var(--primary);background:var(--primary-soft);border-radius:7px;padding:3px 9px;flex:none;font-weight:600;letter-spacing:0}
+.sec-rule{height:1px;background:linear-gradient(90deg,var(--border-strong),transparent);margin:16px 0 22px}
+h3{font-size:19.5px;margin:32px 0 10px;line-height:1.5}
+p{margin:0 0 15px}
+.lead{font-size:17.5px;color:var(--text-2)}
+ul,ol{margin:0 0 16px;padding-left:24px}
+li{margin:5px 0}
+code.i{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1.5px 5px;color:#b13a5f;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--text-3)}
+
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--border);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.7;background:var(--surface)}
+th,td{padding:9px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+th{background:var(--bg-soft);font-weight:600;font-size:13.5px;color:var(--text-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg-soft)}
+td code,th code{font-family:var(--mono);font-size:13px}
+
+.st{display:inline-block;font-family:var(--mono);font-size:12.5px;font-weight:600;border-radius:6px;padding:1px 8px;border:1px solid}
+.st-200{color:var(--green);background:var(--green-soft);border-color:var(--green-border)}
+.st-401{color:var(--amber);background:var(--amber-soft);border-color:var(--amber-border)}
+.st-403{color:var(--red);background:var(--red-soft);border-color:var(--red-border)}
+.st-biz{color:var(--primary);background:var(--primary-soft);border-color:#cfd9ff}
+
+.code{margin:0 0 18px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--code-head);border-bottom:1px solid var(--border);font-size:11.5px;letter-spacing:1.2px;color:var(--text-3);font-weight:600}
+.code-h button{font-family:var(--sans);font-size:11.5px;letter-spacing:0;color:var(--text-3);background:transparent;border:1px solid var(--border-strong);border-radius:6px;padding:2px 9px;cursor:pointer}
+.code-h button:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-soft)}
+pre{margin:0;padding:14px 18px;overflow-x:auto;font-family:var(--mono);font-size:13.6px;line-height:1.72;tab-size:2}
+pre code{font-family:inherit;color:var(--text)}
+.tk-kw{color:var(--tk-kw)} .tk-str{color:var(--tk-str)} .tk-com{color:var(--tk-com);font-style:italic}
+.tk-num{color:var(--tk-num)} .tk-ann{color:var(--tk-ann)}
+
+.note,.warn,.tip{border-radius:10px;padding:13px 18px;margin:0 0 18px;font-size:15.5px;line-height:1.8;border:1px solid;border-left-width:3px}
+.note{background:var(--primary-soft);border-color:var(--border);border-left-color:var(--primary)}
+.warn{background:var(--amber-soft);border-color:var(--amber-border);border-left-color:var(--amber)}
+.tip{background:var(--green-soft);border-color:var(--green-border);border-left-color:var(--green)}
+.note b,.warn b,.tip b{display:block;font-size:12.5px;letter-spacing:1px;margin-bottom:3px}
+.note b{color:var(--primary)} .warn b{color:var(--amber)} .tip b{color:var(--green)}
+.note p:last-child,.warn p:last-child,.tip p:last-child{margin-bottom:0}
+
+/* 交互面板 */
+.panel{border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);margin:0 0 20px;overflow:hidden}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--bg-soft)}
+.panel-h .t{font-size:14.5px;font-weight:600}
+.panel-h .t span{font-family:var(--mono);font-size:12px;color:var(--text-3);font-weight:400;margin-left:8px}
+.panel-b{padding:18px}
+.hint{font-size:13px;color:var(--text-3);margin:0}
+
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg button{font-family:var(--sans);font-size:13px;color:var(--text-2);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;padding:5px 12px;cursor:pointer;line-height:1.5}
+.seg button:hover{border-color:var(--primary);color:var(--primary)}
+.seg button.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.seg button.on:hover{background:#2549d8;border-color:#2549d8;color:#fff}
+.seg button .r{font-family:var(--mono);font-size:11px;opacity:.75;margin-left:5px}
+
+.diagram{overflow-x:auto;padding:4px 0}
+.diagram svg{display:block;min-width:600px;width:100%;height:auto}
+.node{cursor:pointer}
+.node rect{transition:opacity .18s,stroke .18s}
+.edge{transition:opacity .18s,stroke-width .18s}
+.caption{margin:10px 0 0;font-size:13.5px;color:var(--text-2);min-height:22px}
+.caption b{color:var(--primary);font-family:var(--mono)}
+
+.matrix td.cell{text-align:center;font-family:var(--mono);font-size:15px}
+.matrix td.yes{color:var(--green);font-weight:700}
+.matrix td.no{color:var(--border-strong)}
+.matrix tbody tr.hl{background:var(--primary-soft)}
+.matrix tbody tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--primary)}
+
+.calc-out{border:1px solid var(--border);border-radius:10px;background:var(--bg-soft);padding:14px 16px;margin-top:16px}
+.calc-out .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.calc-out .row:last-child{margin-bottom:0}
+.calc-out .k{font-size:12px;letter-spacing:1px;color:var(--text-3);width:100%;font-weight:600}
+.perm-chip{font-family:var(--mono);font-size:12.5px;border-radius:6px;padding:2px 8px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-2)}
+.perm-chip.role{background:var(--primary-soft);border-color:#cfd9ff;color:var(--primary);font-weight:600}
+.perm-chip.new{animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.86);opacity:.2}to{transform:scale(1);opacity:1}}
+
+/* 模拟器 */
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin:0 0 14px}
+.field label{display:block;font-size:12px;letter-spacing:1px;color:var(--text-3);font-weight:600;margin:0 0 6px}
+select{width:100%;font-family:var(--sans);font-size:14px;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:9px;padding:8px 10px;cursor:pointer}
+select:focus{outline:2px solid var(--primary-soft);border-color:var(--primary)}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border);font-size:14px;line-height:1.7}
+.steps li:last-child{border-bottom:none}
+.steps .mark{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;margin-top:2px;border:1px solid}
+.steps li.pass .mark{color:var(--green);background:var(--green-soft);border-color:var(--green-border)}
+.steps li.fail .mark{color:var(--red);background:var(--red-soft);border-color:var(--red-border)}
+.steps li.skip .mark{color:var(--text-3);background:var(--bg-soft);border-color:var(--border-strong)}
+.steps li.pending{opacity:.32}
+.steps .k{font-weight:600;margin-right:6px}
+.steps .d{color:var(--text-2);font-size:13.5px}
+.steps .d code{font-family:var(--mono);font-size:12.5px;background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 4px}
+
+.result{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:10px;border:1px solid;margin-top:14px;font-size:14px}
+.result.ok{background:var(--green-soft);border-color:var(--green-border)}
+.result.na{background:var(--amber-soft);border-color:var(--amber-border)}
+.result.no{background:var(--red-soft);border-color:var(--red-border)}
+.result .big{font-family:var(--mono);font-size:22px;font-weight:700}
+.result.ok .big{color:var(--green)} .result.na .big{color:var(--amber)} .result.no .big{color:var(--red)}
+.result .msg{color:var(--text-2)}
+.result .msg code{font-family:var(--mono);font-size:12.5px}
+
+.own-table td.cell{text-align:center}
+.pill{display:inline-block;font-size:12px;font-family:var(--mono);border-radius:6px;padding:1px 7px;border:1px solid}
+.pill.ok{color:var(--green);background:var(--green-soft);border-color:var(--green-border)}
+.pill.no{color:var(--red);background:var(--red-soft);border-color:var(--red-border)}
+
+/* 测验 */
+.quiz{border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:0 0 14px;background:var(--surface)}
+.quiz .q{font-weight:600;font-size:15.5px;margin:0 0 10px}
+.quiz .q span{font-family:var(--mono);color:var(--primary);margin-right:6px}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opts button{text-align:left;font-family:var(--sans);font-size:14px;line-height:1.6;color:var(--text);background:var(--bg-soft);border:1px solid var(--border);border-radius:9px;padding:9px 13px;cursor:pointer}
+.opts button:hover{border-color:var(--primary);background:var(--primary-soft)}
+.opts button.right{border-color:var(--green-border);background:var(--green-soft);color:var(--green);font-weight:600}
+.opts button.wrong{border-color:var(--red-border);background:var(--red-soft);color:var(--red)}
+.opts button:disabled{cursor:default}
+.fb{font-size:13.5px;color:var(--text-2);margin:10px 0 0;padding:9px 12px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);display:none}
+.fb.show{display:block}
+.score{font-family:var(--mono);font-size:14px;color:var(--text-2)}
+.score b{color:var(--primary);font-size:17px}
+
+.cmp{display:grid;grid-template-columns:1fr;gap:0}
+.switch{display:inline-flex;border:1px solid var(--border-strong);border-radius:9px;overflow:hidden}
+.switch button{font-family:var(--sans);font-size:13px;padding:6px 14px;background:var(--surface);border:none;cursor:pointer;color:var(--text-2)}
+.switch button.on{background:var(--primary);color:#fff;font-weight:600}
+.switch button + button{border-left:1px solid var(--border-strong)}
+.pane{display:none}
+.pane.on{display:block}
+
+@media (max-width:1080px){
+  .layout{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .wrap{padding:0 22px}
+  .cover h1{font-size:32px}
+  .sim-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="progress"><i id="bar"></i></div>
+
+<div class="layout">
+<aside class="side">
+  <div class="side-brand"><span class="dot"></span><b>RBAC 交互式教程</b></div>
+  <p class="side-sub">案例来自 09-security 实训任务系统</p>
+  <nav id="toc">
+    <a href="#s1">1 越权是怎么发生的</a>
+    <a href="#s2">2 三列模型：谁、什么角色、能干什么</a>
+    <a href="#s3">3 数据模型：五张表</a>
+    <a href="#s4">4 权限点怎么命名</a>
+    <a href="#s5">5 权限集合怎么摊平</a>
+    <a href="#s6">6 一次请求的判定路径</a>
+    <a href="#s7">7 数据级授权</a>
+    <a href="#s8">8 三种常见反模式</a>
+    <a href="#s9">9 结课测验</a>
+    <a href="#s10">10 落地检查清单</a>
+  </nav>
+  <div class="side-foot">
+    全文交互：模型图、权限矩阵、集合计算器、请求模拟器、归属判定、测验。<br>
+    数据与判定逻辑对照 <code class="mono">Role.java</code>、<code class="mono">SecurityConfig.java</code>。
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<header class="cover">
+  <p class="eyebrow">交互式教程</p>
+  <h1>RBAC：把"谁能做什么"写成规则</h1>
+  <p class="sub">从一次改 URL 的越权开始，走到 Spring Security 过滤器链上的四次拦截判定。</p>
+  <div class="chips">
+    <span class="chip"><b>难度</b> 进阶</span>
+    <span class="chip"><b>用时</b> 40 分钟</span>
+    <span class="chip"><b>前置</b> 04-web、05-mybatis</span>
+    <span class="chip"><b>对应代码</b> 09-security</span>
+  </div>
+</header>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2><span class="num">01</span>越权是怎么发生的</h2>
+  <div class="sec-rule"></div>
+
+  <p class="lead">先看一个不用 RBAC 也能写出来的接口。任务详情页，前端拿当前登录人的令牌，URL 里带任务 id。</p>
+
+  <div class="code">
+    <div class="code-h"><span>TaskController.java · 有问题的版本</span></div>
+    <pre><code><span class="tk-ann">@GetMapping</span>("/api/tasks/{id}")
+<span class="tk-kw">public</span> Result&lt;TaskView&gt; detail(<span class="tk-ann">@PathVariable</span> Long id) {
+    <span class="tk-com">// 只要登录了就能查任意 id</span>
+    <span class="tk-kw">return</span> Result.ok(taskService.findById(id));
+}</code></pre>
+  </div>
+
+  <p>朱彦清登录后看到自己的实训一，地址栏里是 <code class="i">/api/tasks/1</code>。他把 1 改成 2，回车。</p>
+
+  <div class="panel">
+    <div class="panel-h"><div class="t">改一下 URL 里的 id<span>真实请求形态</span></div></div>
+    <div class="panel-b">
+      <div class="seg" id="curlSeg">
+        <button class="on" data-t="1">GET /api/tasks/1</button>
+        <button data-t="2">GET /api/tasks/2</button>
+        <button data-t="3">GET /api/tasks/3</button>
+      </div>
+      <div class="code" style="margin:14px 0 0">
+        <div class="code-h"><span>响应</span></div>
+        <pre id="curlOut" style="min-height:96px"></pre>
+      </div>
+      <p class="caption" id="curlNote"></p>
+    </div>
+  </div>
+
+  <p>问题不在"他登录了没有"，而在"这条记录归不归他"。身份认证只回答第一个问题。授权要回答第二个，而 RBAC 负责的是更靠前的第三层问题：这类操作，这种身份的人到底允许做吗。</p>
+
+  <div class="tip">
+    <b>三个层次，别混在一起</b>
+    <p><b style="display:inline">认证</b>：你是谁（令牌解析）。<b style="display:inline">功能授权</b>：这个角色能不能调这个接口（RBAC 的主场）。<b style="display:inline">数据授权</b>：这条具体的记录归不归你（业务代码判定）。三层缺一层就是漏洞。</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2><span class="num">02</span>三列模型：谁、什么角色、能干什么</h2>
+  <div class="sec-rule"></div>
+
+  <p>RBAC 的全称是 Role-Based Access Control，基于角色的访问控制。主张只有一句：<b>权限绑定在角色上，角色分配给用户</b>。用户不直接持有权限，权限也不直接指向用户，角色是唯一的挂载点。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>概念</th><th>回答的问题</th><th>在本模块里的样子</th></tr></thead>
+      <tbody>
+        <tr><td>用户 User</td><td>谁在访问</td><td><code class="mono">sec_user</code>，14 个账号</td></tr>
+        <tr><td>角色 Role</td><td>他承担什么职责</td><td><code class="mono">sec_role</code>：STUDENT / TEACHER / ADMIN</td></tr>
+        <tr><td>权限 Permission</td><td>对某个资源能做哪个动作</td><td><code class="mono">task:review</code> 这类权限点，共 5 个</td></tr>
+        <tr><td>用户角色关联</td><td>谁有哪个职责</td><td><code class="mono">sec_user_role</code>，多对多</td></tr>
+        <tr><td>角色权限关联</td><td>这个职责能做哪些事</td><td>本模块省掉了这张表，权限点写在 <code class="mono">Role</code> 枚举里</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>五个概念构成两段多对多：用户 ↔ 角色、角色 ↔ 权限。多对多落进关系库，就是两张中间表。下一节的五张表由此而来。</p>
+
+  <p>下图是本模块的真实数据。点左列的用户看他的角色，点右列的权限点看谁能拿到它。</p>
+
+  <div class="panel">
+    <div class="panel-h">
+      <div class="t">用户 → 角色 → 权限点<span>点击任意节点</span></div>
+      <div class="seg"><button id="modelReset">重置</button></div>
+    </div>
+    <div class="panel-b">
+      <div class="diagram"><div id="modelWrap"></div></div>
+      <p class="caption" id="modelCap">四个账号，三个角色，五个权限点。</p>
+    </div>
+  </div>
+
+  <p>多了角色这一层，改动成本就从"改 N 个人"降到"改一个角色的配置"。新来一位助教，给他 <code class="i">TEACHER</code> 就行，不用逐个接口加白名单。</p>
+
+  <div class="note">
+    <b>权限点给接口用，角色给人看</b>
+    <p>接口上应该写 <code class="mono">hasAuthority('task:review')</code> 而不是 <code class="mono">hasRole('TEACHER')</code>。前者说的是"这件事允许被做"，后者说的是"这个人是谁"。将来教务也要批改时，给教务配上 <code class="mono">task:review</code> 即可，接口一行不用改。</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2><span class="num">03</span>数据模型：五张表，两段多对多</h2>
+  <div class="sec-rule"></div>
+
+  <p>把上一节的五个概念落进关系库，标准做法是三张基础表加两张关联表。基础表存实体本身，关联表存多对多关系，主键取两端 id 的组合，天然挡住重复绑定。</p>
+
+  <div class="panel">
+    <div class="panel-h">
+      <div class="t">五表模型<span>点任意表看职责与关联</span></div>
+      <div class="seg"><button id="erReset">重置</button></div>
+    </div>
+    <div class="panel-b">
+      <div class="diagram"><div id="erWrap"></div></div>
+      <p class="caption" id="erCap">三张基础表（用户、角色、权限）加两张关联表，串成两段多对多。</p>
+    </div>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>表</th><th>类型</th><th>存什么</th><th>关键约束</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">sec_user</td><td>基础</td><td>登录名、密码密文、姓名、启用状态</td><td><code class="mono">username</code> 唯一</td></tr>
+        <tr><td class="mono">sec_role</td><td>基础</td><td>角色编码与显示名</td><td><code class="mono">code</code> 唯一</td></tr>
+        <tr><td class="mono">sec_permission</td><td>基础</td><td>权限点编码、名称、所属资源</td><td><code class="mono">code</code> 唯一，如 <code class="mono">task:review</code></td></tr>
+        <tr><td class="mono">sec_user_role</td><td>关联</td><td>谁有哪个角色</td><td>主键 <code class="mono">(user_id, role_id)</code></td></tr>
+        <tr><td class="mono">sec_role_permission</td><td>关联</td><td>哪个角色能做哪些事</td><td>主键 <code class="mono">(role_id, permission_id)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code">
+    <div class="code-h"><span>标准五表 · DDL</span></div>
+    <pre><code><span class="tk-com">-- 基础表：权限点单独成表，code 就是接口注解里要写的那个字符串</span>
+<span class="tk-kw">CREATE TABLE</span> sec_permission (
+    id    <span class="tk-kw">BIGINT UNSIGNED</span> <span class="tk-kw">NOT NULL</span> <span class="tk-kw">AUTO_INCREMENT</span>,
+    code  <span class="tk-kw">VARCHAR</span>(50)     <span class="tk-kw">NOT NULL</span>,   <span class="tk-com">-- task:read / task:review</span>
+    name  <span class="tk-kw">VARCHAR</span>(50)     <span class="tk-kw">NOT NULL</span>,
+    <span class="tk-kw">PRIMARY KEY</span> (id),
+    <span class="tk-kw">UNIQUE KEY</span> uk_perm_code (code)
+);
+
+<span class="tk-com">-- 关联表一：用户与角色。主键是两列组合，同一个人不会被重复授予同一角色</span>
+<span class="tk-kw">CREATE TABLE</span> sec_user_role (
+    user_id <span class="tk-kw">BIGINT UNSIGNED</span> <span class="tk-kw">NOT NULL</span>,
+    role_id <span class="tk-kw">BIGINT UNSIGNED</span> <span class="tk-kw">NOT NULL</span>,
+    <span class="tk-kw">PRIMARY KEY</span> (user_id, role_id),
+    <span class="tk-kw">KEY</span> idx_ur_role (role_id)            <span class="tk-com">-- 反向查“哪些人持有这个角色”用得上</span>
+);
+
+<span class="tk-com">-- 关联表二：角色与权限。这张表在标准模型里有，本模块省掉了</span>
+<span class="tk-kw">CREATE TABLE</span> sec_role_permission (
+    role_id       <span class="tk-kw">BIGINT UNSIGNED</span> <span class="tk-kw">NOT NULL</span>,
+    permission_id <span class="tk-kw">BIGINT UNSIGNED</span> <span class="tk-kw">NOT NULL</span>,
+    <span class="tk-kw">PRIMARY KEY</span> (role_id, permission_id),
+    <span class="tk-kw">KEY</span> idx_rp_perm (permission_id)
+);</code></pre>
+  </div>
+
+  <p>两张关联表都别用自增主键。组合主键本身就在表达业务约束：一个人对一个角色、一个角色对一个权限点，各只允许存在一条记录。加自增 id 反而要靠唯一索引去补这个约束，多此一举。至于反向外键上的普通索引，是为了按“权限点反查角色”“角色反查用户”这两类查询不扫全表。</p>
+
+  <h3>本模块为什么只用两张表</h3>
+
+  <p>09-security 里实际只建了 <code class="i">sec_user</code>、<code class="i">sec_role</code>、<code class="i">sec_user_role</code>，<code class="i">sec_permission</code> 与 <code class="i">sec_role_permission</code> 没有建，权限点写在 <code class="i">Role</code> 枚举里。这是有意的取舍，不是漏了：</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>判断维度</th><th>放库（五表）</th><th>放代码（本模块）</th></tr></thead>
+      <tbody>
+        <tr><td>变化频率</td><td>权限点常调整，运营随时改</td><td>跟着接口一起变，一次提交改完</td></tr>
+        <tr><td>谁维护</td><td>运营或管理员，通过后台界面</td><td>开发，跟着代码评审</td></tr>
+        <tr><td>可追溯</td><td>需要额外做变更审计表</td><td><code class="mono">git log</code> 就是审计记录</td></tr>
+        <tr><td>启动依赖</td><td>依赖库里有配置，空库启动没有任何权限</td><td>代码即配置，空库也能跑</td></tr>
+        <tr><td>适用规模</td><td>权限点多、角色多、要按权限点检索</td><td>权限点稳定在几十个以内</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>教学项目里权限点会随章节增删，放代码能保证 clone 下来就能跑。真实系统要支持运营后台配权限、要回答“谁能看这个菜单”，就得上齐全五张表。</p>
+
+  <h3>补齐五张表要改的地方</h3>
+
+  <p>把 <code class="i">Role.authorities()</code> 换成一次 JOIN 查询即可，接口上的 <code class="mono">hasAuthority('task:review')</code> 一行都不用动。这正是权限点与角色分离的收益。</p>
+
+  <div class="code">
+    <div class="code-h"><span>PermissionMapper.java · 一次查完两段多对多</span></div>
+    <pre><code><span class="tk-ann">@Select</span>("""
+        <span class="tk-kw">SELECT DISTINCT</span> p.code
+        <span class="tk-kw">FROM</span> sec_user_role ur
+        <span class="tk-kw">JOIN</span> sec_role_permission rp <span class="tk-kw">ON</span> rp.role_id = ur.role_id
+        <span class="tk-kw">JOIN</span> sec_permission p     <span class="tk-kw">ON</span> p.id = rp.permission_id
+        <span class="tk-kw">WHERE</span> ur.user_id = #{userId}
+        """)
+List&lt;String&gt; selectPermissionCodes(<span class="tk-ann">@Param</span>("userId") Long userId);</code></pre>
+  </div>
+
+  <ul>
+    <li>登录时先按用户查角色编码（<code class="mono">ROLE_XXX</code> 仍要拼），再查一次权限点编码，两者合并成 <code class="mono">GrantedAuthority</code> 集合。</li>
+    <li>权限点变更后要让旧令牌失效，否则用户会拿着过期的权限集合继续访问。做法是给令牌加版本号，或者权限变更时清掉该用户的令牌。</li>
+    <li>关联表的写入要包在事务里，先删后插或按差异增删，别留下半个角色的脏数据。</li>
+  </ul>
+
+  <h3>权限矩阵</h3>
+  <p>不论权限点存在枚举还是表里，展开成矩阵的形态一样。鼠标划过某一行，看哪些角色拿到了这个权限点。</p>
+
+  <div class="panel">
+    <div class="panel-h"><div class="t">角色 × 权限点<span>共 5 个权限点</span></div></div>
+    <div class="panel-b">
+      <div class="tw matrix">
+        <table>
+          <thead>
+            <tr><th>权限点</th><th>含义</th><th style="text-align:center">STUDENT</th><th style="text-align:center">TEACHER</th><th style="text-align:center">ADMIN</th></tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">注意 <code class="mono">task:submit</code> 这一行：管理员没有它。管理员不该替学生交作业，矩阵把这个约束写在了明面上。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2><span class="num">04</span>权限点怎么命名</h2>
+  <div class="sec-rule"></div>
+
+  <p>约定是 <code class="i">资源:动作</code>，全小写，冒号分隔。名字要在接口上直接读得通：<code class="mono">hasAuthority('task:review')</code> 念出来就是"有批改任务的权限"。</p>
+
+  <ul>
+    <li>用资源不用 URL。<code class="mono">task:read</code> 比 <code class="mono">api:tasks:get</code> 稳，接口改路径时权限点不用动。</li>
+    <li>动作选动词，别用 CRUD 缩写糊弄。<code class="mono">task:review</code> 说明业务意图，<code class="mono">task:update</code> 说明不了。</li>
+    <li>一个权限点对应一类操作，不要写成 <code class="mono">task:read:all</code> 这种复合含义。</li>
+  </ul>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>练一下</span>需求是"教务能看全部提交，也能批改，但不能提交任务"。下面哪种做法改动最小？</p>
+    <div class="opts">
+      <button data-ok="0">在 Controller 上改成 <code class="mono">hasAnyRole('TEACHER','ADMIN','ACADEMIC')</code></button>
+      <button data-ok="1">新增 ACADEMIC 角色并配置 <code class="mono">task:read</code>、<code class="mono">task:review</code></button>
+      <button data-ok="0">把教务账号的用户 id 加到接口里的 if 判断白名单</button>
+    </div>
+    <p class="fb">对。接口上写的是权限点，加一个角色就够了，接口代码不动。这正是把角色和权限点分开的收益。</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2><span class="num">05</span>权限集合怎么摊平</h2>
+  <div class="sec-rule"></div>
+
+  <p>Spring Security 里没有"角色集合"这个概念，它只认一个扁平字符串集合 <code class="i">Collection&lt;GrantedAuthority&gt;</code>。所以登录成功后要把角色摊平：每个角色贡献两条东西，角色名本身 <code class="mono">ROLE_XXX</code>，以及它名下的全部权限点。</p>
+
+  <p>权限点的来源两种模型不同：五表模型下是上面那条 JOIN 查出来的 <code class="mono">p.code</code> 集合；本模块省掉两张表，直接读 <code class="i">Role</code> 枚举的 <code class="i">permissions()</code>。摊平这一步的产物一样，都是 <code class="i">List&lt;String&gt;</code>。</p>
+
+  <div class="code">
+    <div class="code-h"><span>Role.java · 摊平逻辑</span></div>
+    <pre><code><span class="tk-kw">public static</span> List&lt;String&gt; authorities(Collection&lt;Role&gt; roles) {
+    <span class="tk-kw">return</span> roles.stream()
+            .flatMap(role -&gt; Stream.concat(
+                    Stream.of(role.authority()),          <span class="tk-com">// ROLE_TEACHER</span>
+                    role.permissions().stream()))         <span class="tk-com">// task:review、task:read</span>
+            .distinct()                                   <span class="tk-com">// 多个角色重复的权限点只留一份</span>
+            .toList();
+}</code></pre>
+  </div>
+
+  <p>下面这个计算器用的就是同一份数据。勾选角色，看摊平结果和接口可达性。故意勾两个角色，能看到并集和去重。</p>
+
+  <div class="panel">
+    <div class="panel-h">
+      <div class="t">GrantedAuthority 计算器<span>可多选</span></div>
+      <div class="seg" id="calcSeg">
+        <button data-role="STUDENT">STUDENT</button>
+        <button data-role="TEACHER">TEACHER</button>
+        <button data-role="ADMIN">ADMIN</button>
+      </div>
+    </div>
+    <div class="panel-b">
+      <div class="calc-out" id="calcOut"></div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <b>ROLE_ 前缀是 Security 补的</b>
+    <p><code class="mono">hasRole("ADMIN")</code> 内部比对的是 <code class="mono">ROLE_ADMIN</code>。所以在枚举里存角色名、摊平时手动加前缀，配置里绝不要写成 <code class="mono">hasRole("ROLE_ADMIN")</code>，那样会去找 <code class="mono">ROLE_ROLE_ADMIN</code>，永远为假。</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2><span class="num">06</span>一次请求的判定路径</h2>
+  <div class="sec-rule"></div>
+
+  <p>令牌带上来以后，请求要过四道关。任何一道不过，后面的都不再执行。</p>
+
+  <div class="code">
+    <div class="code-h"><span>过滤器链顺序</span></div>
+    <pre><code>CorsFilter
+  ↓
+JwtAuthenticationFilter        <span class="tk-com">// 解析令牌，填 SecurityContext。失败不抛异常，留给后面的关判断</span>
+  ↓
+ExceptionTranslationFilter     <span class="tk-com">// 把 AuthenticationException 变 401、AccessDeniedException 变 403</span>
+  ↓
+AuthorizationFilter            <span class="tk-com">// 消费 authorizeHttpRequests 里的 URL 规则</span>
+  ↓
+DispatcherServlet → Controller <span class="tk-com">// 方法级 @PreAuthorize 由 AOP 拦截，抛 AccessDeniedException</span>
+  ↓
+Service                        <span class="tk-com">// 数据归属判断，业务自己写</span></code></pre>
+  </div>
+
+  <p>下面这个模拟器按真实代码的判定顺序走一遍。选身份和接口，看每一关的结果。</p>
+
+  <div class="panel">
+    <div class="panel-h"><div class="t">请求模拟器<span>判定逻辑对照 SecurityConfig 与 Controller</span></div></div>
+    <div class="panel-b">
+      <div class="sim-grid">
+        <div class="field">
+          <label>身份</label>
+          <select id="simIdent"></select>
+        </div>
+        <div class="field">
+          <label>请求</label>
+          <select id="simEp"></select>
+        </div>
+      </div>
+      <div class="field" id="taskIdField" style="display:none">
+        <label>路径里的任务 id</label>
+        <select id="simTask"></select>
+      </div>
+      <div class="seg" style="margin-bottom:14px">
+        <button id="simRun" class="on">发送请求</button>
+      </div>
+      <ul class="steps" id="simSteps"></ul>
+      <div id="simResult"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>401 和 403 的分界</b>
+    <p>不知道你是谁，给 401，前端清空令牌跳登录页。知道你是谁但不许做，给 403，前端只提示无权限，不要跳登录，否则用户刚登录就被踢出去，说不清。</p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <h2><span class="num">07</span>数据级授权</h2>
+  <div class="sec-rule"></div>
+
+  <p>RBAC 只能管到"这类操作能不能做"，管不到"这条记录归不归你"。后者必须在拿到数据之后判断。</p>
+
+  <div class="code">
+    <div class="code-h"><span>TaskService.java · 归属判定</span></div>
+    <pre><code><span class="tk-kw">private boolean</span> canView(TaskRow row, SecurityUser viewer) {
+    <span class="tk-kw">if</span> (row.getOwnerId().equals(viewer.id())) {
+        <span class="tk-kw">return true</span>;                       <span class="tk-com">// 本人</span>
+    }
+    <span class="tk-kw">return</span> viewer.getAuthorities().stream()
+            .anyMatch(a -&gt; a.getAuthority().equals(<span class="tk-str">"task:review"</span>));  <span class="tk-com">// 或教师与管理员</span>
+}</code></pre>
+  </div>
+
+  <p>下面四条记录，切换查看者，看谁能看哪条。<code class="mono">student02</code> 的提交就是给越权演示用的。</p>
+
+  <div class="panel">
+    <div class="panel-h">
+      <div class="t">归属判定<span>GET /api/tasks/{id}</span></div>
+      <div class="seg" id="ownSeg">
+        <button class="on" data-user="student01">student01</button>
+        <button data-user="student02">student02</button>
+        <button data-user="teacher01">teacher01</button>
+        <button data-user="admin">admin</button>
+      </div>
+    </div>
+    <div class="panel-b">
+      <div class="tw own-table">
+        <table>
+          <thead><tr><th>id</th><th>标题</th><th>提交人</th><th style="text-align:center">这条能不能看</th><th>服务端的判断理由</th></tr></thead>
+          <tbody id="ownBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <b>归属只能由服务端按令牌判定</b>
+    <p>提交接口的 <code class="mono">owner_id</code> 从令牌里的用户 id 取，不从请求体取，也不从前端传。前端传什么都不可信。这是本模块最重要的一条规矩。</p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <h2><span class="num">08</span>三种常见反模式</h2>
+  <div class="sec-rule"></div>
+
+  <p>同一个需求，两种写法。切换对比，左边是把角色名写进注解，右边只认权限点。</p>
+
+  <div class="panel">
+    <div class="panel-h">
+      <div class="t">同一需求，两种写法</div>
+      <div class="switch" id="switch1">
+        <button class="on" data-pane="p1">反模式</button>
+        <button data-pane="p2">RBAC 写法</button>
+      </div>
+    </div>
+    <div class="panel-b">
+      <div class="pane on" id="p1">
+        <div class="code" style="margin:0 0 12px">
+          <div class="code-h"><span>把角色名硬编码进判断</span></div>
+          <pre><code><span class="tk-ann">@PreAuthorize</span>(<span class="tk-str">"hasRole('TEACHER') or hasRole('ADMIN')"</span>)
+<span class="tk-kw">public</span> Result&lt;List&lt;TaskView&gt;&gt; all() { ... }</code></pre>
+        </div>
+        <p style="margin:0">教务要批改时，得回来改注解。两处、三处、最后散在十几个 Controller 里，评审时看不出哪些接口受影响。</p>
+      </div>
+      <div class="pane" id="p2">
+        <div class="code" style="margin:0 0 12px">
+          <div class="code-h"><span>只认权限点</span></div>
+          <pre><code><span class="tk-ann">@PreAuthorize</span>(<span class="tk-str">"hasAuthority('task:review')"</span>)
+<span class="tk-kw">public</span> Result&lt;List&lt;TaskView&gt;&gt; all() { ... }</code></pre>
+        </div>
+        <p style="margin:0">加角色只改 <code class="mono">Role</code> 枚举一行，所有相关接口自动生效，也没有接口上的字符串要跟着改。</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>另外两种</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>反模式</th><th>表现</th><th>后果与改法</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>只在前端藏按钮</td>
+          <td>前端 <code class="mono">v-if="isAdmin"</code> 藏了入口，后端接口不做校验</td>
+          <td>改 URL 或拿 Postman 直接调就绕过了。前端隐藏只影响体验，不构成防线</td>
+        </tr>
+        <tr>
+          <td>用角色名做数据过滤</td>
+          <td><code class="mono">if (user.isTeacher()) queryAll() else queryMine()</code></td>
+          <td>查询范围按角色分叉，越权面随角色数量膨胀。改成按归属与权限点判断，见上一节</td>
+        </tr>
+        <tr>
+          <td>把越权藏在 200 里</td>
+          <td>数据越权返回 HTTP 200 + 业务码</td>
+          <td>前端拦截器会当成成功响应处理。本模块对越权返回真实 403，其余业务错误才用 200 + code</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <h2><span class="num">09</span>结课测验</h2>
+  <div class="sec-rule"></div>
+
+  <p>六道题，点选即时反馈。全对说明这套模型已经过关。</p>
+  <p class="score" id="quizScore">得分 <b>0</b> / 6</p>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>1</span>用户 student01 只有 STUDENT 角色，调用 <code class="mono">POST /api/tasks</code> 会得到什么？</p>
+    <div class="opts">
+      <button data-ok="1">200，他有 <code class="mono">task:submit</code></button>
+      <button data-ok="0">403，因为 URL 规则只放行教师</button>
+      <button data-ok="0">401，因为没有带角色声明</button>
+    </div>
+    <p class="fb">对。<code class="mono">/api/tasks/**</code> 只要求已认证，具体能不能提交由方法上的 <code class="mono">task:submit</code> 决定。</p>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>2</span>admin 调用 <code class="mono">POST /api/tasks</code> 提交任务，结果是什么？</p>
+    <div class="opts">
+      <button data-ok="0">200，管理员权限最大</button>
+      <button data-ok="1">403，ADMIN 的权限点里没有 <code class="mono">task:submit</code></button>
+      <button data-ok="0">500，因为缺少学生档案</button>
+    </div>
+    <p class="fb">对。ADMIN 拿到的是 <code class="mono">user:read</code>、<code class="mono">user:write</code>、<code class="mono">task:read</code>、<code class="mono">task:review</code>，没有提交权。角色大不等于权限全。</p>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>3</span>student01 查 <code class="mono">/api/tasks/2</code>，而 id=2 属于 student02。哪里拒绝的？</p>
+    <div class="opts">
+      <button data-ok="0">URL 规则，<code class="mono">/api/tasks/**</code> 要求已认证</button>
+      <button data-ok="0"><code class="mono">@PreAuthorize</code>，接口上没有权限点</button>
+      <button data-ok="1">Service 里的归属判断，抛业务异常映射成 403</button>
+    </div>
+    <p class="fb">对。他通过了两道鉴权关，卡在数据归属。这也是三层里最容易被漏掉的一层。</p>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>4</span>一个账号同时有 STUDENT 和 TEACHER 两个角色，摊平后的权限点有几条？</p>
+    <div class="opts">
+      <button data-ok="0">5 条，两个角色相加</button>
+      <button data-ok="1">4 条，<code class="mono">task:read</code> 去重</button>
+      <button data-ok="0">2 条，只保留角色名</button>
+    </div>
+    <p class="fb">对。两条角色名加三个不重复的权限点：<code class="mono">task:submit</code>、<code class="mono">task:review</code>、<code class="mono">task:read</code>。<code class="mono">distinct()</code> 就是干这个的。</p>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>5</span>新增一个"教务"角色，需要改动哪些地方？</p>
+    <div class="opts">
+      <button data-ok="0">每个相关接口的注解都要加上新角色</button>
+      <button data-ok="1">Role 枚举加一项并配好权限点，再给用户绑定该角色</button>
+      <button data-ok="0">改 SecurityConfig 的 URL 规则就够了</button>
+    </div>
+    <p class="fb">对。接口只认权限点，加角色不动接口。要配置化时再加两张权限表，把查枚举换成查库。</p>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <p class="q"><span>6</span>标准五表模型里，<code class="mono">sec_role_permission</code> 的主键应该是什么？</p>
+    <div class="opts">
+      <button data-ok="0">自增 id，再加唯一索引</button>
+      <button data-ok="1"><code class="mono">(role_id, permission_id)</code> 组合主键</button>
+      <button data-ok="0">不需要主键，关联表只存关系</button>
+    </div>
+    <p class="fb">对。组合主键本身就在表达"一个角色对一个权限点只允许一条记录"这个业务约束，不必再靠自增 id 加唯一索引兜一遍。</p>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <h2><span class="num">10</span>落地检查清单</h2>
+  <div class="sec-rule"></div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>检查项</th><th>本模块的做法</th></tr></thead>
+      <tbody>
+        <tr><td>三张基础表</td><td><code class="mono">sec_user</code>、<code class="mono">sec_role</code> 已建；<code class="mono">sec_permission</code> 暂由 <code class="mono">Role</code> 枚举承担</td></tr>
+        <tr><td>两张关联表</td><td><code class="mono">sec_user_role</code> 已建；<code class="mono">sec_role_permission</code> 在补齐五表时加，主键取两端 id 组合</td></tr>
+        <tr><td>登录接口放行</td><td><code class="mono">/auth/login</code> 与 <code class="mono">/public/**</code> 走 <code class="mono">permitAll()</code></td></tr>
+        <tr><td>规则从具体到宽泛</td><td><code class="mono">anyRequest()</code> 一定放最后，否则前面全部失效</td></tr>
+        <tr><td>接口写权限点不写角色</td><td><code class="mono">hasAuthority('task:review')</code>，管理员另有 <code class="mono">hasRole('ADMIN')</code> 管整组管理接口</td></tr>
+        <tr><td>双重把关</td><td><code class="mono">/admin/**</code> 一边 URL 规则、一边类上的 <code class="mono">@PreAuthorize</code>；写操作再加 <code class="mono">user:write</code></td></tr>
+        <tr><td>401 与 403 分开</td><td>认证失败给 401 并清令牌，授权失败给 403 只提示</td></tr>
+        <tr><td>归属服务端判定</td><td><code class="mono">owner_id</code> 从令牌取，URL 里的 id 只能当查询条件</td></tr>
+        <tr><td>越权不打 200 折扣</td><td>业务异常映射成真实 403，别让前端把拒绝当成功</td></tr>
+        <tr><td>权限点有测试覆盖</td><td><code class="mono">SecurityApiTest</code> 里每个角色对每个接口的期望状态码都断言一遍</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>回到开头那个改 id 的请求。现在它会在第三层被拦住，日志里留下一行 <code class="mono">student01 试图查看 student02 的任务 2</code>。这条日志本身也是资产，它告诉你有人在探边界。</p>
+
+  <div class="tip">
+    <b>接着往下走</b>
+    <p>本模块的权限点还在代码里。要支持运营后台改权限，下一步是加 <code class="mono">sec_permission</code> 与 <code class="mono">sec_role_permission</code>，登录时查库装配权限，再把权限变更做成可审计的操作日志。</p>
+  </div>
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= 公共数据（与 Role.java 一致） ================= */
+  var ROLE_PERMS = {
+    STUDENT: ["task:submit", "task:read"],
+    TEACHER: ["task:review", "task:read"],
+    ADMIN: ["user:read", "user:write", "task:read", "task:review"]
+  };
+  var PERM_DESC = {
+    "task:submit": "提交任务",
+    "task:read": "查看任务",
+    "task:review": "批改任务",
+    "user:read": "查看账号",
+    "user:write": "增删账号"
+  };
+  var PERM_ORDER = ["task:submit", "task:read", "task:review", "user:read", "user:write"];
+  var USERS = [
+    { username: "student01", real: "朱彦清", roles: ["STUDENT"] },
+    { username: "student02", real: "李思远", roles: ["STUDENT"] },
+    { username: "teacher01", real: "陶老师", roles: ["TEACHER"] },
+    { username: "admin", real: "管理员", roles: ["ADMIN"] }
+  ];
+  var TASKS = [
+    { id: 1, title: "实训一：前后端分离登录", owner: "student01" },
+    { id: 2, title: "实训二：任务列表与分页", owner: "student02" },
+    { id: 3, title: "实训三：统一响应改造", owner: "student01" },
+    { id: 4, title: "实训四：MyBatis-Plus 分页", owner: "student03" }
+  ];
+
+  function authorities(roles) {
+    var out = [];
+    roles.forEach(function (r) {
+      ["ROLE_" + r].concat(ROLE_PERMS[r] || []).forEach(function (a) {
+        if (out.indexOf(a) === -1) out.push(a);
+      });
+    });
+    return out;
+  }
+  function hasAuthority(roles, perm) {
+    return authorities(roles).indexOf(perm) !== -1;
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  /* ================= 进度条 + 目录高亮 ================= */
+  var bar = document.getElementById("bar");
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var sections = tocLinks.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+  function onScroll() {
+    var h = document.documentElement;
+    var pct = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+    bar.style.width = Math.min(100, pct * 100) + "%";
+    var idx = 0;
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i] && sections[i].getBoundingClientRect().top <= 120) idx = i;
+    }
+    tocLinks.forEach(function (a, i) { a.classList.toggle("active", i === idx); });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  /* ================= 代码复制 ================= */
+  document.querySelectorAll(".code-h").forEach(function (h) {
+    if (h.querySelector("button")) return;
+    var btn = document.createElement("button");
+    btn.textContent = "复制";
+    btn.addEventListener("click", function () {
+      var pre = h.parentElement.querySelector("pre");
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.innerText).then(function () {
+        btn.textContent = "已复制";
+        setTimeout(function () { btn.textContent = "复制"; }, 1400);
+      });
+    });
+    h.appendChild(btn);
+  });
+
+  /* ================= 1. 改 id 演示 ================= */
+  var CURL_BODY = {
+    1: { ok: true, body: { code: 200, data: { id: 1, title: "实训一：前后端分离登录", owner: "朱彦清", status: "SUBMITTED" } } },
+    2: { ok: true, body: { code: 200, data: { id: 2, title: "实训二：任务列表与分页", owner: "李思远", status: "REVIEWED", score: 88 } } },
+    3: { ok: true, body: { code: 200, data: { id: 3, title: "实训三：统一响应改造", owner: "朱彦清", status: "REVIEWED", score: 91 } } }
+  };
+  var curlOut = document.getElementById("curlOut");
+  var curlNote = document.getElementById("curlNote");
+  function renderCurl(id) {
+    var r = CURL_BODY[id];
+    curlOut.textContent = "HTTP 200\n" + JSON.stringify(r.body, null, 2);
+    curlNote.innerHTML = id === "1"
+      ? "自己的记录，一切正常。"
+      : '<b>' + "id=" + id + '</b> 不是他的记录，但接口只检查了"登录了没有"，于是别人的提交连同分数一起返回了。';
+  }
+  document.querySelectorAll("#curlSeg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("#curlSeg button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      renderCurl(b.dataset.t);
+    });
+  });
+  renderCurl("1");
+
+  /* ================= 2. 三列模型图 ================= */
+  var USER_Y = { student01: 40, student02: 100, teacher01: 160, admin: 220 };
+  var ROLE_Y = { STUDENT: 56, TEACHER: 146, ADMIN: 236 };
+  var PERM_Y = { "task:submit": 40, "task:read": 92, "task:review": 144, "user:read": 206, "user:write": 258 };
+  var USER_ROLE = [["student01", "STUDENT"], ["student02", "STUDENT"], ["teacher01", "TEACHER"], ["admin", "ADMIN"]];
+  var ROLE_PERM_EDGE = [];
+  Object.keys(ROLE_PERMS).forEach(function (r) {
+    ROLE_PERMS[r].forEach(function (p) { ROLE_PERM_EDGE.push([r, p]); });
+  });
+
+  var UX = 6, UW = 150, UH = 40;
+  var RX = 282, RW = 142, RH = 46;
+  var PX = 538, PW = 168, PH = 34;
+
+  function curve(x1, y1, x2, y2) {
+    var mx = (x1 + x2) / 2;
+    return "M" + x1 + "," + y1 + " C" + mx + "," + y1 + " " + mx + "," + y2 + " " + x2 + "," + y2;
+  }
+
+  var modelSel = null;
+  var modelWrap = document.getElementById("modelWrap");
+  var modelCap = document.getElementById("modelCap");
+
+  function renderModel() {
+    var svg = ['<svg viewBox="0 0 712 320" role="img" aria-label="用户 角色 权限点 关系图">'];
+    svg.push('<defs><linearGradient id="gn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef2ff"/><stop offset="1" stop-color="#e4ecff"/></linearGradient></defs>');
+
+    // 列标题
+    svg.push('<text x="' + (UX + UW / 2) + '" y="16" text-anchor="middle" font-size="11" letter-spacing="1.6" fill="#7b8798">用户</text>');
+    svg.push('<text x="' + (RX + RW / 2) + '" y="16" text-anchor="middle" font-size="11" letter-spacing="1.6" fill="#7b8798">角色</text>');
+    svg.push('<text x="' + (PX + PW / 2) + '" y="16" text-anchor="middle" font-size="11" letter-spacing="1.6" fill="#7b8798">权限点</text>');
+
+    function activeEdges() {
+      var a = { ur: {}, rp: {} };
+      if (!modelSel) return null;
+      if (modelSel.type === "role") {
+        USER_ROLE.forEach(function (e) { if (e[1] === modelSel.key) a.ur[e[0] + "|" + e[1]] = 1; });
+        ROLE_PERM_EDGE.forEach(function (e) { if (e[0] === modelSel.key) a.rp[e[0] + "|" + e[1]] = 1; });
+      } else if (modelSel.type === "perm") {
+        ROLE_PERM_EDGE.forEach(function (e) {
+          if (e[1] === modelSel.key) {
+            a.rp[e[0] + "|" + e[1]] = 1;
+            USER_ROLE.forEach(function (u) { if (u[1] === e[0]) a.ur[u[0] + "|" + u[1]] = 1; });
+          }
+        });
+      } else if (modelSel.type === "user") {
+        USER_ROLE.forEach(function (e) {
+          if (e[0] === modelSel.key) {
+            a.ur[e[0] + "|" + e[1]] = 1;
+            ROLE_PERM_EDGE.forEach(function (r) { if (r[0] === e[1]) a.rp[r[0] + "|" + r[1]] = 1; });
+          }
+        });
+      }
+      return a;
+    }
+    var act = activeEdges();
+
+    // 用户 -> 角色
+    USER_ROLE.forEach(function (e) {
+      var y1 = USER_Y[e[0]] + UH / 2, y2 = ROLE_Y[e[1]] + RH / 2;
+      var on = act ? !!act.ur[e[0] + "|" + e[1]] : true;
+      svg.push('<path class="edge" d="' + curve(UX + UW, y1, RX, y2) + '" fill="none" stroke="' +
+        (on ? "#2f5cf6" : "#c9d2e4") + '" stroke-width="' + (on ? 2 : 1.6) +
+        '" opacity="' + (act && !on ? 0.16 : 0.85) + '"/>');
+    });
+    // 角色 -> 权限点
+    ROLE_PERM_EDGE.forEach(function (e) {
+      var y1 = ROLE_Y[e[0]] + RH / 2, y2 = PERM_Y[e[1]] + PH / 2;
+      var on = act ? !!act.rp[e[0] + "|" + e[1]] : true;
+      svg.push('<path class="edge" d="' + curve(RX + RW, y1, PX, y2) + '" fill="none" stroke="' +
+        (on ? "#2f5cf6" : "#c9d2e4") + '" stroke-width="' + (on ? 2 : 1.6) +
+        '" opacity="' + (act && !on ? 0.16 : 0.85) + '"/>');
+    });
+
+    // 用户节点
+    USERS.forEach(function (u) {
+      var y = USER_Y[u.username];
+      var dim = act && modelSel && !(modelSel.type === "user" && modelSel.key === u.username) && !(act.ur[u.username + "|" + u.roles[0]]);
+      svg.push('<g class="node" data-user="' + u.username + '" opacity="' + (dim ? 0.5 : 1) + '">');
+      svg.push('<rect x="' + UX + '" y="' + y + '" width="' + UW + '" height="' + UH + '" rx="9" fill="#ffffff" stroke="#d3d9e6"/>');
+      svg.push('<text x="' + (UX + 12) + '" y="' + (y + 17) + '" font-size="13" font-family="ui-monospace,Menlo,monospace" fill="#1b2333">' + esc(u.username) + '</text>');
+      svg.push('<text x="' + (UX + 12) + '" y="' + (y + 31) + '" font-size="11" fill="#7b8798">' + esc(u.real) + '</text>');
+      svg.push('</g>');
+    });
+
+    // 角色节点
+    Object.keys(ROLE_PERMS).forEach(function (r) {
+      var y = ROLE_Y[r];
+      var on = !modelSel || (modelSel.type === "role" && modelSel.key === r) || (act && Object.keys(act.rp).some(function (k) { return k.split("|")[0] === r; }));
+      svg.push('<g class="node" data-role="' + r + '" opacity="' + (on ? 1 : 0.55) + '">');
+      svg.push('<rect x="' + RX + '" y="' + y + '" width="' + RW + '" height="' + RH + '" rx="10" fill="' +
+        (modelSel && modelSel.type === "role" && modelSel.key === r ? "#2f5cf6" : "url(#gn)") +
+        '" stroke="' + (modelSel && modelSel.type === "role" && modelSel.key === r ? "#2f5cf6" : "#cfd9ff") + '" stroke-width="1.4"/>');
+      var hi = modelSel && modelSel.type === "role" && modelSel.key === r;
+      svg.push('<text x="' + (RX + RW / 2) + '" y="' + (y + 20) + '" text-anchor="middle" font-size="13" font-family="ui-monospace,Menlo,monospace" font-weight="600" fill="' + (hi ? "#ffffff" : "#2f5cf6") + '">' + r + '</text>');
+      svg.push('<text x="' + (RX + RW / 2) + '" y="' + (y + 35) + '" text-anchor="middle" font-size="11" fill="' + (hi ? "#dfe7ff" : "#7b8798") + '">' + ROLE_PERMS[r].length + ' 个权限点</text>');
+      svg.push('</g>');
+    });
+
+    // 权限点节点
+    PERM_ORDER.forEach(function (p) {
+      var y = PERM_Y[p];
+      var hi = modelSel && modelSel.type === "perm" && modelSel.key === p;
+      var on = !modelSel || hi || (act && Object.keys(act.rp).some(function (k) { return k.split("|")[1] === p; }));
+      svg.push('<g class="node" data-perm="' + p + '" opacity="' + (on ? 1 : 0.55) + '">');
+      svg.push('<rect x="' + PX + '" y="' + y + '" width="' + PW + '" height="' + PH + '" rx="8" fill="' + (hi ? "#eef2ff" : "#ffffff") + '" stroke="' + (hi ? "#2f5cf6" : "#d3d9e6") + '" stroke-width="' + (hi ? 1.6 : 1) + '"/>');
+      svg.push('<text x="' + (PX + 12) + '" y="' + (y + 22) + '" font-size="12.5" font-family="ui-monospace,Menlo,monospace" fill="#1b2333">' + esc(p) + '</text>');
+      svg.push('</g>');
+    });
+
+    svg.push('</svg>');
+    modelWrap.innerHTML = svg.join("");
+
+    modelWrap.querySelectorAll("[data-user]").forEach(function (g) {
+      g.addEventListener("click", function () { pick("user", g.dataset.user); });
+    });
+    modelWrap.querySelectorAll("[data-role]").forEach(function (g) {
+      g.addEventListener("click", function () { pick("role", g.dataset.role); });
+    });
+    modelWrap.querySelectorAll("[data-perm]").forEach(function (g) {
+      g.addEventListener("click", function () { pick("perm", g.dataset.perm); });
+    });
+  }
+
+  function pick(type, key) {
+    if (modelSel && modelSel.type === type && modelSel.key === key) modelSel = null;
+    else modelSel = { type: type, key: key };
+    renderModel();
+    updateCap();
+  }
+  function updateCap() {
+    if (!modelSel) {
+      modelCap.innerHTML = "四个账号，三个角色，五个权限点。点任意节点看关系。";
+      return;
+    }
+    if (modelSel.type === "user") {
+      var u = USERS.filter(function (x) { return x.username === modelSel.key; })[0];
+      modelCap.innerHTML = '<b>' + u.username + '</b>（' + u.real + '）持有 ' +
+        u.roles.map(function (r) { return '<b>' + r + '</b>'; }).join("、") +
+        '，摊平后共 ' + authorities(u.roles).length + ' 条 authority。';
+    } else if (modelSel.type === "role") {
+      var who = USERS.filter(function (x) { return x.roles.indexOf(modelSel.key) !== -1; }).map(function (x) { return x.username; });
+      modelCap.innerHTML = '<b>' + modelSel.key + '</b> 被 ' + who.length + ' 个账号持有：' + who.join("、") +
+        '；权限点 ' + ROLE_PERMS[modelSel.key].map(function (p) { return '<b>' + p + '</b>'; }).join("、") + '。';
+    } else {
+      var holders = Object.keys(ROLE_PERMS).filter(function (r) { return ROLE_PERMS[r].indexOf(modelSel.key) !== -1; });
+      modelCap.innerHTML = '<b>' + modelSel.key + '</b>（' + PERM_DESC[modelSel.key] + '）由 ' +
+        (holders.length ? holders.join("、") : "没有任何角色") + ' 提供。';
+    }
+  }
+  document.getElementById("modelReset").addEventListener("click", function () {
+    modelSel = null; renderModel(); updateCap();
+  });
+  renderModel(); updateCap();
+
+  /* ================= 2b. 五表 ER 图 ================= */
+  var ER = [
+    {
+      key: "sec_user", name: "用户表", kind: "基础表",
+      cols: [["id", "PK"], ["username", "UQ"], ["password", ""], ["enabled", ""]],
+      desc: "账号本身。密码存 BCrypt 密文，enabled=0 的账号连登录都过不了。"
+    },
+    {
+      key: "sec_user_role", name: "用户角色表", kind: "关联表",
+      cols: [["user_id", "PK FK"], ["role_id", "PK FK"]],
+      desc: "用户与角色的多对多。主键取 (user_id, role_id) 组合，同一个人不会被重复授予同一角色。"
+    },
+    {
+      key: "sec_role", name: "角色表", kind: "基础表",
+      cols: [["id", "PK"], ["code", "UQ"], ["name", ""]],
+      desc: "角色的唯一定义。code 与 Role 枚举同名，登录时靠它拼出 ROLE_XXX。"
+    },
+    {
+      key: "sec_role_permission", name: "角色权限表", kind: "关联表",
+      cols: [["role_id", "PK FK"], ["permission_id", "PK FK"]],
+      desc: "角色与权限点的多对多，正是本模块省掉的一环。补上这张表，权限就能在运营后台配。"
+    },
+    {
+      key: "sec_permission", name: "权限表", kind: "基础表",
+      cols: [["id", "PK"], ["code", "UQ"], ["name", ""]],
+      desc: "权限点的唯一定义。code 就是接口注解里写的那个字符串，例如 task:review。"
+    }
+  ];
+  var ER_W = 170, ER_HH = 34, ER_RH = 19;
+  var ER_POS = [
+    [6, 26],      // sec_user
+    [272, 26],    // sec_user_role
+    [538, 26],    // sec_role
+    [272, 176],   // sec_role_permission
+    [538, 176]    // sec_permission
+  ];
+  var ER_EDGE = [
+    { a: 0, b: 1, dir: "h", label: "1 : N" },
+    { a: 1, b: 2, dir: "h", label: "N : 1" },
+    { a: 2, b: 3, dir: "v", label: "1 : N" },
+    { a: 3, b: 4, dir: "h", label: "N : 1" }
+  ];
+  var erSel = null;
+  var erWrap = document.getElementById("erWrap");
+  var erCap = document.getElementById("erCap");
+
+  function erHeight(t) { return ER_HH + t.cols.length * ER_RH + 8; }
+  function erRight(i) { return ER_POS[i][0] + ER_W; }
+  function erMidY(i) { return ER_POS[i][1] + 52; }
+  function erBottom(i) { return ER_POS[i][1] + erHeight(ER[i]); }
+
+  function renderEr() {
+    var out = ['<svg viewBox="0 0 714 320" role="img" aria-label="RBAC 五张表的关系图">'];
+
+    ER_EDGE.forEach(function (e) {
+      var touched = erSel !== null && (erSel === e.a || erSel === e.b);
+      var dim = erSel !== null && !touched;
+      var stroke = touched ? "#2f5cf6" : "#c9d2e4";
+      var sw = touched ? 2 : 1.4;
+      var op = dim ? 0.22 : 0.9;
+      var d, lx, ly, anchor = "middle";
+      if (e.dir === "h") {
+        var y = erMidY(e.a);
+        d = '<line x1="' + erRight(e.a) + '" y1="' + y + '" x2="' + ER_POS[e.b][0] + '" y2="' + erMidY(e.b) + '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + op + '"/>';
+        lx = (erRight(e.a) + ER_POS[e.b][0]) / 2;
+        ly = y - 7;
+      } else {
+        var x1 = ER_POS[e.a][0] + ER_W / 2, y1 = erBottom(e.a);
+        var x2 = ER_POS[e.b][0] + ER_W / 2, y2 = ER_POS[e.b][1];
+        var my = (y1 + y2) / 2;
+        d = '<path d="M' + x1 + ',' + y1 + ' C' + x1 + ',' + my + ' ' + x2 + ',' + my + ' ' + x2 + ',' + y2 + '" fill="none" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + op + '"/>';
+        lx = x2 + 8;
+        ly = my + 3;
+        anchor = "start";
+      }
+      out.push(d);
+      out.push('<text x="' + lx + '" y="' + ly + '" text-anchor="' + anchor + '" font-size="9.5" font-family="ui-monospace,Menlo,monospace" fill="' +
+        (touched ? "#2f5cf6" : "#9aa5b8") + '" opacity="' + (dim ? 0.3 : 1) + '">' + e.label + '</text>');
+    });
+
+    ER.forEach(function (t, i) {
+      var x = ER_POS[i][0], y = ER_POS[i][1], h = erHeight(t);
+      var sel = erSel === i;
+      var near = ER_EDGE.some(function (e) { return (e.a === erSel && e.b === i) || (e.b === erSel && e.a === i); });
+      var dim = erSel !== null && !sel && !near;
+      var base = t.kind === "基础表";
+      var headFill = sel ? "#2f5cf6" : (base ? "#eef2ff" : "#fff7ed");
+      var headStroke = sel ? "#2f5cf6" : (base ? "#cfd9ff" : "#f3d9b5");
+      out.push('<g class="node" data-er="' + i + '" opacity="' + (dim ? 0.45 : 1) + '">');
+      out.push('<rect x="' + x + '" y="' + y + '" width="' + ER_W + '" height="' + h + '" rx="9" fill="#ffffff" stroke="' + headStroke + '" stroke-width="' + (sel ? 2 : 1.2) + '"/>');
+      out.push('<path d="M' + x + ',' + (y + 9) + ' a9,9 0 0 1 9,-9 h' + (ER_W - 18) + ' a9,9 0 0 1 9,9 v' + (ER_HH - 9) + ' h' + (-ER_W) + ' z" fill="' + headFill + '"/>');
+      out.push('<text x="' + (x + 11) + '" y="' + (y + 15) + '" font-size="12" font-weight="600" fill="' + (sel ? "#ffffff" : "#1b2333") + '">' + t.name + '</text>');
+      out.push('<text x="' + (x + 11) + '" y="' + (y + 28) + '" font-size="10" font-family="ui-monospace,Menlo,monospace" fill="' + (sel ? "#dfe7ff" : "#7b8798") + '">' + t.key + '</text>');
+      t.cols.forEach(function (c, j) {
+        var cy = y + ER_HH + 5 + j * ER_RH;
+        out.push('<text x="' + (x + 11) + '" y="' + (cy + 12) + '" font-size="10.5" font-family="ui-monospace,Menlo,monospace" fill="#48546a">' + c[0] + '</text>');
+        if (c[1]) {
+          out.push('<text x="' + (x + ER_W - 9) + '" y="' + (cy + 12) + '" text-anchor="end" font-size="8.5" font-family="ui-monospace,Menlo,monospace" fill="' +
+            (c[1].indexOf("PK") === 0 ? "#2f5cf6" : "#b45309") + '">' + c[1] + '</text>');
+        }
+      });
+      out.push('</g>');
+    });
+
+    out.push('</svg>');
+    erWrap.innerHTML = out.join("");
+    erWrap.querySelectorAll("[data-er]").forEach(function (g) {
+      g.addEventListener("click", function () {
+        var i = parseInt(g.dataset.er, 10);
+        erSel = (erSel === i) ? null : i;
+        renderEr();
+        updateErCap();
+      });
+    });
+  }
+
+  function updateErCap() {
+    if (erSel === null) {
+      erCap.innerHTML = '三张基础表（用户、角色、权限）加两张关联表，串成两段多对多。点击任意表看它管什么。';
+      return;
+    }
+    var t = ER[erSel];
+    erCap.innerHTML = '<b>' + t.key + '</b>（' + t.kind + '）：' + t.desc;
+  }
+
+  document.getElementById("erReset").addEventListener("click", function () {
+    erSel = null; renderEr(); updateErCap();
+  });
+  renderEr(); updateErCap();
+
+  /* ================= 3. 权限矩阵 ================= */
+  var mb = document.getElementById("matrixBody");
+  mb.innerHTML = PERM_ORDER.map(function (p) {
+    var cells = ["STUDENT", "TEACHER", "ADMIN"].map(function (r) {
+      var has = ROLE_PERMS[r].indexOf(p) !== -1;
+      return '<td class="cell ' + (has ? "yes" : "no") + '">' + (has ? "✓" : "·") + '</td>';
+    }).join("");
+    return '<tr data-perm="' + p + '"><td class="mono">' + esc(p) + '</td><td>' + PERM_DESC[p] + '</td>' + cells + '</tr>';
+  }).join("");
+  mb.querySelectorAll("tr").forEach(function (tr) {
+    tr.addEventListener("mouseenter", function () { tr.classList.add("hl"); });
+    tr.addEventListener("mouseleave", function () { tr.classList.remove("hl"); });
+  });
+
+  /* ================= 5. 集合计算器 ================= */
+  var calcRoles = [];
+  var calcOut = document.getElementById("calcOut");
+  var EP_FOR_PERM = {
+    "task:submit": "POST /api/tasks",
+    "task:read": "GET /api/tasks/mine",
+    "task:review": "GET /api/tasks、POST /api/tasks/{id}/review",
+    "user:read": "GET /admin/users",
+    "user:write": "POST /admin/users"
+  };
+  function renderCalc() {
+    var auths = authorities(calcRoles);
+    var perms = auths.filter(function (a) { return a.indexOf("ROLE_") !== 0; });
+    var html = "";
+    html += '<div class="row"><span class="k">已选角色</span>' +
+      (calcRoles.length ? calcRoles.map(function (r) { return '<span class="perm-chip role">' + r + '</span>'; }).join("")
+        : '<span class="muted" style="font-size:13.5px">未选择，等同于匿名，所有接口 401</span>') + '</div>';
+    html += '<div class="row"><span class="k">GrantedAuthority（' + auths.length + ' 条）</span>' +
+      (auths.length ? auths.map(function (a) {
+        return '<span class="perm-chip' + (a.indexOf("ROLE_") === 0 ? " role" : " new") + '">' + esc(a) + '</span>';
+      }).join("") : '<span class="muted" style="font-size:13.5px">空集合</span>') + '</div>';
+    html += '<div class="row"><span class="k">由此可调用的接口</span>' +
+      (perms.length ? perms.map(function (p) {
+        return '<span class="perm-chip">' + EP_FOR_PERM[p] + '</span>';
+      }).join("") : '<span class="muted" style="font-size:13.5px">无</span>') + '</div>';
+    if (calcRoles.length > 1) {
+      html += '<p class="hint" style="margin-top:8px">多个角色取并集，重复权限点只保留一份，这就是 <code class="mono">distinct()</code> 的作用。</p>';
+    }
+    if (calcRoles.indexOf("ADMIN") !== -1 && calcRoles.indexOf("STUDENT") === -1) {
+      html += '<p class="hint" style="margin-top:8px">注意这里没有 <code class="mono">task:submit</code>，管理员交不了作业。</p>';
+    }
+    calcOut.innerHTML = html;
+  }
+  document.querySelectorAll("#calcSeg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var r = b.dataset.role;
+      var i = calcRoles.indexOf(r);
+      if (i === -1) { calcRoles.push(r); b.classList.add("on"); }
+      else { calcRoles.splice(i, 1); b.classList.remove("on"); }
+      renderCalc();
+    });
+  });
+  renderCalc();
+
+  /* ================= 6. 请求模拟器 ================= */
+  var IDENTS = [
+    { key: "anon", label: "匿名（无令牌）", roles: null },
+    { key: "student01", label: "student01 · 朱彦清（STUDENT）", roles: ["STUDENT"] },
+    { key: "student02", label: "student02 · 李思远（STUDENT）", roles: ["STUDENT"] },
+    { key: "teacher01", label: "teacher01 · 陶老师（TEACHER）", roles: ["TEACHER"] },
+    { key: "admin", label: "admin · 管理员（ADMIN）", roles: ["ADMIN"] },
+    { key: "dual", label: "朱彦清 + 助教（STUDENT + TEACHER）", roles: ["STUDENT", "TEACHER"] }
+  ];
+  var ENDPOINTS = [
+    { id: "login", label: "POST /auth/login（登录）", url: "permit", match: "/auth/login" },
+    { id: "health", label: "GET /public/health（公开）", url: "permit", match: "/public/**" },
+    { id: "mine", label: "GET /api/tasks/mine（我的提交）", url: "auth", match: "/api/tasks/**" },
+    { id: "submit", label: "POST /api/tasks（提交任务）", url: "auth", match: "/api/tasks/**", perm: "task:submit" },
+    { id: "all", label: "GET /api/tasks（全部提交）", url: "auth", match: "/api/tasks/**", perm: "task:review" },
+    { id: "review", label: "POST /api/tasks/1/review（批改）", url: "auth", match: "/api/tasks/**", perm: "task:review" },
+    { id: "detail", label: "GET /api/tasks/{id}（看单条）", url: "auth", match: "/api/tasks/**", data: "ownerOrReview" },
+    { id: "adminList", label: "GET /admin/users（账号列表）", url: "admin", match: "/admin/**", role: "ADMIN" },
+    { id: "adminCreate", label: "POST /admin/users（新建账号）", url: "admin", match: "/admin/**", role: "ADMIN", perm: "user:write" },
+    { id: "adminDel", label: "DELETE /admin/users/admin（删当前账号）", url: "admin", match: "/admin/**", role: "ADMIN", data: "notSelf" }
+  ];
+
+  var simIdent = document.getElementById("simIdent");
+  var simEp = document.getElementById("simEp");
+  var simTask = document.getElementById("simTask");
+  var simSteps = document.getElementById("simSteps");
+  var simResult = document.getElementById("simResult");
+  var taskIdField = document.getElementById("taskIdField");
+
+  IDENTS.forEach(function (d) {
+    simIdent.insertAdjacentHTML("beforeend", '<option value="' + d.key + '">' + esc(d.label) + '</option>');
+  });
+  ENDPOINTS.forEach(function (e) {
+    simEp.insertAdjacentHTML("beforeend", '<option value="' + e.id + '">' + esc(e.label) + '</option>');
+  });
+  TASKS.forEach(function (t) {
+    simTask.insertAdjacentHTML("beforeend", '<option value="' + t.id + '">id=' + t.id + ' · ' + esc(t.title) + '（提交人 ' + t.owner + '）</option>');
+  });
+  simTask.value = "2";
+
+  function getIdent(key) {
+    return IDENTS.filter(function (d) { return d.key === key; })[0];
+  }
+  function getEp(key) {
+    return ENDPOINTS.filter(function (e) { return e.id === key; })[0];
+  }
+
+  function stepClass(s) {
+    return s.s === "pass" ? "pass" : (s.s === "fail" ? "fail" : "skip");
+  }
+  function stepMark(s) {
+    return s.s === "pass" ? "✓" : (s.s === "fail" ? "✕" : "–");
+  }
+
+  function buildPlan(identKey, epKey, taskId) {
+    var ident = getIdent(identKey);
+    var ep = getEp(epKey);
+    var steps = [];
+    var authed = !!ident.roles;
+
+    // ① 认证
+    if (ep.url === "permit") {
+      steps.push({ k: "① 认证", s: "skip", d: "该路径 permitAll，过滤链不要求身份，匿名也能过。" });
+    } else if (!authed) {
+      steps.push({ k: "① 认证", s: "fail", d: "请求头没有 <code>Authorization: Bearer …</code>，SecurityContext 为空，抛 AuthenticationException。" });
+      return { steps: steps, status: 401, code: "401", msg: "未认证或令牌已失效", stop: "ExceptionTranslationFilter 把异常翻成 401，前端清空令牌跳登录页。" };
+    } else {
+      steps.push({ k: "① 认证", s: "pass", d: "JWT 校验通过，SecurityContext 放入 <code>" + ident.key + "</code>，携带 " + authorities(ident.roles).length + " 条 authority。" });
+    }
+
+    // ② URL 规则
+    if (ep.url === "permit") {
+      steps.push({ k: "② URL 规则", s: "pass", d: '<code>requestMatchers("' + ep.match + '").permitAll()</code>' });
+    } else if (ep.url === "auth") {
+      steps.push({ k: "② URL 规则", s: "pass", d: '<code>requestMatchers("' + ep.match + '").authenticated()</code>，只要求登录，不区分角色。' });
+    } else {
+      if (ident.roles && ident.roles.indexOf(ep.role) !== -1) {
+        steps.push({ k: "② URL 规则", s: "pass", d: '<code>requestMatchers("/admin/**").hasRole("ADMIN")</code>，比对 <code>ROLE_ADMIN</code>，通过。' });
+      } else {
+        steps.push({ k: "② URL 规则", s: "fail", d: "整组 <code>/admin/**</code> 要求 <code>ROLE_ADMIN</code>，" + ident.key + " 没有，AccessDeniedException。" });
+        return { steps: steps, status: 403, code: "403", msg: "无权访问该资源", stop: "由 RestAccessDeniedHandler 输出 403，前端只提示无权限，不跳登录。" };
+      }
+    }
+
+    // ③ 方法级
+    if (ep.url === "permit") {
+      steps.push({ k: "③ 方法级", s: "skip", d: "该接口没有 @PreAuthorize。" });
+    } else if (ep.perm) {
+      if (hasAuthority(ident.roles, ep.perm)) {
+        steps.push({ k: "③ 方法级", s: "pass", d: "<code>@PreAuthorize(\"hasAuthority('" + ep.perm + "')\")</code>，集合中有这一条，通过。" });
+      } else {
+        steps.push({ k: "③ 方法级", s: "fail", d: "注解要求 <code>" + ep.perm + "</code>，" + ident.key + " 的集合里没有这一条，AccessDeniedException。" });
+        return { steps: steps, status: 403, code: "403", msg: "无权访问该资源", stop: "GlobalExceptionHandler 兜住 AccessDeniedException，返回真实 403。" };
+      }
+    } else if (ep.role) {
+      if (ident.roles.indexOf(ep.role) !== -1) {
+        steps.push({ k: "③ 方法级", s: "pass", d: "类上的 <code>@PreAuthorize(\"hasRole('ADMIN')\")</code>，通过。这是第二道防线。" });
+      } else {
+        steps.push({ k: "③ 方法级", s: "fail", d: "类上的 <code>hasRole('ADMIN')</code> 不通过。" });
+        return { steps: steps, status: 403, code: "403", msg: "无权访问该资源", stop: "" };
+      }
+    } else {
+      steps.push({ k: "③ 方法级", s: "skip", d: "没有 @PreAuthorize，权限点这一层不设限。" });
+    }
+
+    // ④ 数据级
+    if (ep.data === "ownerOrReview") {
+      var t = TASKS.filter(function (x) { return String(x.id) === String(taskId); })[0];
+      var isOwner = t.owner === ident.key;
+      var canReview = hasAuthority(ident.roles, "task:review");
+      if (isOwner) {
+        steps.push({ k: "④ 数据级", s: "pass", d: "id=" + t.id + " 的 owner_id 就是令牌里的用户 id，本人可看。" });
+        return { steps: steps, status: 200, code: "200", msg: "返回 id=" + t.id + " 的详情", stop: "" };
+      }
+      if (canReview) {
+        steps.push({ k: "④ 数据级", s: "pass", d: "不是本人，但持有 <code>task:review</code>，教师与管理员可看全部。" });
+        return { steps: steps, status: 200, code: "200", msg: "返回 id=" + t.id + " 的详情", stop: "" };
+      }
+      steps.push({ k: "④ 数据级", s: "fail", d: "owner_id 是 " + t.owner + "，不是 " + ident.key + "，且没有 <code>task:review</code>。Service 抛 BusinessException(FORBIDDEN)，日志留一行 warn。" });
+      return { steps: steps, status: 403, code: "403", msg: "无权访问该资源", stop: "越权用真实 403，不藏在 200 里，前端才能正确处理。" };
+    }
+    if (ep.data === "notSelf") {
+      steps.push({ k: "④ 数据级", s: "fail", d: "目标账号就是当前登录账号 admin，UserService 抛 CANNOT_DELETE_SELF。" });
+      return { steps: steps, status: 200, code: "30005", msg: "不能删除当前登录账号", stop: "业务异常走 200 + code 30005，前端按业务码提示，不当作成功。" };
+    }
+    steps.push({ k: "④ 数据级", s: "skip", d: "不涉及单条记录归属。" });
+
+    var body = {
+      login: "返回 accessToken 与角色列表",
+      health: "pong",
+      mine: "只返回本人的 3 条提交",
+      submit: "创建一条 SUBMITTED 记录",
+      all: "全部 28 条提交",
+      review: "写入分数与评语",
+      adminList: "14 个账号",
+      adminCreate: "新账号已创建",
+      adminDel: "账号已删除"
+    }[ep.id] || "";
+    return { steps: steps, status: 200, code: "200", msg: body, stop: "" };
+  }
+
+  function paintSteps(steps, upto) {
+    simSteps.innerHTML = steps.map(function (s, i) {
+      var cls = i < upto ? stepClass(s) : "pending";
+      var mark = i < upto ? stepMark(s) : "·";
+      return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span><span class="k">' + s.k + '</span><span class="d">' + s.d + '</span></span></li>';
+    }).join("");
+  }
+
+  var simToken = 0;
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  async function runSim() {
+    var identKey = simIdent.value, epKey = simEp.value, taskId = simTask.value;
+    var plan = buildPlan(identKey, epKey, taskId);
+    var myToken = ++simToken;
+    simResult.innerHTML = "";
+    paintSteps(plan.steps, 0);
+    for (var i = 0; i < plan.steps.length; i++) {
+      await sleep(i === 0 ? 120 : 380);
+      if (myToken !== simToken) return;
+      paintSteps(plan.steps, i + 1);
+    }
+    await sleep(220);
+    if (myToken !== simToken) return;
+    var cls = plan.status === 200 ? "ok" : (plan.status === 401 ? "na" : "no");
+    var biz = plan.code === "30005";
+    var head = biz ? '<span class="st st-biz">HTTP 200</span>' : "";
+    var big = biz ? "30005" : plan.status;
+    simResult.innerHTML = '<div class="result ' + cls + '">' + head +
+      '<span class="big">' + big + '</span>' +
+      '<span class="msg"><b style="display:block;font-size:13px;letter-spacing:.5px">' + esc(plan.msg) + '</b>' +
+      (plan.stop ? esc(plan.stop) : "") + '</span></div>';
+  }
+
+  document.getElementById("simRun").addEventListener("click", runSim);
+  simIdent.addEventListener("change", runSim);
+  simEp.addEventListener("change", function () {
+    taskIdField.style.display = getEp(simEp.value).data === "ownerOrReview" ? "block" : "none";
+    runSim();
+  });
+  simTask.addEventListener("change", runSim);
+
+  // 初始：匿名 + 提交接口，让第一屏就有 401 可看
+  simIdent.value = "anon";
+  simEp.value = "submit";
+  runSim();
+
+  /* ================= 7. 归属判定表 ================= */
+  var ownBody = document.getElementById("ownBody");
+  var ownViewer = "student01";
+  function renderOwn() {
+    var viewer = ownViewer;
+    var roles = USERS.filter(function (u) { return u.username === viewer; })[0].roles;
+    ownBody.innerHTML = TASKS.map(function (t) {
+      var isOwner = t.owner === viewer;
+      var canReview = hasAuthority(roles, "task:review");
+      var ok = isOwner || canReview;
+      var why = isOwner ? "owner_id 等于令牌里的用户 id"
+        : (canReview ? "不是本人，但持有 task:review" : "不是本人，也没有 task:review，抛 FORBIDDEN");
+      return '<tr><td class="mono">' + t.id + '</td><td>' + esc(t.title) + '</td>' +
+        '<td class="mono">' + esc(t.owner) + '</td>' +
+        '<td class="cell"><span class="pill ' + (ok ? "ok" : "no") + '">' + (ok ? "200" : "403") + '</span></td>' +
+        '<td style="font-size:13.5px;color:#48546a">' + esc(why) + '</td></tr>';
+    }).join("");
+  }
+  document.querySelectorAll("#ownSeg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("#ownSeg button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      ownViewer = b.dataset.user;
+      renderOwn();
+    });
+  });
+  renderOwn();
+
+  /* ================= 8. 反模式切换 ================= */
+  document.querySelectorAll("#switch1 button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("#switch1 button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      document.querySelectorAll(".pane").forEach(function (p) {
+        p.classList.toggle("on", p.id === b.dataset.pane);
+      });
+    });
+  });
+
+  /* ================= 测验 ================= */
+  var scoreEl = document.getElementById("quizScore");
+  var s9 = document.getElementById("s9");
+  var scoredQuizzes = Array.prototype.slice.call(s9.querySelectorAll("[data-quiz]"));
+  var total = scoredQuizzes.length;
+  var right = 0;
+  var answered = {};
+
+  document.querySelectorAll("[data-quiz]").forEach(function (quiz) {
+    var scored = scoredQuizzes.indexOf(quiz) !== -1;
+    var qi = scored ? scoredQuizzes.indexOf(quiz) : null;
+    var fb = quiz.querySelector(".fb");
+    var btns = Array.prototype.slice.call(quiz.querySelectorAll(".opts button"));
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (scored && answered[qi]) return;
+        if (scored) answered[qi] = true;
+        var ok = b.dataset.ok === "1";
+        btns.forEach(function (x) {
+          x.disabled = true;
+          if (x.dataset.ok === "1") x.classList.add("right");
+        });
+        if (!ok) b.classList.add("wrong");
+        fb.classList.add("show");
+        if (scored) {
+          if (ok) right++;
+          scoreEl.innerHTML = "得分 <b>" + right + "</b> / " + total;
+        }
+      });
+    });
+  });
+  scoreEl.innerHTML = "得分 <b>0</b> / " + total;
+
+})();
+</script>
+</body>
+</html>

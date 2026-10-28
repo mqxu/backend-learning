@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import top.mqxu.web.common.LogInterceptor;
+import top.mqxu.web.interceptor.TimeStatInterceptor;
 
 /**
  * Web 配置
@@ -15,12 +15,19 @@ import top.mqxu.web.common.LogInterceptor;
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+    private final TimeStatInterceptor timeStatInterceptor;
 
-    private final LogInterceptor logInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(logInterceptor).addPathPatterns("/**");
+        // 注册耗时统计拦截器
+        registry.addInterceptor(timeStatInterceptor)
+                // 拦截所有路径
+                .addPathPatterns("/**")
+                // 排除静态资源和错误页
+                .excludePathPatterns("/static/**", "/error")
+                // 执行顺序（值越小越先执行）
+                .order(1);
     }
 
     @Override

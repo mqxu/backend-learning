@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 过滤器、拦截器与监听器 · 交互讲义</title>
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f7f8fb; --surface:#ffffff;
+  --border:#e4e8f0; --border-strong:#d3d9e6;
+  --text:#1b2333; --text-2:#48546a; --text-3:#7b8798;
+  --primary:#2f5cf6; --primary-soft:#eef2ff;
+  --amber:#b45309; --amber-soft:#fff7ed; --amber-border:#f3d9b5;
+  --red:#c0392b; --red-soft:#fdf2f1; --red-border:#f0cec9;
+  --green:#0f7b46; --green-soft:#f1fbf5; --green-border:#c6e8d6;
+  --code-bg:#f6f8fc; --code-head:#eef2f9;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px -16px rgba(16,24,40,.18);
+  --mono:"JetBrains Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --tk-kw:#a626a4; --tk-str:#3f8f4a; --tk-com:#8d95a5; --tk-num:#986801;
+  --tk-ann:#3a72c4; --tk-type:#b2791a; --tk-tag:#2f5cf6; --tk-attr:#a626a4;
+}
+[data-theme="dark"]{
+  --bg:#0f141b; --bg-soft:#151c25; --surface:#141b24;
+  --border:#26303d; --border-strong:#33404f;
+  --text:#e8edf5; --text-2:#b3bfd0; --text-3:#7d8b9e;
+  --primary:#7f9bff; --primary-soft:#1a2333;
+  --amber:#f0b429; --amber-soft:#221b10; --amber-border:#3d3018;
+  --red:#ff8b8b; --red-soft:#25161a; --red-border:#43222a;
+  --green:#5bd6a0; --green-soft:#10261c; --green-border:#1d4433;
+  --code-bg:#111923; --code-head:#16202c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.7);
+  --tk-kw:#c678dd; --tk-str:#98c379; --tk-com:#646c7a; --tk-num:#d19a66;
+  --tk-ann:#61afef; --tk-type:#e5c07b; --tk-tag:#7f9bff; --tk-attr:#c678dd;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.85;-webkit-font-smoothing:antialiased}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:60}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f5cf6,#6f8cff);transition:width .12s linear}
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr)}
+
+.side{position:sticky;top:0;height:100vh;overflow-y:auto;padding:26px 16px 40px 24px;border-right:1px solid var(--border);background:var(--bg-soft)}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+.side-brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.side-brand .dot{width:9px;height:9px;border-radius:50%;background:var(--primary);flex:none}
+.side-brand b{font-size:15px}
+.side-sub{font-size:12px;color:var(--text-3);margin:0 0 16px}
+.side nav{display:flex;flex-direction:column;gap:1px}
+.side a{display:block;color:var(--text-2);border-radius:7px;padding:5px 10px;font-size:14px;line-height:1.5}
+.side a:hover{background:var(--primary-soft);color:var(--primary);text-decoration:none}
+.side a.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.side a.lv2{font-size:13px;padding:3px 10px 3px 22px;color:var(--text-3)}
+.side-foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-3);line-height:1.8}
+kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--surface);color:var(--text-2)}
+
+main{padding:0 0 100px;min-width:0}
+.wrap{max-width:980px;padding:0 52px}
+
+.cover{padding:60px 0 40px;border-bottom:1px solid var(--border);position:relative}
+.cover::before{content:"";position:absolute;left:0;top:32px;width:52px;height:4px;border-radius:2px;background:linear-gradient(90deg,#2f5cf6,#7f9bff)}
+.eyebrow{font-size:12.5px;letter-spacing:2.2px;color:var(--primary);font-weight:600;margin:0 0 14px}
+.cover h1{font-size:44px;line-height:1.25;margin:0 0 10px;letter-spacing:-.5px}
+.cover .sub{font-size:18.5px;color:var(--text-2);margin:0 0 24px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12.5px;color:var(--text-2);background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:4px 12px}
+.chip b{color:var(--text)}
+
+section{padding-top:50px}
+h2{font-size:28px;line-height:1.4;margin:0 0 6px;letter-spacing:-.3px;display:flex;align-items:baseline;gap:12px}
+h2 .num{font-family:var(--mono);font-size:15px;color:var(--primary);background:var(--primary-soft);border-radius:7px;padding:3px 9px;flex:none;font-weight:600;letter-spacing:0}
+.sec-rule{height:1px;background:linear-gradient(90deg,var(--border-strong),transparent);margin:16px 0 24px}
+h3{font-size:20px;margin:34px 0 12px;line-height:1.5}
+p{margin:0 0 15px}
+.lead{font-size:17.5px;color:var(--text-2)}
+ul,ol{margin:0 0 16px;padding-left:24px}
+li{margin:5px 0}
+strong{font-weight:600}
+code.i{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1.5px 5px;color:#b13a5f;white-space:nowrap}
+[data-theme="dark"] code.i{color:#f0a0b8}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--text-3)}
+
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--border);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.7;background:var(--surface)}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+th{background:var(--bg-soft);font-weight:600;font-size:13.5px;color:var(--text-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg-soft)}
+td code,th code{font-family:var(--mono);font-size:13px}
+.nowrap{white-space:nowrap}
+
+.st{display:inline-block;font-family:var(--mono);font-size:12.5px;font-weight:600;border-radius:6px;padding:1px 8px;border:1px solid}
+.st-200{color:var(--green);background:var(--green-soft);border-color:var(--green-border)}
+.st-401{color:var(--amber);background:var(--amber-soft);border-color:var(--amber-border)}
+.st-403{color:var(--red);background:var(--red-soft);border-color:var(--red-border)}
+
+.code{margin:0 0 18px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--code-head);border-bottom:1px solid var(--border);font-size:11.5px;letter-spacing:1.2px;color:var(--text-3);text-transform:uppercase;font-weight:600}
+.code-h button{font-family:var(--sans);font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--text-3);background:transparent;border:1px solid var(--border-strong);border-radius:6px;padding:2px 9px;cursor:pointer}
+.code-h button:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-soft)}
+pre{margin:0;padding:15px 18px;overflow-x:auto;font-family:var(--mono);font-size:13.8px;line-height:1.72;tab-size:2}
+pre code{font-family:inherit;color:var(--text)}
+.tk-kw{color:var(--tk-kw)} .tk-str{color:var(--tk-str)} .tk-com{color:var(--tk-com);font-style:italic}
+.tk-num{color:var(--tk-num)} .tk-ann{color:var(--tk-ann)} .tk-type{color:var(--tk-type)}
+.tk-tag{color:var(--tk-tag)} .tk-attr{color:var(--tk-attr)}
+
+.note,.warn,.tip,.danger{border-radius:10px;padding:14px 18px;margin:0 0 18px;font-size:15.5px;line-height:1.8;border:1px solid;border-left-width:3px}
+.note{background:var(--primary-soft);border-color:var(--border);border-left-color:var(--primary)}
+.warn{background:var(--amber-soft);border-color:var(--amber-border);border-left-color:var(--amber)}
+.tip{background:var(--green-soft);border-color:var(--green-border);border-left-color:var(--green)}
+.danger{background:var(--red-soft);border-color:var(--red-border);border-left-color:var(--red)}
+.note b,.warn b,.tip b,.danger b{display:block;font-size:13px;letter-spacing:1px;margin-bottom:3px}
+.note b{color:var(--primary)} .warn b{color:var(--amber)} .tip b{color:var(--green)} .danger b{color:var(--red)}
+.note p:last-child,.warn p:last-child,.tip p:last-child,.danger p:last-child{margin-bottom:0}
+
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.card{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--surface);box-shadow:var(--shadow)}
+.card .k{font-family:var(--mono);font-size:12px;color:var(--primary);font-weight:600;letter-spacing:1px}
+.card h5{margin:5px 0 6px;font-size:16px;font-weight:600}
+.card p{margin:0;font-size:14.5px;color:var(--text-2);line-height:1.7}
+
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 20px}
+.vs-card{border-radius:12px;padding:18px 20px;border:1px solid}
+.vs-card .big{font-family:var(--mono);font-size:38px;line-height:1;font-weight:700}
+.vs-card .ttl{font-size:16px;font-weight:600;margin:8px 0 2px}
+.vs-card .ask{font-size:13.5px;opacity:.85;margin:0 0 10px}
+.vs-card dl{margin:0;font-size:13.5px}
+.vs-card dt{font-size:11.5px;letter-spacing:1px;opacity:.7;margin-top:8px}
+.vs-card dd{margin:1px 0 0;font-family:var(--mono);font-size:13px;word-break:break-all}
+.vs-401{background:var(--amber-soft);border-color:var(--amber-border);color:var(--amber)}
+.vs-403{background:var(--red-soft);border-color:var(--red-border);color:var(--red)}
+
+.flow{margin:0 0 20px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+.flow .row{display:grid;grid-template-columns:30px 1fr;border-bottom:1px solid var(--border)}
+.flow .row:last-child{border-bottom:none}
+.flow .idx{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--text-3);background:var(--bg-soft);border-right:1px solid var(--border)}
+.flow .body{padding:10px 15px}
+.flow .name{font-family:var(--mono);font-size:14px;font-weight:600}
+.flow .desc{font-size:13.5px;color:var(--text-2);margin:1px 0 0}
+.flow .row.ours{background:var(--primary-soft)}
+.flow .row.ours .name{color:var(--primary)}
+.flow .row.ours .idx{color:var(--primary);background:transparent}
+
+.step{display:grid;grid-template-columns:30px 1fr;margin:0 0 14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+.step .n{display:flex;align-items:center;justify-content:center;background:var(--bg-soft);border-right:1px solid var(--border);font-family:var(--mono);font-size:13px;font-weight:600;color:var(--primary)}
+.step .c{padding:12px 16px}
+.step .c h5{margin:0 0 3px;font-size:15.5px;font-weight:600}
+.step .c p{margin:0;font-size:14px;color:var(--text-2);line-height:1.7}
+
+.jwt{display:flex;gap:8px;align-items:stretch;overflow-x:auto;margin:0 0 18px}
+.jwt .seg{flex:1 1 0;min-width:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden}
+.jwt .seg .cap{font-size:11px;letter-spacing:1.2px;font-weight:600;padding:5px 10px;border-bottom:1px solid var(--border);background:var(--bg-soft);color:var(--text-3);white-space:nowrap}
+.jwt .seg .val{font-family:var(--mono);font-size:11.5px;line-height:1.6;padding:9px 10px;word-break:break-all;max-height:110px;overflow:auto}
+.jwt .seg1 .cap{color:var(--primary)} .jwt .seg2 .cap{color:var(--green)} .jwt .seg3 .cap{color:var(--amber)}
+.jwt .dot{align-self:center;font-family:var(--mono);font-size:22px;color:var(--text-3);flex:none}
+
+.foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--text-3)}
+.top{position:fixed;right:24px;bottom:24px;width:40px;height:40px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-2);font-size:17px;cursor:pointer;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+.top.show{opacity:1;pointer-events:auto}
+
+@media (max-width:1180px){
+  .layout{grid-template-columns:1fr}
+  .side{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .side nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .wrap{padding:0 26px}
+  .cover h1{font-size:34px}
+}
+@media (max-width:720px){ .cards,.vs{grid-template-columns:1fr} .wrap{padding:0 18px} }
+@media print{
+  .side,.progress,.top,.code-h button{display:none!important}
+  .layout{display:block}
+  body{font-size:10.5pt;line-height:1.65}
+  .wrap{max-width:none;padding:0}
+  section{padding-top:18pt}
+  h2{font-size:16pt} h3{font-size:12.5pt}
+  .code,.tw,.note,.warn,.tip,.danger,.vs,.flow,.step,.card,.jwt{break-inside:avoid}
+  pre{font-size:8.6pt;white-space:pre-wrap;word-break:break-all}
+  @page{margin:14mm 12mm}
+}
+/* ── 交互实验台 ── */
+.lab{margin:0 0 22px;border:1px solid var(--border-strong);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.lab-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 15px;background:var(--bg-soft);border-bottom:1px solid var(--border)}
+.lab-h .t{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;color:var(--primary)}
+.lab-h .h{font-size:12.5px;color:var(--text-3)}
+.lab-b{padding:15px 16px 16px}
+.lab-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{font-family:var(--sans);font-size:13.5px;color:var(--text-2);background:var(--surface);border:1px solid var(--border-strong);border-radius:7px;padding:5px 13px;cursor:pointer;transition:all .15s}
+.btn:hover:not(:disabled){color:var(--primary);border-color:var(--primary);background:var(--primary-soft)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn.pri{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.pri:hover:not(:disabled){background:#274ecb;border-color:#274ecb;color:#fff}
+.cnt{font-family:var(--mono);font-size:12px;color:var(--text-3);margin-left:auto}
+
+.pipe{display:grid;gap:5px}
+.p-row{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:8px;padding:6px 12px;background:var(--surface);transition:all .18s}
+.p-row .idx{font-family:var(--mono);font-size:11.5px;color:var(--text-3)}
+.p-row .nm{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)}
+.p-row .ds{font-size:12.5px;color:var(--text-3);line-height:1.5;margin-top:1px;font-family:var(--sans)}
+.p-row .tag{font-family:var(--mono);font-size:10.5px;border:1px solid var(--border-strong);border-radius:20px;padding:1px 8px;color:var(--text-3);white-space:nowrap}
+.p-row.c-client{border-left-color:var(--border-strong)}
+.p-row.c-lst{border-left-color:var(--amber)}
+.p-row.c-fil{border-left-color:var(--primary)}
+.p-row.c-mvc{border-left-color:var(--green)}
+.p-row.on{background:var(--primary-soft);border-color:var(--primary);border-left-color:var(--primary)}
+.p-row.on .nm,.p-row.on .idx{color:var(--primary)}
+.p-row.done{opacity:.55}
+
+.cons{margin-top:13px;padding:11px 13px;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:12.4px;line-height:1.72;max-height:250px;overflow:auto;color:var(--text-2)}
+.cons .ln{white-space:pre-wrap;word-break:break-word}
+.cons .ln em{font-style:normal;color:var(--text-3)}
+.cons .ln.in{color:var(--text)}
+.cons .ln.out{color:var(--primary)}
+.cons .ln.bad{color:var(--red)}
+.cons .ln.ev{color:var(--amber)}
+.cons .ph{color:var(--text-3);font-family:var(--sans);font-size:12.5px}
+
+.fc{display:grid;gap:7px}
+.fc-row{display:grid;grid-template-columns:20px 1fr 84px;gap:10px;align-items:center;border:1px solid var(--border);border-radius:8px;padding:7px 12px;background:var(--surface)}
+.fc-row.off{opacity:.45}
+.fc-row input[type=checkbox]{width:14px;height:14px;accent-color:var(--primary);margin:0}
+.fc-row .nm{font-family:var(--mono);font-size:13px;font-weight:600}
+.fc-row .ds{font-size:12.5px;color:var(--text-3);font-family:var(--sans);line-height:1.5}
+.fc-row input[type=number]{width:84px;font-family:var(--mono);font-size:12.5px;padding:3px 7px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-soft);color:var(--text)}
+.chkline{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:13.5px;color:var(--text-2)}
+.chkline input{width:14px;height:14px;accent-color:var(--red);margin:0}
+
+.life{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ctl{display:flex;flex-wrap:wrap;gap:7px}
+.ctl .btn{font-size:13px;padding:5px 11px}
+.stat{margin-top:13px;border:1px solid var(--border);border-radius:9px;padding:9px 13px;background:var(--bg-soft)}
+.stat .kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3.5px 0;border-bottom:1px dashed var(--border)}
+.stat .kv:last-child{border-bottom:none}
+.stat .kv span:first-child{color:var(--text-2)}
+.stat .kv span:last-child{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+.badge{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;border:1px solid;margin:2px 4px 2px 0}
+.b-ctx{color:var(--primary);background:var(--primary-soft);border-color:var(--border)}
+.b-ses{color:var(--amber);background:var(--amber-soft);border-color:var(--amber-border)}
+.b-req{color:var(--green);background:var(--green-soft);border-color:var(--green-border)}
+
+.q{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:0 0 12px;background:var(--surface)}
+.q .qt{font-size:15.5px;font-weight:600;margin:0 0 10px;line-height:1.6}
+.q .qt em{font-family:var(--mono);font-style:normal;color:var(--primary);font-size:12.5px;margin-right:7px}
+.opt{display:block;width:100%;text-align:left;font-family:var(--sans);font-size:14.5px;line-height:1.7;color:var(--text-2);background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;padding:7px 12px;margin:0 0 6px;cursor:pointer;transition:all .15s}
+.opt:hover{border-color:var(--primary);color:var(--text)}
+.opt.ok{border-color:var(--green-border);background:var(--green-soft);color:var(--green);font-weight:600}
+.opt.no{border-color:var(--red-border);background:var(--red-soft);color:var(--red)}
+.exp{display:none;font-size:13.5px;color:var(--text-2);border-left:2px solid var(--border-strong);padding-left:12px;margin:9px 0 0;line-height:1.75}
+.exp.show{display:block}
+.score{font-size:14px;color:var(--text-2);margin:6px 0 0}
+.score b{font-family:var(--mono);color:var(--primary);font-size:16px}
+
+@media (max-width:820px){ .life{grid-template-columns:1fr} }
+@media print{ .lab{break-inside:avoid} .cons{max-height:none} }
+</style>
+</head>
+<body>
+<div class="progress"><i id="pbar"></i></div>
+
+<div class="layout">
+<aside class="side">
+  <div class="side-brand"><span class="dot"></span><b>04 · 过滤器 · 拦截器 · 监听器</b></div>
+  <p class="side-sub">请求链路上的三个扩展点</p>
+  <nav id="toc">
+    <a href="#s0">先分清三件套</a>
+    <a href="#s1">一条请求经过谁</a>
+    <a href="#s2">过滤器的链式模型</a>
+    <a href="#s2-1" class="lv2">链式实验台</a>
+    <a href="#s3">三种注册方式</a>
+    <a href="#s4">用包装器改请求</a>
+    <a href="#s4i">拦截器的三个回调</a>
+    <a href="#s4i-1" class="lv2">回调实验台</a>
+    <a href="#s5">监听器管的是事件</a>
+    <a href="#s5-1" class="lv2">八种监听接口</a>
+    <a href="#s5-2" class="lv2">生命周期实验台</a>
+    <a href="#s6">代码落到项目里</a>
+    <a href="#s7">跑起来看日志</a>
+    <a href="#s8">容易踩的地方</a>
+    <a href="#s9">小测验</a>
+    <a href="#s10">练习与小结</a>
+  </nav>
+  <div class="side-foot">
+    <kbd>←</kbd> <kbd>→</kbd> 切换章节<br>
+    <kbd>T</kbd> 明暗主题 · <kbd>P</kbd> 打印
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<header class="cover">
+  <p class="eyebrow">后端工程化开发 · 模块 04 补充讲义</p>
+  <h1>过滤器、拦截器与监听器</h1>
+  <p class="sub">顺着一条请求的路径，把链路上的三个扩展点走一遍</p>
+  <div class="chips">
+    <span class="chip"><b>60</b> 分钟</span>
+    <span class="chip">四个交互实验台</span>
+    <span class="chip">对应代码 <b>04-web</b></span>
+    <span class="chip">Spring Boot <b>4.1.1</b></span>
+    <span class="chip">Tomcat <b>11.0.24</b></span>
+    <span class="chip">Servlet <b>6.1</b></span>
+    <span class="chip">Java <b>21</b></span>
+  </div>
+</header>
+
+<section id="s0">
+  <h2><span class="num">00</span>先分清三件套</h2>
+  <div class="sec-rule"></div>
+  <p class="lead">Servlet 规范给容器留了三个可替换的零件。写业务的是 Servlet，改请求的是 Filter，收事件的是 Listener。拦截器不在这份名单里，它属于 Spring MVC，位置在 DispatcherServlet 内部，第 05 节单独讲。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:86px">零件</th><th style="width:190px">规范接口</th><th>在链路里的位置</th><th>能做什么</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Servlet</b></td>
+          <td class="nowrap"><code>jakarta.servlet.http.HttpServlet</code></td>
+          <td>最内层，真正处理请求</td>
+          <td>读写响应体。Spring MVC 里由 <code class="i">DispatcherServlet</code> 统一顶替，业务代码写 Controller。</td>
+        </tr>
+        <tr>
+          <td><b>Filter</b></td>
+          <td class="nowrap"><code>jakarta.servlet.Filter</code></td>
+          <td>Servlet 之前，可以挂多层</td>
+          <td>进可改请求、退可改响应，还能直接短路。能拦住静态资源。</td>
+        </tr>
+        <tr>
+          <td><b>Listener</b></td>
+          <td class="nowrap"><code>jakarta.servlet.*Listener</code></td>
+          <td>不属于请求链路，挂在事件上</td>
+          <td>被动接收应用启动、会话创建、属性变更这类通知，不改请求也不改响应。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><code class="i">04-web</code> 里已经有两个东西在统计耗时：<code class="i">RequestTimeFilter</code> 和 <code class="i">LogInterceptor</code>。同一个请求会打出两条日志，数值还不一样。这不是重复，是两层各记各的：过滤器包住整个 DispatcherServlet，拦截器只包 Controller 那一段，所以过滤器的数值总是更大。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:128px">维度</th><th>Filter</th><th>HandlerInterceptor</th></tr></thead>
+      <tbody>
+        <tr><td>归属</td><td>Servlet 规范，容器调用</td><td>Spring MVC，框架调用</td></tr>
+        <tr><td>能否知道进的是哪个方法</td><td>不能</td><td>能，<code>preHandle</code> 有 handler 参数</td></tr>
+        <tr><td>能否改 request / response</td><td>能，用包装器整体替换</td><td>只能读，不能换掉对象</td></tr>
+        <tr><td>静态资源</td><td>会经过</td><td>路径匹配到也会经过，但拿到的是 <code>ResourceHttpRequestHandler</code></td></tr>
+        <tr><td>能否依赖注入</td><td>注册成 Bean 时可以</td><td>可以</td></tr>
+        <tr><td>典型用途</td><td>traceId、编码、跨域、请求体缓存、限流</td><td>登录校验、日志、权限注解</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>怎么选</b>
+    <p>需要换掉 request 或 response、需要覆盖静态资源、或者请求根本到不了 Spring MVC 也要处理，用过滤器。需要知道目标方法、要读注解，用拦截器。两个都要时，过滤器放外层做通用处理，拦截器在里层做业务判断。</p>
+  </div>
+</section>
+
+<section id="s1">
+  <h2><span class="num">01</span>一条请求经过谁</h2>
+  <div class="sec-rule"></div>
+  <p>下面这条路径就是本节全部内容。点“下一步”逐层推进，右边同步打出这一层会留下的日志。</p>
+
+  <div class="lab">
+    <div class="lab-h">
+      <span class="t">实验台 1 · 请求路径</span>
+      <span class="h">14 个节点，画的是 /users/1 这条最普通的请求</span>
+    </div>
+    <div class="lab-b">
+      <div class="pipe" id="pipe"></div>
+      <div class="lab-bar">
+        <button class="btn pri" id="pipeNext" type="button">下一步</button>
+        <button class="btn" id="pipeAuto" type="button">自动播放</button>
+        <button class="btn" id="pipeReset" type="button">重置</button>
+        <span class="cnt" id="pipeCnt">0 / 14</span>
+      </div>
+      <div class="cons" id="pipeLog"><div class="ph">点“下一步”开始</div></div>
+    </div>
+  </div>
+
+  <p>三个结论直接从图上看得出来：</p>
+  <ol>
+    <li>去程是“由外向内”，回程是“由内向外”，每一层都有两次机会。</li>
+    <li>请求级监听器在过滤器之前收到 <code class="i">requestInitialized</code>，在过滤器全部返回之后收到 <code class="i">requestDestroyed</code>。</li>
+    <li><code class="i">DispatcherServlet</code> 只是过滤器链条上的一个点，所以过滤器里抛的异常，全局异常处理器兜不住。</li>
+  </ol>
+</section>
+
+<section id="s2">
+  <h2><span class="num">02</span>过滤器的链式模型</h2>
+  <div class="sec-rule"></div>
+  <p>接口只有一个方法，参数里带着下家的引用：</p>
+
+  <pre data-lang="java"><code>void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+        throws IOException, ServletException;</code></pre>
+
+  <p>关键在于 <code class="i">chain.doFilter(...)</code> 这一行：它之前是进方向，它之后是出方向。整条链像俄罗斯套娃，容器把第一个过滤器放在最外层。想短路，不调用 <code class="i">chain.doFilter</code> 就行——后面所有过滤器、DispatcherServlet、Controller 都不会执行。</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="k">必要条件</div>
+      <h5>每层都要往下传</h5>
+      <p>漏掉 <code class="i">chain.doFilter</code>，请求就停在当前这一层，浏览器那边只会看到一个空响应。</p>
+    </div>
+    <div class="card">
+      <div class="k">顺序</div>
+      <h5>由 order 决定</h5>
+      <p>数字小的先进入、后返回。没写 order 的默认排在最外层之外的最后，容易被 Tomcat 自带的过滤器挤到奇怪的位置。</p>
+    </div>
+  </div>
+
+  <h3 id="s2-1">链式实验台</h3>
+  <p>勾选要参与的过滤器，改数字看顺序怎么变，再点“发送请求”。勾上“拦截”那一项，可以看清短路时回程会发生什么。</p>
+
+  <div class="lab">
+    <div class="lab-h">
+      <span class="t">实验台 2 · FilterChain</span>
+      <span class="h">改 order 数字会影响去程与回程的顺序</span>
+    </div>
+    <div class="lab-b">
+      <div class="fc" id="fcRows"></div>
+      <label class="chkline"><input type="checkbox" id="fcBreak"> 让 AuthFilter 校验失败，直接返回 401（演示短路）</label>
+      <div class="lab-bar">
+        <button class="btn pri" id="fcRun" type="button">发送请求</button>
+        <button class="btn" id="fcClear" type="button">清空日志</button>
+      </div>
+      <div class="cons" id="fcLog"><div class="ph">发送一个 GET /users/1，看四个过滤器怎么进出</div></div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <b>动手试这两组</b>
+    <p>一是把 <code class="i">RequestTimeFilter</code> 的 order 改成 1，看它跟 TraceIdFilter 谁先进入；二是勾上拦截，注意 <code class="i">RequestTimeFilter</code> 依然会打印耗时——它虽然没等到结果，但自己的回程照样执行，这也是“过滤器统计的耗时偏大”的原因之一。</p>
+  </div>
+
+  <div class="warn">
+    <b>过滤器里抛异常，谁接</b>
+    <p><code class="i">@RestControllerAdvice</code> 挂在 DispatcherServlet 内部，过滤器在它外面，异常传不进去。容器会转发到 <code class="i">/error</code>，返回的是 Spring Boot 的默认错误结构，不是项目里的 <code class="i">Result</code>。所以过滤器里要么自己 try-catch 写响应，要么统一用 <code class="i">ErrorController</code> 兜底。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">03</span>三种注册方式</h2>
+  <div class="sec-rule"></div>
+  <p>同一个 Filter 有三种挂到容器上的写法，差别在顺序、路径、依赖注入这三点。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:200px">方式</th><th>顺序控制</th><th>路径控制</th><th>能否注入 Bean</th><th>适用</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="nowrap"><code>@Component</code> + <code>@Order</code></td>
+          <td><code>@Order</code> 注解</td>
+          <td>默认 <code>/*</code>，无法指定</td>
+          <td>能</td>
+          <td>全局通用处理</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><code>FilterRegistrationBean</code></td>
+          <td><code>setOrder</code></td>
+          <td><code>addUrlPatterns</code></td>
+          <td>能</td>
+          <td>要限路径、要能关掉</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><code>@WebFilter</code> + <code>@ServletComponentScan</code></td>
+          <td>不能，靠注册先后</td>
+          <td><code>urlPatterns</code></td>
+          <td>不能，实例由容器 new</td>
+          <td>老项目迁移、示例</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>第一种最省事，类上加两个注解就是一层过滤器：</p>
+
+  <pre data-lang="java"><code>@Slf4j
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class TraceIdFilter extends OncePerRequestFilter {
+
+    public static final String TRACE_ID = "traceId";
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        String traceId = request.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isBlank()) {
+            traceId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        }
+        MDC.put(TRACE_ID, traceId);
+        response.setHeader("X-Trace-Id", traceId);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove(TRACE_ID);
+        }
+    }
+}</code></pre>
+
+  <p>第二种把注册信息写成 Bean，顺序、路径、开关都在代码里显式写出来。项目里 <code class="i">ParameterCleanFilter</code> 和 <code class="i">ApiKeyFilter</code> 都是这个路子：</p>
+
+  <pre data-lang="java"><code>@Configuration
+public class FilterConfig {
+
+    @Bean
+    public FilterRegistrationBean&lt;ApiKeyFilter&gt; apiKeyFilter() {
+        FilterRegistrationBean&lt;ApiKeyFilter&gt; bean =
+                new FilterRegistrationBean&lt;&gt;(new ApiKeyFilter());
+        bean.setName("apiKeyFilter");
+        bean.addUrlPatterns("/demo/secure");
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE + 30);
+        return bean;
+    }
+}</code></pre>
+
+  <p>第三种靠启动类上的扫描注解把 <code class="i">@WebFilter</code> 找出来。Spring Boot 4 的包路径变了，从 <code>org.springframework.boot.web.servlet</code> 挪到了 <code>org.springframework.boot.web.server.servlet.context</code>，照旧路径写会直接编译不过：</p>
+
+  <pre data-lang="java"><code>@SpringBootApplication
+@ServletComponentScan   // org.springframework.boot.web.server.servlet.context.ServletComponentScan
+public class WebApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(WebApplication.class, args);
+    }
+}</code></pre>
+
+  <pre data-lang="java"><code>@Slf4j
+@WebFilter(urlPatterns = "/demo/annotation/*", filterName = "annotationDemoFilter")
+public class AnnotationDemoFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        log.info("@WebFilter 生效：{} {}", httpRequest.getMethod(), httpRequest.getRequestURI());
+        chain.doFilter(request, response);
+    }
+}</code></pre>
+
+  <div class="danger">
+    <b>两个容易出事的地方</b>
+    <p><code class="i">@WebFilter</code> 的实例是 Tomcat 创建的，不是 Spring Bean，里面写的 <code class="i">@Autowired</code> 字段会是 null，运行时才炸。要注入依赖就换成前两种写法。</p>
+    <p>一个 Filter 类如果既是 <code class="i">@Component</code> 又在 <code class="i">FilterConfig</code> 里注册了一次，Boot 只会注册一次，但顺序按 <code class="i">FilterRegistrationBean</code> 的来，<code class="i">@Order</code> 就失效了。改顺序时先确认自己改的是哪一处。</p>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="num">04</span>用包装器改请求</h2>
+  <div class="sec-rule"></div>
+  <p>过滤器能改请求，靠的不是修改原对象，而是把 <code class="i">HttpServletRequestWrapper</code> 包一层再传给下一层。Wrapper 默认把所有方法原样转发，只覆盖需要改的那几个。</p>
+
+  <p>项目里的 <code class="i">ParameterCleanFilter</code> 做的事很具体：参数两端带空格时，Controller 收到的就是去掉空格的值。</p>
+
+  <pre data-lang="java"><code>public class ParameterCleanFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        chain.doFilter(new TrimmedRequest(request), response);
+    }
+
+    static final class TrimmedRequest extends HttpServletRequestWrapper {
+
+        private final Map&lt;String, String[]&gt; values;
+
+        TrimmedRequest(HttpServletRequest request) {
+            super(request);
+            Map&lt;String, String[]&gt; copy = new LinkedHashMap&lt;&gt;();
+            request.getParameterMap().forEach((name, origin) -&gt; copy.put(name, trimAll(origin)));
+            this.values = Collections.unmodifiableMap(copy);
+        }
+
+        private static String[] trimAll(String[] origin) {
+            return Arrays.stream(origin).map(v -&gt; v == null ? null : v.trim()).toArray(String[]::new);
+        }
+
+        @Override
+        public String getParameter(String name) {
+            String[] value = values.get(name);
+            return value == null || value.length == 0 ? null : value[0];
+        }
+
+        @Override
+        public String[] getParameterValues(String name) {
+            return values.get(name);
+        }
+
+        @Override
+        public Map&lt;String, String[]&gt; getParameterMap() {
+            return values;
+        }
+    }
+}</code></pre>
+
+  <p>实测：请求 <code class="i">/demo/trim?name=%20%20abc%20%20</code>，Controller 拿到的长度是 3。</p>
+
+  <pre data-lang="bash"><code>{"code":200,"data":"收到参数长度 3，值 [abc]","message":"success"}</code></pre>
+
+  <div class="warn">
+    <b>包装请求的代价</b>
+    <p><code class="i">getParameterMap()</code> 会强制容器解析请求体。表单上传（<code class="i">multipart/form-data</code>）时这等于提前把文件流读完，后面 MultipartResolver 就拿不到内容了。真实项目里用 <code class="i">shouldNotFilter</code> 把上传路径排掉。</p>
+    <p>想要缓存 body 以便多次读取，别自己接 <code class="i">getInputStream</code>，直接用 <code class="i">ContentCachingRequestWrapper</code>，或者 Boot 自带的 <code class="i">ContentCachingFilter</code>。</p>
+  </div>
+
+  <pre data-lang="java"><code>@Override
+protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                FilterChain chain) throws ServletException, IOException {
+    ContentCachingRequestWrapper wrapper = new ContentCachingRequestWrapper(request);
+    chain.doFilter(wrapper, response);
+    // 请求结束之后才有完整内容
+    log.info("请求体：{}", new String(wrapper.getContentAsByteArray(), StandardCharsets.UTF_8));
+}</code></pre>
+</section>
+
+<section id="s4i">
+  <h2><span class="num">05</span>拦截器的三个回调</h2>
+  <div class="sec-rule"></div>
+  <p class="lead">过滤器决定请求能不能进，拦截器决定进来之后怎么处理。Spring MVC 在 DispatcherServlet 内部给拦截器留了四个回调，常用的三个。</p>
+
+  <p>项目里 <code class="i">LogInterceptor</code> 是最小例子：<code class="i">preHandle</code> 把开始时间塞进 request，<code class="i">afterCompletion</code> 拿出来算差值。要看三个回调的实际调用顺序，再挂一个只打日志的：</p>
+
+  <pre data-lang="java"><code>@Slf4j
+@Component
+public class CallbackTraceInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.info("preHandle：{} {}，handler = {}", request.getMethod(), request.getRequestURI(),
+                handler.getClass().getSimpleName());
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+                           ModelAndView modelAndView) {
+        log.info("postHandle：{} {}，此时响应还没写出去", request.getMethod(), request.getRequestURI());
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
+                                Exception ex) {
+        log.info("afterCompletion：{} {}，异常 = {}", request.getMethod(), request.getRequestURI(),
+                ex == null ? "无" : ex.getClass().getSimpleName());
+    }
+}</code></pre>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:200px">回调</th><th style="width:220px">时机</th><th>要留意的地方</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>preHandle</code></td>
+          <td>Controller 执行之前</td>
+          <td>返回 <code>false</code> 就到此为止，后续拦截器、Controller、<code>postHandle</code> 全部不执行。响应要自己写，状态码也要自己设。</td>
+        </tr>
+        <tr>
+          <td><code>postHandle</code></td>
+          <td>Controller 执行之后，响应写出之前</td>
+          <td>Controller 抛异常时不执行。REST 接口这里拿不到返回对象，想改响应体得用 <code>ResponseBodyAdvice</code>，改响应头倒是可以。</td>
+        </tr>
+        <tr>
+          <td><code>afterCompletion</code></td>
+          <td>响应完成之后</td>
+          <td>一定执行（只要进了 <code>preHandle</code>），适合清理 ThreadLocal、打印耗时。异常被 <code>@ExceptionHandler</code> 消化掉之后，这里的 <code>ex</code> 是 null。</td>
+        </tr>
+        <tr>
+          <td><code>afterConcurrentHandlingStarted</code></td>
+          <td>异步请求的第一次派发结束时</td>
+          <td>只在 Controller 返回 <code>Callable</code>、<code>DeferredResult</code> 时触发，用来替代这一次的 <code>postHandle</code> 与 <code>afterCompletion</code>。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="s4i-1">回调实验台</h3>
+  <p>四个按钮是同一段拦截器代码碰到的四种情况。点一遍就能看出哪几个回调消失、哪几个照常执行。</p>
+
+  <div class="lab">
+    <div class="lab-h">
+      <span class="t">实验台 4 · 拦截器回调</span>
+      <span class="h">两个拦截器 A、B，A 在前</span>
+    </div>
+    <div class="lab-b">
+      <div class="life">
+        <div>
+          <div class="ctl">
+            <button class="btn" data-ic="normal" type="button">正常返回</button>
+            <button class="btn" data-ic="block" type="button">preHandle 返回 false</button>
+            <button class="btn" data-ic="thrown" type="button">Controller 抛异常</button>
+            <button class="btn" data-ic="async" type="button">异步接口</button>
+          </div>
+          <div class="stat" id="icStat">
+            <div class="kv"><span>点一个场景</span><span>—</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="cons" id="icLog" style="margin-top:0"><div class="ph">选一种情况，看回调序列</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p>正常返回时，日志是四行连着下来的，<code class="i">postHandle</code> 与 <code class="i">afterCompletion</code> 的顺序跟 <code class="i">preHandle</code> 相反：</p>
+
+  <pre data-lang="bash"><code>INFO  CallbackTraceInterceptor [5a3c607d7f404709] - preHandle：GET /demo/ping，handler = HandlerMethod
+INFO  CallbackTraceInterceptor [5a3c607d7f404709] - postHandle：GET /demo/ping，此时响应还没写出去
+INFO  CallbackTraceInterceptor [5a3c607d7f404709] - afterCompletion：GET /demo/ping，异常 = 无
+INFO  LogInterceptor [5a3c607d7f404709] - 拦截器统计：GET /demo/ping 耗时 45ms
+INFO  RequestTimeFilter [5a3c607d7f404709] - 过滤器统计：GET /demo/ping 耗时 56ms</code></pre>
+
+  <p>Controller 抛异常时，<code class="i">postHandle</code> 直接消失，而 <code class="i">afterCompletion</code> 里的异常是“无”——因为 <code class="i">@RestControllerAdvice</code> 已经把异常处理成了 <code class="i">Result</code>，DispatcherServlet 认为这次请求有结果，回调时传的就是 null：</p>
+
+  <pre data-lang="bash"><code>INFO  CallbackTraceInterceptor [e71bbe6019c348c6] - preHandle：GET /demo/throw，handler = HandlerMethod
+WARN  GlobalExceptionHandler [e71bbe6019c348c6] - 业务异常：参数错误
+INFO  CallbackTraceInterceptor [e71bbe6019c348c6] - afterCompletion：GET /demo/throw，异常 = 无</code></pre>
+
+  <p>拦截器返回 false 时，排在它前面的拦截器照样会收到 <code class="i">afterCompletion</code>，它自己的两个回调都不会执行。这也是为什么 <code class="i">LogInterceptor</code> 在 401 的请求上还能打出耗时：</p>
+
+  <pre data-lang="bash"><code>INFO  CallbackTraceInterceptor [87ef92b2a8314478] - preHandle：GET /demo/token/data，handler = HandlerMethod
+WARN  TokenInterceptor [87ef92b2a8314478] - TokenInterceptor 拦住请求：GET /demo/token/data，X-Token 不合法
+INFO  CallbackTraceInterceptor [87ef92b2a8314478] - afterCompletion：GET /demo/token/data，异常 = 无
+INFO  LogInterceptor [87ef92b2a8314478] - 拦截器统计：GET /demo/token/data 耗时 0ms</code></pre>
+
+  <p>异步接口最值得看：一次请求，两套回调，两条线程。第一次派发只到 <code class="i">preHandle</code>，过滤器当场结算耗时；异步线程完成后重新派发，才有 <code class="i">postHandle</code> 和 <code class="i">afterCompletion</code>。注意第二段日志的 traceId 是空的：</p>
+
+  <pre data-lang="bash"><code>08:20:46:196 [http-nio-18004-exec-5] INFO  CallbackTraceInterceptor [867188fef110498b] - preHandle：GET /demo/async，handler = HandlerMethod
+08:20:46:199 [http-nio-18004-exec-5] INFO  RequestTimeFilter [867188fef110498b] - 过滤器统计：GET /demo/async 耗时 4ms
+08:20:46:329 [http-nio-18004-exec-6] INFO  CallbackTraceInterceptor [] - preHandle：GET /demo/async，handler = HandlerMethod
+08:20:46:332 [http-nio-18004-exec-6] INFO  CallbackTraceInterceptor [] - postHandle：GET /demo/async，此时响应还没写出去
+08:20:46:332 [http-nio-18004-exec-6] INFO  CallbackTraceInterceptor [] - afterCompletion：GET /demo/async，异常 = 无</code></pre>
+
+  <div class="warn">
+    <b>异步请求里 traceId 去哪了</b>
+    <p>异步完成后的那次派发是 ASYNC 类型，过滤器不会重跑：<code class="i">OncePerRequestFilter</code> 默认跳过 ASYNC 与 ERROR 派发，普通 <code class="i">Filter</code> 注册时又只映射 REQUEST。所以第二段日志的 <code class="i">MDC</code> 是空的。要让异步线程也带上，就把 traceId 一起传进任务，或用 <code class="i">TaskDecorator</code> 复制 MDC。</p>
+  </div>
+
+  <h3>注册与排序</h3>
+  <p>拦截器靠 <code class="i">WebMvcConfigurer#addInterceptors</code> 注册，路径与顺序都在这里定。<code class="i">order</code> 小的先执行 <code class="i">preHandle</code>，后执行 <code class="i">postHandle</code> 和 <code class="i">afterCompletion</code>。</p>
+
+  <pre data-lang="java"><code>@Override
+public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(logInterceptor).addPathPatterns("/**").order(0);
+    registry.addInterceptor(callbackTraceInterceptor).addPathPatterns("/demo/**").order(1);
+    registry.addInterceptor(tokenInterceptor)
+            .addPathPatterns("/demo/token/**")
+            .excludePathPatterns("/demo/token/public")
+            .order(2);
+}</code></pre>
+
+  <p>令牌校验写成拦截器也就是一个 <code class="i">preHandle</code>。注意返回 false 之前把响应写完整，否则浏览器会拿到一个没有任何内容的 401：</p>
+
+  <pre data-lang="java"><code>@Override
+public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+        throws Exception {
+    String token = request.getHeader("X-Token");
+    if ("demo-token".equals(token)) {
+        return true;
+    }
+    log.warn("TokenInterceptor 拦住请求：{} {}", request.getMethod(), request.getRequestURI());
+    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    response.setContentType("application/json;charset=UTF-8");
+    response.getOutputStream().write(
+            "{\"code\":401,\"message\":\"缺少或错误的 X-Token\",\"data\":null}".getBytes(StandardCharsets.UTF_8));
+    return false;
+}</code></pre>
+
+  <div class="tip">
+    <b>和过滤器怎么分工</b>
+    <p>项目里 <code class="i">ApiKeyFilter</code> 挡的是“这个服务不该被调用”，<code class="i">TokenInterceptor</code> 挡的是“这个用户没有资格”，两者位置不同、拿到的东西也不同。过滤器只认 path，拦截器还能从 <code class="i">handler</code> 上读注解，做注解式权限判断要放在拦截器里。</p>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="num">06</span>监听器管的是事件</h2>
+  <div class="sec-rule"></div>
+  <p>监听器不参与请求处理，它只等容器发通知。所以判断用不用监听器，看的是“有没有一件事发生了”，而不是“要不要拦一个请求”。</p>
+
+  <h3 id="s5-1">八种监听接口</h3>
+  <p>按作用域分三级，每级又有生命周期和属性两类事件：</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:74px">作用域</th><th style="width:280px">接口</th><th>触发时机</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-ctx">应用</span></td><td><code>ServletContextListener</code></td><td>容器启动、关闭，各一次</td></tr>
+        <tr><td><span class="badge b-ctx">应用</span></td><td><code>ServletContextAttributeListener</code></td><td>application 作用域属性增、改、删</td></tr>
+        <tr><td><span class="badge b-ses">会话</span></td><td><code>HttpSessionListener</code></td><td><code>sessionCreated</code>、<code>sessionDestroyed</code></td></tr>
+        <tr><td><span class="badge b-ses">会话</span></td><td><code>HttpSessionAttributeListener</code></td><td>session 作用域属性增、改、删</td></tr>
+        <tr><td><span class="badge b-ses">会话</span></td><td><code>HttpSessionIdListener</code></td><td>会话 id 被 <code>changeSessionId()</code> 换掉</td></tr>
+        <tr><td><span class="badge b-req">请求</span></td><td><code>ServletRequestListener</code></td><td>每个请求进入、结束</td></tr>
+        <tr><td><span class="badge b-req">请求</span></td><td><code>ServletRequestAttributeListener</code></td><td>request 作用域属性增、改、删</td></tr>
+        <tr><td>对象自身</td><td><code>HttpSessionBindingListener</code>、<code>HttpSessionActivationListener</code></td><td>由放进 session 的对象自己实现，跟着对象的绑定与钝化走</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="s5-2">生命周期实验台</h3>
+  <p>下面八个按钮对应真实容器里会发的事件。按顺序点一遍，注意每个事件由哪个接口负责，以及在线人数什么时候变。</p>
+
+  <div class="lab">
+    <div class="lab-h">
+      <span class="t">实验台 3 · 容器事件</span>
+      <span class="h">顺序点：启动 → 请求 → 会话 → 属性 → 销毁</span>
+    </div>
+    <div class="lab-b">
+      <div class="life">
+        <div>
+          <div class="ctl">
+            <button class="btn" data-ev="start" type="button">启动应用</button>
+            <button class="btn" data-ev="request" type="button">处理一个请求</button>
+            <button class="btn" data-ev="session" type="button">新建会话</button>
+            <button class="btn" data-ev="add" type="button">写 session 属性</button>
+            <button class="btn" data-ev="replace" type="button">改 session 属性</button>
+            <button class="btn" data-ev="remove" type="button">删 session 属性</button>
+            <button class="btn" data-ev="invalidate" type="button">销毁会话</button>
+            <button class="btn" data-ev="stop" type="button">关闭应用</button>
+          </div>
+          <div class="stat">
+            <div class="kv"><span>应用状态</span><span id="stApp">未启动</span></div>
+            <div class="kv"><span>当前会话</span><span id="stSes">无</span></div>
+            <div class="kv"><span>在线人数</span><span id="stOnline">0</span></div>
+            <div class="kv"><span>session 属性</span><span id="stAttr">无</span></div>
+            <div class="kv"><span>已收到事件</span><span id="stCount">0</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="cons" id="lifeLog" style="margin-top:0"><div class="ph">点“启动应用”开始</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:210px">事件</th><th style="width:270px">接口与方法</th><th>什么时候真的发生</th></tr></thead>
+      <tbody>
+        <tr><td><code>contextInitialized</code></td><td><code>ServletContextListener</code></td><td>Tomcat 启动上下文时，比大部分业务 Bean 完成初始化更早</td></tr>
+        <tr><td><code>sessionCreated</code></td><td><code>HttpSessionListener</code></td><td>第一次调用 <code>getSession()</code> 真正建会话，不是每个请求都发</td></tr>
+        <tr><td><code>attributeAdded</code> / <code>Replaced</code> / <code>Removed</code></td><td><code>HttpSessionAttributeListener</code></td><td>同名 key 再 put 一次算替换，不算新增</td></tr>
+        <tr><td><code>sessionDestroyed</code></td><td><code>HttpSessionListener</code></td><td><code>invalidate()</code> 立刻触发；超时销毁由容器定时清理时触发</td></tr>
+        <tr><td><code>contextDestroyed</code></td><td><code>ServletContextListener</code></td><td>应用关闭，写线程池、连接池的收尾代码就放这里</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>三个时机问题</b>
+    <p><code class="i">contextInitialized</code> 里能拿到的 Bean 有限。往这里塞重量级初始化，容易碰上“依赖的 Bean 还没就绪”的循环。要等全场就绪，用 <code class="i">ApplicationReadyEvent</code> 或 <code class="i">ApplicationRunner</code>。</p>
+    <p>页面一直刷却没有 <code class="i">sessionCreated</code>，先确认 Controller 有没有真的拿 session。JWT 无状态方案根本不建会话，监听器自然不会触发。</p>
+    <p>用 Spring Security 的会话管理（并发登录控制、会话注册表）时，还要注册 <code class="i">HttpSessionEventPublisher</code>，否则 Spring 收不到容器的会话事件。</p>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="num">07</span>代码落到项目里</h2>
+  <div class="sec-rule"></div>
+  <p>这一节的代码都放在 <code class="i">04-web</code>，跑起来就能看到日志。新增和改动如下：</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:300px">文件</th><th style="width:118px">类型</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td class="nowrap"><code>common/filter/TraceIdFilter.java</code></td><td>新增</td><td><code>@Component</code> 方式，生成 traceId 写进 MDC，响应头回带</td></tr>
+        <tr><td class="nowrap"><code>common/filter/ParameterCleanFilter.java</code></td><td>新增</td><td>包装器示例，参数去空格</td></tr>
+        <tr><td class="nowrap"><code>common/filter/ApiKeyFilter.java</code></td><td>新增</td><td>短路示例，校验不过直接写 401</td></tr>
+        <tr><td class="nowrap"><code>common/filter/AnnotationDemoFilter.java</code></td><td>新增</td><td><code>@WebFilter</code> 方式，只拦 <code>/demo/annotation/*</code></td></tr>
+        <tr><td class="nowrap"><code>config/FilterConfig.java</code></td><td>新增</td><td>用 <code>FilterRegistrationBean</code> 控制路径与顺序</td></tr>
+        <tr><td class="nowrap"><code>common/listener/AppLifecycleListener.java</code></td><td>新增</td><td>应用启动、关闭</td></tr>
+        <tr><td class="nowrap"><code>common/listener/OnlineCountListener.java</code></td><td>新增</td><td>在线人数 + 会话属性变更</td></tr>
+        <tr><td class="nowrap"><code>common/interceptor/CallbackTraceInterceptor.java</code></td><td>新增</td><td>打印 <code>preHandle</code> / <code>postHandle</code> / <code>afterCompletion</code></td></tr>
+        <tr><td class="nowrap"><code>common/interceptor/TokenInterceptor.java</code></td><td>新增</td><td><code>preHandle</code> 返回 false，写 401 短路</td></tr>
+        <tr><td class="nowrap"><code>controller/DemoController.java</code></td><td>新增</td><td><code>/demo/*</code> 一组接口，用来触发上面的事件与回调</td></tr>
+        <tr><td class="nowrap"><code>config/WebConfig.java</code></td><td>改动</td><td>注册三个拦截器，用 <code>order</code> 与 <code>excludePathPatterns</code> 控制</td></tr>
+        <tr><td class="nowrap"><code>WebApplication.java</code></td><td>改动</td><td>加 <code>@ServletComponentScan</code></td></tr>
+        <tr><td class="nowrap"><code>common/RequestTimeFilter.java</code></td><td>改动</td><td>order 从 <code>HIGHEST_PRECEDENCE</code> 改成 <code>+ 10</code>，给 traceId 让出最外层</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>四个过滤器的最终顺序，以及为什么这么排：</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:66px">order</th><th style="width:210px">过滤器</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td class="nowrap"><code>MIN</code></td><td><code>TraceIdFilter</code></td><td>最外层，后面的过滤器打日志时都有 traceId 可用</td></tr>
+        <tr><td class="nowrap"><code>MIN+10</code></td><td><code>RequestTimeFilter</code></td><td>要量到最完整的一段耗时，所以贴着最外层</td></tr>
+        <tr><td class="nowrap"><code>MIN+20</code></td><td><code>ParameterCleanFilter</code></td><td>改请求要早，业务层才能拿到干净参数</td></tr>
+        <tr><td class="nowrap"><code>MIN+30</code></td><td><code>ApiKeyFilter</code></td><td>鉴权放在清洗之后，失败时已有 traceId 便于排查</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>监听器这边只需要两个类。应用级的最简单：</p>
+
+  <pre data-lang="java"><code>@Slf4j
+@Component
+public class AppLifecycleListener implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent event) {
+        log.info("应用启动：contextInitialized，容器 {}", event.getServletContext().getServerInfo());
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent event) {
+        log.info("应用关闭：contextDestroyed，开始释放资源");
+    }
+}</code></pre>
+
+  <p>会话级的稍微复杂一点，一个类可以同时实现多个监听接口，容器按事件类型分派：</p>
+
+  <pre data-lang="java"><code>@Slf4j
+@Component
+public class OnlineCountListener implements HttpSessionListener, HttpSessionAttributeListener {
+
+    private final AtomicInteger online = new AtomicInteger();
+
+    public int getOnline() {
+        return online.get();
+    }
+
+    @Override
+    public void sessionCreated(HttpSessionEvent event) {
+        log.info("会话创建：{}，当前在线 {}", event.getSession().getId(), online.incrementAndGet());
+    }
+
+    @Override
+    public void sessionDestroyed(HttpSessionEvent event) {
+        log.info("会话销毁：{}，当前在线 {}", event.getSession().getId(), online.decrementAndGet());
+    }
+
+    @Override
+    public void attributeAdded(HttpSessionBindingEvent event) {
+        log.info("会话属性新增：{} = {}", event.getName(), event.getValue());
+    }
+
+    @Override
+    public void attributeReplaced(HttpSessionBindingEvent event) {
+        log.info("会话属性替换：{}，旧值 {}", event.getName(), event.getValue());
+    }
+
+    @Override
+    public void attributeRemoved(HttpSessionBindingEvent event) {
+        log.info("会话属性移除：{}，原值 {}", event.getName(), event.getValue());
+    }
+}</code></pre>
+
+  <p>这个监听器注册成 Bean，所以 <code class="i">DemoController</code> 可以直接注入它，把在线人数当普通对象读出来：</p>
+
+  <pre data-lang="java"><code>@RestController
+@RequestMapping("/demo")
+@RequiredArgsConstructor
+public class DemoController {
+
+    private final OnlineCountListener onlineCountListener;
+
+    @GetMapping("/online")
+    public Result&lt;Integer&gt; online() {
+        return Result.ok(onlineCountListener.getOnline());
+    }
+
+    @DeleteMapping("/session")
+    public Result&lt;String&gt; destroySession(HttpSession session) {
+        session.invalidate();
+        return Result.ok("会话已销毁");
+    }
+}</code></pre>
+</section>
+
+<section id="s7">
+  <h2><span class="num">08</span>跑起来看日志</h2>
+  <div class="sec-rule"></div>
+  <p>启动模块，然后按下面的顺序发几个请求：</p>
+
+  <pre data-lang="bash"><code>mvn -pl 04-web spring-boot:run
+
+# 1. 最普通的请求，看 traceId 与两段耗时
+curl -i http://localhost:8004/demo/ping
+
+# 2. 参数两端是空格
+curl -s "http://localhost:8004/demo/trim?name=%20%20abc%20%20"
+
+# 3. 短路：没带密钥
+curl -i http://localhost:8004/demo/secure
+curl -i -H "X-Api-Key: demo-key" http://localhost:8004/demo/secure
+
+# 4. 会话事件：创建、改属性、销毁
+curl -c cookie.txt http://localhost:8004/demo/session
+curl -b cookie.txt -X PUT "http://localhost:8004/demo/session?user=teacher09"
+curl http://localhost:8004/demo/online
+curl -b cookie.txt -X DELETE http://localhost:8004/demo/session
+
+# 5. @WebFilter 生效的路径
+curl http://localhost:8004/demo/annotation/ping
+
+# 6. 拦截器回调：抛异常与异步
+curl -s http://localhost:8004/demo/throw
+curl -s http://localhost:8004/demo/async
+
+# 7. 拦截器短路与路径排除
+curl -i http://localhost:8004/demo/token/data
+curl -i -H "X-Token: demo-token" http://localhost:8004/demo/token/data
+curl -i http://localhost:8004/demo/token/public</code></pre>
+
+  <p>第一个请求打出的日志，注意 <code class="i">[]</code> 里已经是 traceId，而两个耗时数值并不相同：</p>
+
+  <pre data-lang="bash"><code>INFO  top.mqxu.web.common.LogInterceptor [42c88323e33a4306] - 拦截器统计：GET /demo/ping 耗时 41ms
+INFO  t.mqxu.web.common.RequestTimeFilter [42c88323e33a4306] - 过滤器统计：GET /demo/ping 耗时 52ms</code></pre>
+
+  <p>差值来自 DispatcherServlet 的初始化和 Spring MVC 的进出栈，第一次请求最明显，后面会缩到 1 到 2 毫秒。</p>
+
+  <p>短路那一组更能说明链的位置：Controller 根本没进，但外层过滤器照样完成了自己的收尾。</p>
+
+  <pre data-lang="bash"><code>WARN  t.m.web.common.filter.ApiKeyFilter [471bc39df7e64e4a] - ApiKeyFilter 拦住请求：GET /demo/secure，X-Api-Key 不合法
+INFO  t.mqxu.web.common.RequestTimeFilter [471bc39df7e64e4a] - 过滤器统计：GET /demo/secure 耗时 1ms</code></pre>
+
+  <p>会话那一组，四个事件依次出现，在线人数从 1 回到 0：</p>
+
+  <pre data-lang="bash"><code>INFO  t.m.w.c.listener.OnlineCountListener [..] - 会话创建：12BDD6164915EFD4C718E1A559C4B156，当前在线 1
+INFO  t.m.w.c.listener.OnlineCountListener [..] - 会话属性新增：user = teacher01
+INFO  t.m.w.c.listener.OnlineCountListener [..] - 会话属性替换：user，旧值 teacher01
+INFO  t.m.w.c.listener.OnlineCountListener [..] - 会话销毁：12BDD6164915EFD4C718E1A559C4B156，当前在线 0</code></pre>
+
+  <p>应用启动那一行出现在 <code class="i">Started WebApplication</code> 之前，说明它比 Spring 容器就绪更早，这也是不建议在里面做重活的原因：</p>
+
+  <pre data-lang="bash"><code>INFO  t.m.w.c.l.AppLifecycleListener [] - 应用启动：contextInitialized，容器 Apache Tomcat/11.0.24</code></pre>
+</section>
+
+<section id="s8">
+  <h2><span class="num">09</span>容易踩的地方</h2>
+  <div class="sec-rule"></div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:230px">现象</th><th style="width:250px">原因</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>过滤器完全不执行</td><td><code>@WebFilter</code> 类没被扫描</td><td>启动类加 <code>@ServletComponentScan</code>，注意 Boot 4 的新包路径</td></tr>
+        <tr><td>顺序和预想相反</td><td><code>@Order</code> 写了相同值，或用的是 <code>@WebFilter</code></td><td>改用 <code>FilterRegistrationBean.setOrder</code>，并确认没重复注册</td></tr>
+        <tr><td>过滤器里 <code>@Autowired</code> 拿到 null</td><td>实例由 Tomcat 创建，不在 Spring 容器里</td><td>改成 <code>@Component</code> 或注册 Bean</td></tr>
+        <tr><td>Controller 读到的 body 是空的</td><td>过滤器已经把输入流读完了，流不能重读</td><td>用 <code>ContentCachingRequestWrapper</code></td></tr>
+        <tr><td>过滤器里改的响应头没出现在浏览器</td><td>响应已提交（commit），头已经发出去了</td><td>放在 <code>chain.doFilter</code> 之前设置</td></tr>
+        <tr><td>异步请求要过滤器再跑一次，或者抱怨它跑了两次</td><td>派发类型与过滤器基类不匹配：<code>OncePerRequestFilter</code> 默认跳过 ASYNC，普通 <code>Filter</code> 注册时只映射 REQUEST</td><td>需要就覆盖 <code>shouldNotFilterAsyncDispatch</code>，或在注册时 <code>setDispatcherTypes</code> 指明</td></tr>
+        <tr><td>拦截器改了响应体没有效果</td><td><code>postHandle</code> 拿不到 Controller 的返回对象，REST 场景也没视图可改</td><td>改响应头放 <code>postHandle</code>，改 body 用 <code>ResponseBodyAdvice</code></td></tr>
+        <tr><td><code>afterCompletion</code> 收不到异常</td><td>异常已被 <code>@ExceptionHandler</code> 处理，DispatcherServlet 回调时传 null</td><td>要记录异常就在异常处理器里记，不要指望这个参数</td></tr>
+        <tr><td>拦截器返回 false 后浏览器收到空响应</td><td>没有自己写状态码与响应体</td><td>在 <code>preHandle</code> 里 <code>setStatus</code> 并写 output</td></tr>
+        <tr><td>异步请求里 MDC 的 traceId 是空的</td><td>过滤器默认只处理 REQUEST 派发，ASYNC 派发不再进链</td><td>用 <code>TaskDecorator</code> 复制 MDC，或手动传 traceId</td></tr>
+        <tr><td>在线人数一直是 0</td><td>没有真的创建会话，或方案本身无状态</td><td>检查有没有调用 <code>getSession()</code>；JWT 方案另想办法统计</td></tr>
+        <tr><td>启动直接失败</td><td>监听器里抛了异常，容器启动中断</td><td>启动期逻辑包 try-catch，失败只记日志不抛</td></tr>
+        <tr><td>静态资源也被拦了</td><td>过滤器默认覆盖所有路径，拦截器配了 <code>/**</code> 也一样会执行</td><td>过滤器收窄 <code>addUrlPatterns</code>，拦截器用 <code>excludePathPatterns</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tip">
+    <b>排查顺序</b>
+    <p>先看日志里到底有没有过滤器的输出，判断是没注册还是没执行；再确认路径和 order；最后才怀疑代码逻辑。三步能解决上面九成的问题。</p>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="num">10</span>小测验</h2>
+  <div class="sec-rule"></div>
+  <p>点选项即时判分，选完会给出解释。</p>
+
+  <div id="quiz">
+    <div class="q" data-answer="1">
+      <p class="qt"><em>01</em>同一个请求里，过滤器和拦截器哪个先执行？</p>
+      <button class="opt" type="button">拦截器，它更靠近 Controller</button>
+      <button class="opt" type="button">过滤器，它在 DispatcherServlet 外面</button>
+      <button class="opt" type="button">看 @Order 的值，与类型无关</button>
+      <div class="exp">过滤器属于 Servlet 规范，在 DispatcherServlet 之前执行；拦截器由 Spring MVC 调用，此时请求已经进到 DispatcherServlet 内部。两者各有一套排序方式。</div>
+    </div>
+
+    <div class="q" data-answer="2">
+      <p class="qt"><em>02</em>写了 <code class="i">@WebFilter</code> 的类完全没生效，最可能的原因是什么？</p>
+      <button class="opt" type="button">没写 <code class="i">@Order</code></button>
+      <button class="opt" type="button">没实现 <code class="i">FilterChain</code> 接口</button>
+      <button class="opt" type="button">启动类缺少 <code class="i">@ServletComponentScan</code></button>
+      <div class="exp">注解过滤器靠 Servlet 组件扫描发现。Spring Boot 4 里该注解在 org.springframework.boot.web.server.servlet.context 包下，用错包路径同样不生效。</div>
+    </div>
+
+    <div class="q" data-answer="0">
+      <p class="qt"><em>03</em>一个 <code class="i">@Component</code> 的过滤器只想拦 <code class="i">/api/**</code>，最合适的做法是？</p>
+      <button class="opt" type="button">改成用 <code class="i">FilterRegistrationBean</code> 注册并设置 <code class="i">addUrlPatterns</code></button>
+      <button class="opt" type="button">在 <code class="i">doFilter</code> 里判断 URI，不匹配就 return</button>
+      <button class="opt" type="button">在类上再加一个 <code class="i">@RequestMapping</code></button>
+      <div class="exp">路径控制是注册阶段的事。第二种写法虽然能跑，但过滤器照样进链、照样占顺序，还会漏掉 URL 解码等细节，属于把配置问题写进业务代码。</div>
+    </div>
+
+    <div class="q" data-answer="1">
+      <p class="qt"><em>04</em>过滤器里读了一次 request body，Controller 里再读就是空的，怎么办？</p>
+      <button class="opt" type="button">把过滤器顺序调到最后</button>
+      <button class="opt" type="button">用 <code class="i">ContentCachingRequestWrapper</code> 把内容缓存下来</button>
+      <button class="opt" type="button">让 Controller 改成读 header</button>
+      <div class="exp">Servlet 的输入流只能顺序读一次，读完就到底了。包装器在第一次读的时候把字节缓存起来，后续可以重复获取。顺序无关，除非不读。</div>
+    </div>
+
+    <div class="q" data-answer="2">
+      <p class="qt"><em>05</em><code class="i">HttpSessionListener.sessionCreated</code> 什么时候触发？</p>
+      <button class="opt" type="button">每个请求进来都触发一次</button>
+      <button class="opt" type="button">用户登录成功后触发</button>
+      <button class="opt" type="button">首次调用 <code class="i">getSession()</code> 真正创建会话时触发一次</button>
+      <div class="exp">会话是按需创建的。没调用 getSession() 的接口不会建会话；JWT 这类无状态方案不建会话，所以监听器不会触发。</div>
+    </div>
+
+    <div class="q" data-answer="1">
+      <p class="qt"><em>06</em>某个拦截器的 <code class="i">preHandle</code> 返回 false，还有哪些回调会执行？</p>
+      <button class="opt" type="button">一个都不执行，请求直接结束</button>
+      <button class="opt" type="button">排在它前面的拦截器的 <code class="i">afterCompletion</code> 会执行</button>
+      <button class="opt" type="button">它自己的 <code class="i">postHandle</code> 和 <code class="i">afterCompletion</code> 都会执行</button>
+      <div class="exp">DispatcherServlet 只对 preHandle 已经返回 true 的拦截器调用 afterCompletion，且传入的异常是 null。这个拦截器自己的 postHandle 与 afterCompletion 都不会执行，Controller 也不会执行。</div>
+    </div>
+
+    <div class="q" data-answer="0">
+      <p class="qt"><em>07</em>Controller 抛出的异常被 <code class="i">@RestControllerAdvice</code> 处理成 <code class="i">Result</code> 之后，拦截器 <code class="i">afterCompletion</code> 收到的 ex 是什么？</p>
+      <button class="opt" type="button">null，异常已经被消化掉了</button>
+      <button class="opt" type="button">原来的业务异常对象</button>
+      <button class="opt" type="button">包装后的 ServletException</button>
+      <div class="exp">DispatcherServlet 先交给 HandlerExceptionResolver 处理，处理成功后再回调 afterCompletion 时传 null。异常没被处理掉才会把这个异常透传过来。</div>
+    </div>
+  </div>
+
+  <p class="score">答对 <b id="quizScore">0</b> / 7</p>
+</section>
+
+<section id="s10">
+  <h2><span class="num">11</span>练习与小结</h2>
+  <div class="sec-rule"></div>
+
+  <div class="step"><div class="n">1</div><div class="c"><h5>把 traceId 传到底</h5><p>现在 traceId 只写进 MDC，试着让它进入异步线程（<code class="i">@Async</code> 或线程池提交的任务），验证日志里子线程也带同一个 traceId。</p></div></div>
+  <div class="step"><div class="n">2</div><div class="c"><h5>给过滤器加开关</h5><p>在 <code class="i">FilterRegistrationBean</code> 上接一个配置项 <code class="i">demo.filter.api-key.enabled</code>，用 <code class="i">setEnabled</code> 控制，改配置不用改代码。</p></div></div>
+  <div class="step"><div class="n">3</div><div class="c"><h5>把在线人数换成会话审计</h5><p>用 <code class="i">HttpSessionAttributeListener</code> 记录“谁在什么时候登录、什么时候退出”，写进一个内存队列，再加一个接口读出来。</p></div></div>
+  <div class="step"><div class="n">4</div><div class="c"><h5>验证短路的边界</h5><p>在 <code class="i">ApiKeyFilter</code> 里抛一个运行时异常，观察返回体是不是项目里的 <code class="i">Result</code>，再决定怎么补兜底。</p></div></div>
+  <div class="step"><div class="n">5</div><div class="c"><h5>换一种权限判断</h5><p>自定义一个 <code class="i">@RequireRole</code> 注解，在 <code class="i">TokenInterceptor</code> 里从 <code class="i">handler</code> 拿到 <code class="i">HandlerMethod</code> 再读注解。这件事过滤器做不到，因为它拿不到目标方法。</p></div></div>
+
+  <div class="note">
+    <b>这一节要记住的五句</b>
+    <p>过滤器在 DispatcherServlet 外面，所以能改请求、能短路、拦得住静态资源，也兜不住全局异常。</p>
+    <p>链式模型的全部秘密就是 <code class="i">chain.doFilter</code> 这一行分成进出两段，不调用它就是短路。</p>
+    <p>拦截器的三个回调一进两出：<code class="i">preHandle</code> 正序，<code class="i">postHandle</code> 与 <code class="i">afterCompletion</code> 逆序，抛异常时少了 <code class="i">postHandle</code>。</p>
+    <p>注册方式决定顺序和路径，注解写法和注册 Bean 不要混着用来控顺序。</p>
+    <p>监听器是事件通知，不是拦截器；会话事件只在真的建了会话时才有。</p>
+  </div>
+
+  <div class="foot">
+    后端工程化开发 · 模块 04 补充讲义 · 过滤器、拦截器与监听器<br>
+    对应代码 <code class="i">04-web</code>：4 个过滤器 · 3 个拦截器 · 2 个监听器 · 14 个演示接口<br>
+    Spring Boot 4.1.1 / Tomcat 11.0.24 / Servlet 6.1 / Java 21
+  </div>
+</section>
+
+</div>
+</main>
+</div>
+
+<button class="top" id="toTop" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ───────── 实验台 1：请求路径 ───────── */
+  var STAGES = [
+    { c:"client", n:"客户端发出 GET /users/1", d:"带上 Cookie 和 X-Trace-Id 头", g:"客户端", l:"client   → GET /users/1", k:"in" },
+    { c:"lst", n:"requestInitialized", d:"ServletRequestListener 收到请求进入通知", g:"Listener", l:"listener ServletRequestListener.requestInitialized", k:"ev" },
+    { c:"fil", n:"TraceIdFilter ↓", d:"没有 traceId 就生成一个，放进 MDC", g:"Filter 1", l:"filter   TraceIdFilter ↓  traceId=8f2c1a77b3e04d15 → MDC", k:"in" },
+    { c:"fil", n:"RequestTimeFilter ↓", d:"记下开始时间，继续往下传", g:"Filter 2", l:"filter   RequestTimeFilter ↓  start=System.currentTimeMillis()", k:"in" },
+    { c:"fil", n:"ParameterCleanFilter ↓", d:"用包装器换掉 request，参数去空格", g:"Filter 3", l:"filter   ParameterCleanFilter ↓  包装 request 后传给下一层", k:"in" },
+    { c:"mvc", n:"DispatcherServlet", d:"按 URL 找到对应的 handler", g:"Spring MVC", l:"mvc      DispatcherServlet 找到 UserController#get", k:"in" },
+    { c:"mvc", n:"LogInterceptor.preHandle", d:"把 startTime 塞进 request", g:"Interceptor", l:"mvc      LogInterceptor.preHandle  request.setAttribute(startTime)", k:"in" },
+    { c:"mvc", n:"UserController.get 执行", d:"业务代码在这里跑", g:"Controller", l:"mvc      UserController#get 返回 Result<User>", k:"in" },
+    { c:"mvc", n:"消息转换器写 JSON", d:"Result 被序列化成响应体", g:"Spring MVC", l:"mvc      MappingJackson2HttpMessageConverter 写入响应", k:"in" },
+    { c:"mvc", n:"LogInterceptor.afterCompletion", d:"打印拦截器耗时", g:"Interceptor", l:"mvc      LogInterceptor 拦截器统计：GET /users/1 耗时 41ms", k:"out" },
+    { c:"fil", n:"ParameterCleanFilter ↑", d:"回程，没有额外动作", g:"Filter 3", l:"filter   ParameterCleanFilter ↑", k:"out" },
+    { c:"fil", n:"RequestTimeFilter ↑", d:"打印过滤器耗时，包含 MVC 全部", g:"Filter 2", l:"filter   RequestTimeFilter 过滤器统计：GET /users/1 耗时 52ms", k:"out" },
+    { c:"fil", n:"TraceIdFilter ↑", d:"清掉 MDC，线程要还回线程池", g:"Filter 1", l:"filter   TraceIdFilter ↑  MDC.remove(traceId)", k:"out" },
+    { c:"lst", n:"requestDestroyed", d:"ServletRequestListener 收到请求结束通知", g:"Listener", l:"listener ServletRequestListener.requestDestroyed", k:"ev" }
+  ];
+
+  var pipe = document.getElementById("pipe");
+  var pipeLog = document.getElementById("pipeLog");
+  var pipeCnt = document.getElementById("pipeCnt");
+  var pipeNext = document.getElementById("pipeNext");
+  var pipeAuto = document.getElementById("pipeAuto");
+  var pipeReset = document.getElementById("pipeReset");
+  var pipeAt = 0, pipeTimer = null;
+
+  STAGES.forEach(function(s, i){
+    var row = document.createElement("div");
+    row.className = "p-row c-" + s.c;
+    row.innerHTML = '<span class="idx">' + String(i + 1).padStart(2, "0") + '</span>' +
+      '<span><span class="nm"></span><div class="ds"></div></span>' +
+      '<span class="tag"></span>';
+    row.querySelector(".nm").textContent = s.n;
+    row.querySelector(".ds").textContent = s.d;
+    row.querySelector(".tag").textContent = s.g;
+    pipe.appendChild(row);
+  });
+
+  function pipeStep(){
+    if(pipeAt >= STAGES.length) return false;
+    var row = pipe.children[pipeAt];
+    if(pipeAt > 0) pipe.children[pipeAt - 1].classList.add("done");
+    row.classList.add("on");
+    var s = STAGES[pipeAt];
+    if(pipeAt === 0){ pipeLog.innerHTML = ""; }
+    var line = document.createElement("div");
+    line.className = "ln " + s.k;
+    line.textContent = "[" + String(pipeAt + 1).padStart(2, "0") + "] " + s.l;
+    pipeLog.appendChild(line);
+    pipeLog.scrollTop = pipeLog.scrollHeight;
+    pipeAt++;
+    pipeCnt.textContent = pipeAt + " / " + STAGES.length;
+    if(pipeAt >= STAGES.length){
+      row.classList.remove("on");
+      row.classList.add("done");
+      pipeNext.disabled = true;
+      pipeAuto.disabled = true;
+      stopAuto();
+    }
+    return true;
+  }
+
+  function stopAuto(){
+    if(pipeTimer){ clearInterval(pipeTimer); pipeTimer = null; }
+    pipeAuto.textContent = "自动播放";
+  }
+
+  pipeNext.addEventListener("click", function(){ pipeStep(); });
+  pipeAuto.addEventListener("click", function(){
+    if(pipeTimer){ stopAuto(); return; }
+    pipeAuto.textContent = "暂停";
+    pipeTimer = setInterval(function(){ if(!pipeStep()) stopAuto(); }, 850);
+  });
+  pipeReset.addEventListener("click", function(){
+    stopAuto();
+    pipeAt = 0;
+    pipeNext.disabled = false;
+    pipeAuto.disabled = false;
+    Array.prototype.forEach.call(pipe.children, function(c){ c.classList.remove("on", "done"); });
+    pipeLog.innerHTML = '<div class="ph">点“下一步”开始</div>';
+    pipeCnt.textContent = "0 / " + STAGES.length;
+  });
+
+  /* ───────── 实验台 2：FilterChain ───────── */
+  var FCS = [
+    { n:"TraceIdFilter", d:"生成 traceId 写入 MDC", o:1, on:true },
+    { n:"AuthFilter", d:"校验 X-Token，失败就短路", o:10, on:true },
+    { n:"RequestTimeFilter", d:"记录耗时，回程打印", o:20, on:true },
+    { n:"ParameterCleanFilter", d:"包装 request，参数去空格", o:30, on:true }
+  ];
+  var fcRows = document.getElementById("fcRows");
+  var fcLog = document.getElementById("fcLog");
+  var fcRun = document.getElementById("fcRun");
+  var fcClear = document.getElementById("fcClear");
+  var fcBreak = document.getElementById("fcBreak");
+  var fcTimer = null;
+
+  FCS.forEach(function(f, i){
+    var row = document.createElement("div");
+    row.className = "fc-row";
+    row.innerHTML = '<input type="checkbox" ' + (f.on ? "checked" : "") + '>' +
+      '<span><span class="nm"></span><div class="ds"></div></span>' +
+      '<input type="number" value="' + f.o + '" min="0" max="999" title="order">';
+    row.querySelector(".nm").textContent = f.n;
+    row.querySelector(".ds").textContent = f.d;
+    var box = row.querySelector("input[type=checkbox]");
+    var num = row.querySelector("input[type=number]");
+    box.addEventListener("change", function(){ f.on = box.checked; row.classList.toggle("off", !f.on); });
+    num.addEventListener("change", function(){ f.o = parseInt(num.value, 10) || 0; });
+    if(!f.on) row.classList.add("off");
+    fcRows.appendChild(row);
+  });
+
+  function fcLine(text, ind, cls){
+    var d = document.createElement("div");
+    d.className = "ln " + (cls || "in");
+    d.style.paddingLeft = (ind * 16) + "px";
+    d.textContent = text;
+    fcLog.appendChild(d);
+    fcLog.scrollTop = fcLog.scrollHeight;
+  }
+
+  fcClear.addEventListener("click", function(){
+    if(fcTimer){ clearTimeout(fcTimer); fcTimer = null; }
+    fcRun.disabled = false;
+    fcLog.innerHTML = '<div class="ph">发送一个 GET /users/1，看四个过滤器怎么进出</div>';
+  });
+
+  fcRun.addEventListener("click", function(){
+    if(fcTimer) return;
+    fcRun.disabled = true;
+    fcLog.innerHTML = "";
+    var list = FCS.filter(function(f){ return f.on; })
+      .map(function(f, i){ return { f:f, i:i }; });
+    list.sort(function(a, b){ return a.f.o - b.f.o || a.i - b.i; });
+    list = list.map(function(x){ return x.f; });
+
+    if(list.length === 0){
+      fcLine("没有启用任何过滤器，请求直接进 DispatcherServlet", 0, "in");
+      fcLine("Controller 返回 200", 1, "in");
+      fcRun.disabled = false;
+      return;
+    }
+
+    var steps = [], i;
+    for(i = 0; i < list.length; i++){
+      steps.push({ t: "→ " + list[i].n + ".doFilter 进入", i: i, k: "in" });
+    }
+    var authIdx = -1;
+    for(i = 0; i < list.length; i++){ if(list[i].n === "AuthFilter") authIdx = i; }
+
+    var blocked = fcBreak.checked && authIdx >= 0;
+    if(blocked){
+      steps.push({ t: "AuthFilter 校验失败：写 401，不调用 chain.doFilter()", i: authIdx + 1, k: "bad" });
+      for(i = authIdx - 1; i >= 0; i--){
+        steps.push({ t: "← " + list[i].n + " 回程（虽然没拿到结果，finally 里照样收尾）", i: i + 1, k: "out" });
+      }
+      steps.push({ t: "响应 401 返回客户端，Controller 没有执行", i: 0, k: "bad" });
+    } else {
+      steps.push({ t: "→ DispatcherServlet 找到 handler", i: list.length, k: "in" });
+      steps.push({ t: "→ Controller 执行业务，返回 Result", i: list.length + 1, k: "in" });
+      for(i = list.length - 1; i >= 0; i--){
+        steps.push({ t: "← " + list[i].n + " 回程", i: i, k: "out" });
+      }
+      steps.push({ t: "响应 200 返回客户端", i: 0, k: "out" });
+    }
+
+    var at = 0;
+    function tick(){
+      if(at >= steps.length){
+        fcRun.disabled = false;
+        fcTimer = null;
+        return;
+      }
+      fcLine(steps[at].t, steps[at].i, steps[at].k);
+      at++;
+      fcTimer = setTimeout(tick, 340);
+    }
+    tick();
+  });
+
+  /* ───────── 实验台 3：容器事件 ───────── */
+  var LFC = {
+    start:      { iface:"ServletContextListener", m:"contextInitialized", k:"ev" },
+    request:    { iface:"ServletRequestListener", m:"requestInitialized / requestDestroyed", k:"ev" },
+    session:    { iface:"HttpSessionListener", m:"sessionCreated", k:"ev" },
+    add:        { iface:"HttpSessionAttributeListener", m:"attributeAdded", k:"ev" },
+    replace:    { iface:"HttpSessionAttributeListener", m:"attributeReplaced", k:"ev" },
+    remove:     { iface:"HttpSessionAttributeListener", m:"attributeRemoved", k:"ev" },
+    invalidate: { iface:"HttpSessionListener", m:"sessionDestroyed", k:"ev" },
+    stop:       { iface:"ServletContextListener", m:"contextDestroyed", k:"ev" }
+  };
+  var life = { started:false, session:false, attr:{}, count:0 };
+  var lifeLog = document.getElementById("lifeLog");
+  var stApp = document.getElementById("stApp");
+  var stSes = document.getElementById("stSes");
+  var stOnline = document.getElementById("stOnline");
+  var stAttr = document.getElementById("stAttr");
+  var stCount = document.getElementById("stCount");
+
+  function ev(text, cls){
+    if(life.count === 0) lifeLog.innerHTML = "";
+    life.count++;
+    var d = document.createElement("div");
+    d.className = "ln " + (cls || "ev");
+    d.textContent = "[" + String(life.count).padStart(2, "0") + "] " + text;
+    lifeLog.appendChild(d);
+    lifeLog.scrollTop = lifeLog.scrollHeight;
+    refresh();
+  }
+
+  function refresh(){
+    stApp.textContent = life.started ? "运行中" : "未启动";
+    stSes.textContent = life.session ? "SESS-7f21c8" : "无";
+    stOnline.textContent = life.session ? "1" : "0";
+    var keys = Object.keys(life.attr);
+    stAttr.textContent = keys.length ? keys.map(function(k){ return k + "=" + life.attr[k]; }).join(", ") : "无";
+    stCount.textContent = String(life.count);
+    document.querySelectorAll("[data-ev]").forEach(function(b){
+      var ev = b.getAttribute("data-ev"), ok = true;
+      if(ev === "start") ok = !life.started;
+      else if(ev === "stop") ok = life.started;
+      else if(ev === "session") ok = life.started && !life.session;
+      else if(ev === "invalidate") ok = life.session;
+      else if(ev === "request") ok = life.started;
+      else ok = life.session;
+      b.disabled = !ok;
+    });
+  }
+
+  document.querySelectorAll("[data-ev]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var name = btn.getAttribute("data-ev");
+      var cfg = LFC[name];
+      if(name === "start"){
+        life.started = true;
+        ev("contextInitialized  ←  " + cfg.iface);
+      } else if(name === "request"){
+        ev("requestInitialized  ←  " + cfg.iface, "in");
+        setTimeout(function(){ ev("requestDestroyed  ←  " + cfg.iface, "in"); }, 420);
+      } else if(name === "session"){
+        life.session = true;
+        life.attr = {};
+        ev("sessionCreated  ←  " + cfg.iface + "，在线人数 +1");
+      } else if(name === "add"){
+        life.attr.user = "teacher01";
+        ev("attributeAdded  ←  " + cfg.iface + "，user = teacher01");
+      } else if(name === "replace"){
+        var old = life.attr.user;
+        life.attr.user = "teacher09";
+        ev("attributeReplaced  ←  " + cfg.iface + "，user 旧值 " + old);
+      } else if(name === "remove"){
+        delete life.attr.user;
+        ev("attributeRemoved  ←  " + cfg.iface + "，user 已移除");
+      } else if(name === "invalidate"){
+        life.session = false;
+        life.attr = {};
+        ev("sessionDestroyed  ←  " + cfg.iface + "，在线人数 -1");
+      } else if(name === "stop"){
+        life.started = false;
+        life.session = false;
+        life.attr = {};
+        ev("contextDestroyed  ←  " + cfg.iface + "，开始释放资源", "out");
+      }
+      refresh();
+    });
+  });
+  refresh();
+
+  /* ───────── 实验台 4：拦截器回调 ───────── */
+  var IC = {
+    normal: {
+      kv: [["handler", "HandlerMethod"], ["preHandle", "A → B 依次放行"], ["Controller", "执行"],
+           ["postHandle", "B → A"], ["afterCompletion", "B → A，ex = 无"]],
+      lines: [
+        ["A.preHandle   handler = HandlerMethod", "in"],
+        ["B.preHandle   → true", "in"],
+        ["Controller 返回 Result", "in"],
+        ["B.postHandle", "out"],
+        ["A.postHandle", "out"],
+        ["B.afterCompletion   异常 = 无", "out"],
+        ["A.afterCompletion   异常 = 无", "out"]
+      ]
+    },
+    block: {
+      kv: [["preHandle", "A 放行，B 返回 false"], ["Controller", "没执行"], ["postHandle", "一个都不执行"],
+           ["afterCompletion", "只有 A，ex = 无"], ["响应", "401 由 B 自己写"]],
+      lines: [
+        ["A.preHandle   → true", "in"],
+        ["B.preHandle   → false，顺手写 401", "bad"],
+        ["A.afterCompletion   异常 = 无", "out"],
+        ["过滤器回程，请求结束", "in"]
+      ]
+    },
+    thrown: {
+      kv: [["preHandle", "A → B 都放行"], ["Controller", "抛 BusinessException"], ["postHandle", "一个都不执行"],
+           ["afterCompletion", "B → A，ex = 无"], ["异常", "被 @RestControllerAdvice 消化"]],
+      lines: [
+        ["A.preHandle   → true", "in"],
+        ["B.preHandle   → true", "in"],
+        ["Controller 抛出 BusinessException", "bad"],
+        ["@ExceptionHandler 返回 Result(400)", "ev"],
+        ["B.afterCompletion   异常 = 无", "out"],
+        ["A.afterCompletion   异常 = 无", "out"]
+      ]
+    },
+    async: {
+      kv: [["第一次派发", "只到 preHandle 就返回"], ["afterConcurrentHandlingStarted", "替代这一轮的 postHandle"],
+           ["异步完成", "重新派发一次"], ["postHandle", "B → A，在异步线程"], ["traceId", "第二段日志为空"]],
+      lines: [
+        ["① 请求线程：A.preHandle / B.preHandle", "in"],
+        ["① Controller 返回 Callable，请求线程释放", "in"],
+        ["① 过滤器当场打印耗时", "out"],
+        ["② 异步线程重新派发：A.preHandle / B.preHandle", "in"],
+        ["② B.postHandle → A.postHandle", "out"],
+        ["② B.afterCompletion → A.afterCompletion", "out"]
+      ]
+    }
+  };
+
+  var icStat = document.getElementById("icStat");
+  var icLog = document.getElementById("icLog");
+
+  function renderIC(key){
+    var data = IC[key];
+    if(!data) return;
+    icStat.innerHTML = "";
+    data.kv.forEach(function(pair){
+      var row = document.createElement("div");
+      row.className = "kv";
+      var k = document.createElement("span");
+      k.textContent = pair[0];
+      var v = document.createElement("span");
+      v.textContent = pair[1];
+      row.appendChild(k);
+      row.appendChild(v);
+      icStat.appendChild(row);
+    });
+    icLog.innerHTML = "";
+    data.lines.forEach(function(line, i){
+      var div = document.createElement("div");
+      div.className = "ln " + line[1];
+      div.textContent = String(i + 1).padStart(2, "0") + "  " + line[0];
+      icLog.appendChild(div);
+    });
+  }
+
+  document.querySelectorAll("[data-ic]").forEach(function(btn){
+    btn.addEventListener("click", function(){ renderIC(btn.getAttribute("data-ic")); });
+  });
+
+  /* ───────── 小测验 ───────── */
+  var scoreEl = document.getElementById("quizScore");
+  var score = 0;
+  document.querySelectorAll("#quiz .q").forEach(function(q){
+    var answer = parseInt(q.getAttribute("data-answer"), 10);
+    var opts = q.querySelectorAll(".opt");
+    var exp = q.querySelector(".exp");
+    var done = false;
+    Array.prototype.forEach.call(opts, function(opt, idx){
+      opt.addEventListener("click", function(){
+        if(done) return;
+        done = true;
+        if(idx === answer){
+          opt.classList.add("ok");
+          score++;
+          scoreEl.textContent = String(score);
+        } else {
+          opt.classList.add("no");
+          opts[answer].classList.add("ok");
+        }
+        exp.classList.add("show");
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
+
+<script>
+(function(){
+  "use strict";
+
+  var RULES = {
+    java: [
+      ["com", /\/\/[^\n]*|\/\*[\s\S]*?\*\//],
+      ["str", /"(?:\\\\.|[^"\\\\])*"/],
+      ["ann", /@[A-Za-z_][\w.]*/],
+      ["kw", /\b(?:public|private|protected|static|final|abstract|class|interface|enum|record|extends|implements|return|new|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|throws|void|int|long|short|byte|char|boolean|float|double|var|null|true|false|import|package|this|super|instanceof)\b/],
+      ["num", /\b\d[\d_]*(?:\.\d+)?[LlFfDd]?\b/],
+      ["type", /\b[A-Z][A-Za-z0-9_]*\b/]
+    ],
+    js: [
+      ["com", /\/\/[^\n]*|\/\*[\s\S]*?\*\//],
+      ["str", /'(?:\\\\.|[^'\\\\])*'|"(?:\\\\.|[^"\\\\])*"|`(?:\\\\.|[^`\\\\])*`/],
+      ["kw", /\b(?:import|from|export|default|const|let|var|function|return|if|else|for|while|try|catch|finally|throw|new|await|async|of|in|null|true|false|undefined|typeof)\b/],
+      ["num", /\b\d+(?:\.\d+)?\b/],
+      ["type", /\b[A-Z][A-Za-z0-9_]*\b/]
+    ],
+    bash: [
+      ["com", /#[^\n]*/],
+      ["str", /'[^'\n]*'|"[^"\n]*"/],
+      ["kw", /^\s*(?:curl|npm|mvn|git|cd|echo|export)\b/m],
+      ["num", /--?[A-Za-z][\w-]*/]
+    ],
+    json: [
+      ["attr", /"[^"\n]*"(?=\s*:)/],
+      ["str", /"[^"\n]*"/],
+      ["num", /\b-?\d+(?:\.\d+)?\b/],
+      ["kw", /\b(?:true|false|null)\b/]
+    ]
+  };
+
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function hl(code, lang){
+    var rules = RULES[lang];
+    if(!rules) return esc(code);
+    var src = "", i;
+    for(i=0;i<rules.length;i++){ src += (i?"|":"") + "(?<g" + i + ">" + rules[i][1].source + ")"; }
+    var re = new RegExp(src, "gm"), out = "", last = 0, m;
+    while((m = re.exec(code)) !== null){
+      if(m[0] === ""){ re.lastIndex++; continue; }
+      out += esc(code.slice(last, m.index));
+      var cls = "tk-unk", gi;
+      for(gi=0; gi<rules.length; gi++){ if(m.groups && m.groups["g"+gi] !== undefined){ cls = "tk-" + rules[gi][0]; break; } }
+      out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    return out + esc(code.slice(last));
+  }
+
+  var LABEL = { java:"Java", js:"JavaScript", bash:"Shell", json:"JSON", text:"", http:"" };
+
+  document.querySelectorAll("pre").forEach(function(pre){
+    var code = pre.querySelector("code");
+    if(!code) return;
+    var lang = pre.getAttribute("data-lang") || "text";
+    var raw = code.textContent;
+    if(RULES[lang]) code.innerHTML = hl(raw, lang);
+
+    var box = document.createElement("div");
+    box.className = "code";
+    pre.parentNode.insertBefore(box, pre);
+    box.appendChild(pre);
+
+    var head = document.createElement("div");
+    head.className = "code-h";
+    var lb = LABEL[lang] !== undefined ? LABEL[lang] : lang;
+    head.innerHTML = "<span>" + (lb || "CODE") + "</span>";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "复制";
+    btn.addEventListener("click", function(){
+      var done = function(){ btn.textContent = "已复制"; setTimeout(function(){ btn.textContent = "复制"; }, 1400); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(raw).then(done, fallback);
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement("textarea");
+        ta.value = raw; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try{ document.execCommand("copy"); done(); }catch(e){ btn.textContent = "复制失败"; }
+        document.body.removeChild(ta);
+      }
+    });
+    head.appendChild(btn);
+    box.insertBefore(head, pre);
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute("href").slice(1)); });
+  var activeIdx = -1;
+
+  function sync(){
+    var y = window.scrollY + 90, i, idx = 0;
+    for(i=0;i<targets.length;i++){ if(targets[i] && targets[i].offsetTop <= y) idx = i; }
+    if(idx === activeIdx) return;
+    activeIdx = idx;
+    links.forEach(function(a){ a.classList.remove("active"); });
+    if(links[idx]) links[idx].classList.add("active");
+  }
+
+  var pbar = document.getElementById("pbar"), toTop = document.getElementById("toTop");
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    pbar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0).toFixed(2) + "%";
+    toTop.classList.toggle("show", window.scrollY > 600);
+    sync();
+  }
+  window.addEventListener("scroll", onScroll, { passive:true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+  toTop.addEventListener("click", function(){ window.scrollTo({ top:0, behavior:"smooth" }); });
+
+  var secs = Array.prototype.slice.call(document.querySelectorAll("section[id]"));
+  document.addEventListener("keydown", function(e){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+    if(e.key === "ArrowRight" || e.key === "ArrowLeft"){
+      var y = window.scrollY + 100, cur = 0, i;
+      for(i=0;i<secs.length;i++){ if(secs[i].offsetTop <= y) cur = i; }
+      var next = e.key === "ArrowRight" ? Math.min(cur + 1, secs.length - 1) : Math.max(cur - 1, 0);
+      if(next !== cur){ e.preventDefault(); window.scrollTo({ top: secs[next].offsetTop - 12, behavior:"smooth" }); }
+    } else if(e.key === "t" || e.key === "T"){
+      document.documentElement.setAttribute("data-theme",
+        document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+    } else if(e.key === "p" || e.key === "P"){ window.print(); }
+  });
+})();
+</script>
+</body>
+</html>

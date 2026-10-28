@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园活动小程序 PRD v1.0</title>
+<style>
+  :root{
+    --ink:#16181d;
+    --ink-2:#3d424d;
+    --ink-3:#6b7280;
+    --line:#e5e7eb;
+    --line-2:#eef0f3;
+    --bg:#ffffff;
+    --bg-soft:#fafbfc;
+    --brand:#1f6feb;
+    --brand-soft:#eef4ff;
+    --ok:#0f8a5f;
+    --ok-soft:#e9f7f1;
+    --warn:#a35a00;
+    --warn-soft:#fdf4e6;
+    --danger:#b3261e;
+    --danger-soft:#fdeeed;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75;
+    font-feature-settings:"tnum";
+  }
+  .page{max-width:1040px;margin:0 auto;padding:56px 40px 96px}
+  header.doc-head{padding-bottom:28px;border-bottom:1px solid var(--line);margin-bottom:40px}
+  .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+  h1{font-size:32px;line-height:1.3;margin:0 0 10px;letter-spacing:-.01em;font-weight:650}
+  .subtitle{color:var(--ink-2);font-size:15px;margin:0 0 24px}
+  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .meta div{background:var(--bg);padding:12px 16px}
+  .meta dt{font-size:11px;color:var(--ink-3);margin-bottom:3px}
+  .meta dd{margin:0;font-size:13px;font-weight:550;color:var(--ink)}
+  h2{font-size:21px;font-weight:640;margin:52px 0 6px;padding-top:8px;letter-spacing:-.005em}
+  h2 .num{color:var(--brand);font-variant-numeric:tabular-nums;margin-right:10px;font-weight:600}
+  h3{font-size:16px;font-weight:620;margin:30px 0 10px}
+  h4{font-size:14px;font-weight:620;margin:20px 0 8px;color:var(--ink-2)}
+  p{margin:8px 0 12px;color:var(--ink-2)}
+  ul,ol{margin:8px 0 14px;padding-left:22px;color:var(--ink-2)}
+  li{margin:5px 0}
+  a{color:var(--brand);text-decoration:none}
+  code{background:var(--bg-soft);border:1px solid var(--line-2);border-radius:4px;padding:1px 5px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:13.5px}
+  th{text-align:left;font-weight:600;color:var(--ink-2);background:var(--bg-soft);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--line-2);vertical-align:top;color:var(--ink-2)}
+  tr:last-child td{border-bottom:1px solid var(--line)}
+  td strong{color:var(--ink)}
+  .table-wrap{overflow-x:auto;margin:14px 0 20px}
+  .table-wrap table{margin:0}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0 8px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:var(--bg-soft)}
+  .card .k{font-size:11px;color:var(--ink-3);letter-spacing:.04em;margin-bottom:6px}
+  .card .v{font-size:20px;font-weight:640;color:var(--ink);letter-spacing:-.01em}
+  .card .d{font-size:12.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
+  .tag{display:inline-block;font-size:11.5px;line-height:1.6;padding:1px 7px;border-radius:4px;border:1px solid transparent;white-space:nowrap}
+  .tag.p0{background:var(--danger-soft);color:var(--danger);border-color:#f6d7d5}
+  .tag.p1{background:var(--warn-soft);color:var(--warn);border-color:#f3e2c4}
+  .tag.p2{background:var(--bg-soft);color:var(--ink-3);border-color:var(--line)}
+  .tag.ok{background:var(--ok-soft);color:var(--ok);border-color:#cdeade}
+  .tag.blue{background:var(--brand-soft);color:var(--brand);border-color:#d6e4fd}
+  .callout{border-left:3px solid var(--brand);background:var(--brand-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:13.5px;color:var(--ink-2)}
+  .callout .t{font-weight:620;color:var(--ink);display:block;margin-bottom:2px}
+  .callout.warn{border-color:#e0a33d;background:var(--warn-soft)}
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:18px 0 22px}
+  .step{flex:1;min-width:120px;position:relative;border:1px solid var(--line);border-radius:8px;padding:12px 12px 12px 14px;background:var(--bg);margin-right:22px;margin-bottom:10px}
+  .step:last-child{margin-right:0}
+  .step::after{content:"";position:absolute;right:-15px;top:50%;width:8px;height:8px;border-top:1px solid var(--ink-3);border-right:1px solid var(--ink-3);transform:translateY(-50%) rotate(45deg)}
+  .step:last-child::after{display:none}
+  .step .s-n{font-size:11px;color:var(--brand);font-weight:600;letter-spacing:.06em}
+  .step .s-t{font-size:13.5px;font-weight:600;color:var(--ink);margin:2px 0 4px}
+  .step .s-d{font-size:12px;color:var(--ink-3);line-height:1.55}
+  .state-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 10px}
+  .chip{font-size:12.5px;padding:4px 11px;border-radius:999px;border:1px solid var(--line);background:var(--bg-soft);color:var(--ink-2)}
+  .chip.s1{background:#f4f5f7;border-color:#e3e6ea}
+  .chip.s2{background:var(--warn-soft);color:var(--warn);border-color:#f3e2c4}
+  .chip.s3{background:var(--brand-soft);color:var(--brand);border-color:#d6e4fd}
+  .chip.s4{background:var(--ok-soft);color:var(--ok);border-color:#cdeade}
+  .chip.s5{background:var(--danger-soft);color:var(--danger);border-color:#f6d7d5}
+  .arrow{color:var(--ink-3);font-size:13px}
+  .tree{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.9;background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;color:var(--ink-2);overflow-x:auto;white-space:pre}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .kv{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+  .kv .k{font-size:12px;color:var(--ink-3);margin-bottom:2px}
+  .kv .v{font-size:13.5px;color:var(--ink)}
+  .foot{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+  .toc{border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:12px;background:var(--bg-soft)}
+  .toc ol{margin:0;padding-left:20px;columns:2;column-gap:36px;font-size:13.5px}
+  .toc li{margin:4px 0}
+  .toc a{color:var(--ink-2)}
+  .toc a:hover{color:var(--brand)}
+  hr{border:0;border-top:1px solid var(--line-2);margin:28px 0}
+  .small{font-size:12.5px;color:var(--ink-3)}
+  @media (max-width:820px){
+    .page{padding:32px 20px 64px}
+    .meta{grid-template-columns:repeat(2,1fr)}
+    .cards,.grid2,.grid3{grid-template-columns:1fr}
+    .toc ol{columns:1}
+    h1{font-size:26px}
+    .step{min-width:100%;margin-right:0}
+    .step::after{display:none}
+  }
+  @media print{
+    .page{padding:0;max-width:none}
+    h2{break-after:avoid}
+    table,.callout,.step{break-inside:avoid}
+    body{font-size:12px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc-head">
+  <div class="eyebrow">Product Requirements Document</div>
+  <h1>校园活动小程序 产品需求文档</h1>
+  <p class="subtitle">UniApp 微信小程序 + Spring Boot 4.1.1 后端，面向学生、活动组织者、校团委三方的活动全流程管理</p>
+  <dl class="meta">
+    <div><dt>文档版本</dt><dd>v1.0</dd></div>
+    <div><dt>状态</dt><dd>待评审</dd></div>
+    <div><dt>更新日期</dt><dd>2026-10-28</dd></div>
+    <div><dt>目标版本</dt><dd>V1.0 试运行</dd></div>
+  </dl>
+</header>
+
+<div class="toc">
+  <ol>
+    <li><a href="#s1">项目概述</a></li>
+    <li><a href="#s2">角色与权限</a></li>
+    <li><a href="#s3">核心业务流程</a></li>
+    <li><a href="#s4">功能需求</a></li>
+    <li><a href="#s5">页面与信息架构</a></li>
+    <li><a href="#s6">数据模型</a></li>
+    <li><a href="#s7">接口设计</a></li>
+    <li><a href="#s8">非功能需求</a></li>
+    <li><a href="#s9">技术方案与版本</a></li>
+    <li><a href="#s10">里程碑</a></li>
+    <li><a href="#s11">风险与待确认</a></li>
+    <li><a href="#s12">附录：验收用例</a></li>
+  </ol>
+</div>
+
+<h2 id="s1"><span class="num">01</span>项目概述</h2>
+
+<h3>1.1 背景</h3>
+<p>校园活动目前依赖海报、班级群、公众号推文分散触达，报名用问卷或群接龙，签到用纸质表格。三个环节各自断点：学生找不到活动，组织者收不齐名单，团委拿不到全校活动数据。活动结束后的参与证明、素质拓展学分认定也无从查证。</p>
+
+<h3>1.2 产品目标</h3>
+<div class="cards">
+  <div class="card">
+    <div class="k">覆盖</div>
+    <div class="v">≥ 80%</div>
+    <div class="d">试运行一学期，校级与院级活动线上化比例</div>
+  </div>
+  <div class="card">
+    <div class="k">转化</div>
+    <div class="v">≥ 70%</div>
+    <div class="d">报名到实际签到的到场率，用于倒逼活动质量</div>
+  </div>
+  <div class="card">
+    <div class="k">效率</div>
+    <div class="v">≤ 5 min</div>
+    <div class="d">组织者从新建到提交审核完成一次活动发布</div>
+  </div>
+</div>
+<ul>
+  <li>学生端：一次搜索或分类浏览即可完成发现、报名、签到、查看记录，不再依赖群消息。</li>
+  <li>组织者端：在线发布、名单实时可见、扫码核销、活动结束自动出统计。</li>
+  <li>管理端：活动审核留痕，全校活动数据可按学院、时间、类型聚合。</li>
+</ul>
+
+<h3>1.3 范围</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:90px">范围</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td><strong>V1 包含</strong></td><td>微信登录与学号绑定、活动发布与审核、活动浏览搜索、报名与候补、扫码签到、收藏与消息通知、组织者工作台、Web 管理后台、基础统计看板</td></tr>
+    <tr><td><strong>V1 不含</strong></td><td>在线支付与收费活动、场地预约系统对接、活动直播与视频、原生 App 与 H5 完整适配、素质拓展学分自动认定、社团经费管理</td></tr>
+    <tr><td><strong>后续规划</strong></td><td>活动评价与信用分、活动推荐（基于历史报名标签）、签到数据对接学工系统、活动相册与回顾</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <span class="t">产品定位</span>
+  V1 只做“发现 → 报名 → 到场 → 留痕”这条主链路。凡是不能强化这条链路的社交、内容、电商类需求，一律放到 V2 再评估。
+</div>
+
+<h3>1.4 关键指标</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>指标</th><th>定义</th><th>V1 目标</th></tr></thead>
+  <tbody>
+    <tr><td>周活跃学生</td><td>一周内打开小程序并产生浏览行为的学生数</td><td>≥ 在校生 30%</td></tr>
+    <tr><td>报名成功率</td><td>提交报名请求且最终状态为报名成功的比例</td><td>≥ 98%（不含名额已满拒绝）</td></tr>
+    <tr><td>签到率</td><td>已报名且完成签到人数 / 报名成功人数</td><td>≥ 70%</td></tr>
+    <tr><td>审核时效</td><td>活动提交审核到管理员处理的中位时长</td><td>≤ 24 小时</td></tr>
+    <tr><td>发布耗时</td><td>点击新建活动到提交审核的中位时长</td><td>≤ 5 分钟</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s2"><span class="num">02</span>角色与权限</h2>
+
+<h3>2.1 角色定义</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:130px">角色</th><th style="width:110px">载体</th><th>职责</th><th style="width:120px">获得方式</th></tr></thead>
+  <tbody>
+    <tr><td><strong>学生 student</strong></td><td>小程序</td><td>浏览活动、报名、签到、收藏、查看个人记录</td><td>注册默认角色</td></tr>
+    <tr><td><strong>组织者 organizer</strong></td><td>小程序</td><td>发起活动、管理本组织活动、审核报名、核销签到、查看本组织统计</td><td>管理员授予，绑定到具体组织</td></tr>
+    <tr><td><strong>审核员 reviewer</strong></td><td>Web 后台</td><td>审核活动、处理举报、下架违规活动</td><td>管理员授予（校团委）</td></tr>
+    <tr><td><strong>超级管理员 admin</strong></td><td>Web 后台</td><td>用户与角色管理、组织管理、分类与公告维护、全局数据看板</td><td>系统初始化</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>2.2 权限矩阵</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>能力</th><th style="width:80px">学生</th><th style="width:80px">组织者</th><th style="width:80px">审核员</th><th style="width:80px">管理员</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>浏览、搜索活动</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>报名、取消报名、签到</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+    <tr><td>新建 / 编辑活动（提交后进入审核）</td><td>—</td><td>✓（限本组织）</td><td>—</td><td>✓</td></tr>
+    <tr><td>查看报名名单、导出</td><td>—</td><td>✓（限本组织）</td><td>—</td><td>✓</td></tr>
+    <tr><td>审核报名申请</td><td>—</td><td>✓（限本组织）</td><td>—</td><td>✓</td></tr>
+    <tr><td>扫码核销、手动补签</td><td>—</td><td>✓（限本组织）</td><td>—</td><td>✓</td></tr>
+    <tr><td>审核活动、驳回、下架</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+    <tr><td>处理举报</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+    <tr><td>用户、角色、组织管理</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>全局数据看板</td><td>—</td><td>部分（本组织）</td><td>✓</td><td>✓</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">权限在服务端校验，前端只做展示层隐藏。组织者访问非本组织资源返回 403，而不是 404，便于排查。</p>
+
+<h2 id="s3"><span class="num">03</span>核心业务流程</h2>
+
+<h3>3.1 活动生命周期</h3>
+<div class="state-flow">
+  <span class="chip s1">草稿 DRAFT</span><span class="arrow">→</span>
+  <span class="chip s2">待审核 PENDING</span><span class="arrow">→</span>
+  <span class="chip s3">已发布 PUBLISHED</span><span class="arrow">→</span>
+  <span class="chip s4">进行中 ONGOING</span><span class="arrow">→</span>
+  <span class="chip s1">已结束 FINISHED</span>
+</div>
+<div class="state-flow">
+  <span class="chip s2">待审核</span><span class="arrow">→</span>
+  <span class="chip s5">已驳回 REJECTED</span><span class="arrow">→（修改后重新提交）</span>
+  <span class="chip s2">待审核</span>
+</div>
+<div class="state-flow">
+  <span class="chip s3">已发布 / 进行中</span><span class="arrow">→</span>
+  <span class="chip s5">已取消 CANCELLED</span><span class="arrow">（组织者或管理员取消）</span>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:110px">状态</th><th>含义</th><th>可执行操作</th><th style="width:110px">操作者</th></tr></thead>
+  <tbody>
+    <tr><td>草稿</td><td>已创建未提交，仅本人可见</td><td>编辑、删除、提交审核</td><td>组织者</td></tr>
+    <tr><td>待审核</td><td>已提交，等待审核员处理，学生端不可见</td><td>撤回（回到草稿）、通过、驳回</td><td>组织者 / 审核员</td></tr>
+    <tr><td>已驳回</td><td>审核未通过，展示驳回理由</td><td>编辑后重新提交</td><td>组织者</td></tr>
+    <tr><td>已发布</td><td>学生端可见，报名开放由报名时间控制</td><td>编辑（需重新审核）、取消活动、查看名单</td><td>组织者</td></tr>
+    <tr><td>进行中</td><td>到达开始时间自动切换</td><td>核销签到、补签、取消活动</td><td>系统 / 组织者</td></tr>
+    <tr><td>已结束</td><td>到达结束时间自动切换，报名关闭</td><td>查看统计、导出名单、生成未到场名单</td><td>系统 / 组织者</td></tr>
+    <tr><td>已取消</td><td>活动不再举办，已报名用户收到通知</td><td>查看取消原因</td><td>组织者 / 管理员</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">状态由定时任务每 5 分钟扫描 <code>start_time</code> / <code>end_time</code> 自动推进，同时详情页读取时做一次惰性校正，避免任务延迟导致状态不一致。</p>
+
+<h3>3.2 报名流程</h3>
+<div class="flow">
+  <div class="step"><div class="s-n">STEP 1</div><div class="s-t">进入详情</div><div class="s-d">校验登录态、活动状态、报名时间窗</div></div>
+  <div class="step"><div class="s-n">STEP 2</div><div class="s-t">填写表单</div><div class="s-d">必填项校验，是否需审核决定后续状态</div></div>
+  <div class="step"><div class="s-n">STEP 3</div><div class="s-t">名额判定</div><div class="s-d">条件更新占位；已满则入候补或直接拒绝</div></div>
+  <div class="step"><div class="s-n">STEP 4</div><div class="s-t">生成凭证</div><div class="s-d">下发签到码，推送订阅消息</div></div>
+</div>
+<h4>规则</h4>
+<ul>
+  <li>同一用户对同一活动只保留一条报名记录，唯一索引 <code>uk_activity_user(activity_id, user_id)</code> 兜底。取消后重新报名复用该行，重置状态与时间。</li>
+  <li>报名时间窗由 <code>signup_start_time</code> 与 <code>signup_end_time</code> 控制，默认在活动开始时间结束报名，发布时可调。</li>
+  <li>活动开启报名审核时，提交后状态为 <strong>待审核</strong>，组织者通过后转为 <strong>报名成功</strong>，容量在通过时占用。</li>
+  <li>名额已满且开启候补时，状态为 <strong>候补中</strong>，记录 <code>waitlist_seq</code> 排队序号。</li>
+  <li>有人取消报名，按候补序号顺序自动转正，推送通知；被转正者需在 24 小时内确认，超时顺延给下一位。</li>
+  <li>取消报名默认截止到活动开始前 2 小时，发布时可按活动配置；已签到不可取消。</li>
+  <li>报名表单支持 3 类自定义字段：单行文本、单选、多选，最多 5 个，答案以 JSON 存入 <code>form_data</code>。</li>
+</ul>
+
+<h3>3.3 签到流程</h3>
+<div class="flow">
+  <div class="step"><div class="s-n">STEP 1</div><div class="s-t">现场出示</div><div class="s-d">组织者核销页展示动态签到二维码，30 秒刷新</div></div>
+  <div class="step"><div class="s-n">STEP 2</div><div class="s-t">学生扫码</div><div class="s-d">微信扫一扫进入小程序签到页，携带 token</div></div>
+  <div class="step"><div class="s-n">STEP 3</div><div class="s-t">服务端校验</div><div class="s-d">签名、时间窗、报名状态、（可选）定位距离</div></div>
+  <div class="step"><div class="s-n">STEP 4</div><div class="s-t">写入记录</div><div class="s-d">幂等写入签到表，返回签到成功页</div></div>
+</div>
+<h4>规则</h4>
+<ul>
+  <li>签到码 = 活动 ID + 时间片 + 随机数，服务端 HMAC-SHA256 签名，有效期 2 分钟，防止截图外传后被远程签到。</li>
+  <li>签到时间窗默认“活动开始前 30 分钟 至 活动结束后 30 分钟”，发布时可配置，超出窗口提示不可签到。</li>
+  <li>签到类型三选一：扫码、扫码 + 定位（场地 200 米内）、仅手动。定位签到失败时允许组织者手动补签。</li>
+  <li>补签与核销必须记录操作人与原因，写入审计日志；同一报名记录只能签到一次。</li>
+  <li>活动结束后未签到的报名记录批量标记为 <strong>未到场</strong>，供统计与后续信用机制使用。</li>
+</ul>
+
+<h3>3.4 活动审核流程</h3>
+<ol>
+  <li>组织者提交后进入待审核队列，按提交时间排序，支持按组织、分类筛选。</li>
+  <li>审核员查看活动详情、组织者资质、场地与安全说明，可一键通过或驳回。</li>
+  <li>驳回必须选择理由标签（信息不全 / 场地冲突 / 内容违规 / 其他）并填写说明，组织者收到通知。</li>
+  <li>已发布活动修改关键字段（时间、场地、容量）需重新提交审核，修改简介、封面不触发。</li>
+  <li>审核员的每次操作写入 <code>audit_record</code>，保留操作人、时间、前后状态。</li>
+</ol>
+
+<h2 id="s4"><span class="num">04</span>功能需求</h2>
+<p class="small">优先级：<span class="tag p0">P0</span> 首版必须，缺一不可上线；<span class="tag p1">P1</span> 首版应包含，可在第二个迭代补齐；<span class="tag p2">P2</span> 可延后。</p>
+
+<h3>4.1 认证与用户（M1）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-101</td><td>微信登录</td><td>前端 <code>uni.login</code> 取 code，后端调 <code>code2session</code> 换 openid，首次登录自动建号。不存 session_key 之外的敏感数据。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-102</td><td>学号绑定</td><td>首次登录强制绑定：学号、姓名、学院、年级。与后台导入的学籍白名单比对，不匹配则提示联系管理员；同一学号只能绑一个微信。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-103</td><td>资料维护</td><td>可改手机号、头像、昵称；学号与姓名不可自助修改，需管理员在后台重置绑定。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-104</td><td>登录态</td><td>JWT access token 有效期 2 小时，refresh token 7 天，静默续期；退出登录清空本地缓存。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-105</td><td>角色申请</td><td>学生可提交组织者申请，选择所属组织并填写理由，管理员审批后生效。</td><td><span class="tag p2">P2</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.2 活动浏览与发现（M2）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-201</td><td>首页</td><td>顶部搜索 + 轮播（后台可配）+ 分类快捷入口 + 近期热门（按报名人数与浏览量加权）+ 即将开始列表。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-202</td><td>活动列表</td><td>支持分类、时间（今天 / 本周 / 本月）、状态（报名中 / 即将开始）筛选；按开始时间或热度排序；下拉刷新、上拉加载。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-203</td><td>搜索</td><td>按标题、组织名模糊匹配，关键词高亮，记录最近 10 条搜索历史。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-204</td><td>活动详情</td><td>封面、标题、时间地点、组织方、报名进度（已报 / 总名额）、活动介绍图文、报名须知、地图定位跳转、分享。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-205</td><td>报名状态展示</td><td>按用户与活动关系渲染底部按钮：立即报名 / 待审核 / 已报名（查看凭证）/ 候补中 / 已结束 / 名额已满 / 不可报名（未到时间）。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-206</td><td>分享</td><td>转发给好友与分享到群，卡片带封面与标题；分享进入详情页并记录来源。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-207</td><td>收藏</td><td>详情页收藏 / 取消，我的收藏列表按收藏时间倒序。</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.3 活动发布与管理（M3）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-301</td><td>新建活动</td><td>字段：标题（≤ 30 字）、封面（1 张，建议 16:9）、分类、简介（≤ 100 字）、详情（图文，≤ 5000 字）、开始与结束时间、报名起止时间、场地名称与经纬度、容量、是否开启候补、报名是否需审核、签到方式、取消截止时间、自定义报名字段。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-302</td><td>草稿与提交</td><td>支持存草稿，最多 20 个；提交前校验必填项与时间逻辑（报名截止 ≤ 活动开始 ≤ 活动结束）。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-303</td><td>我的活动</td><td>按状态分组：草稿、待审核、已发布、已结束；支持复制为新活动。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-304</td><td>报名名单</td><td>分页列表展示姓名、学号、学院、报名时间、状态、签到状态；支持按状态筛选、搜索学号姓名、导出 CSV。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-305</td><td>报名审核</td><td>组织者批量通过 / 驳回，驳回填理由；通过时校验剩余名额。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-306</td><td>活动取消</td><td>填写取消原因，已报名用户收到通知，报名记录置为已取消，名额释放。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-307</td><td>活动编辑</td><td>草稿与已驳回状态可自由编辑；已发布修改时间、场地、容量需重新审核，其余字段即时生效。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-308</td><td>组织者工作台</td><td>本组织活动数、待审核报名数、即将开始活动、累计参与人次概览。</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.4 报名（M4）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-401</td><td>提交报名</td><td>校验登录、学号绑定、活动状态、报名时间窗、重复报名；事务内完成名额占用与记录写入。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-402</td><td>名额并发控制</td><td><code>UPDATE activity SET signed_count = signed_count + 1 WHERE id = ? AND signed_count &lt; capacity</code>，影响行数为 0 即视为已满，不做先查后写。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-403</td><td>候补队列</td><td>满员且开启候补时入队；有人取消则按序号转正并推送通知；转正后 24 小时未确认自动顺延。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-404</td><td>取消报名</td><td>在取消截止时间前可取消，释放名额并触发候补转正；已签到不可取消。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-405</td><td>我的报名</td><td>按“待参加 / 待审核 / 候补中 / 已结束 / 已取消”分组，展示签到码与倒计时。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-406</td><td>签到凭证</td><td>报名成功后生成 <code>signup_no</code>，详情页展示二维码，供组织者扫码反查（备用通道）。</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.5 签到（M5）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-501</td><td>动态签到码</td><td>核销页展示二维码，30 秒自动刷新，服务端签发带签名的 token；页面常亮，支持手动刷新。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-502</td><td>学生签到</td><td>扫码后服务端校验签名、时间片、报名状态与是否已签到，返回结果页（成功 / 重复 / 未报名 / 超时）。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-503</td><td>组织者核销</td><td>核销页可调起扫码，扫学生凭证完成签到；核销列表实时刷新已到人数。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-504</td><td>定位校验</td><td>开启后校验签到时经纬度与场地距离 ≤ 200 米，超出提示到现场签到。</td><td><span class="tag p2">P2</span></td></tr>
+    <tr><td>FR-505</td><td>手动补签</td><td>组织者按学号搜索报名记录补签，必须填写原因，写审计日志。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-506</td><td>未到场标记</td><td>活动结束后 1 小时，定时任务将未签到记录标记为未到场。</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.6 消息通知（M6）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-601</td><td>订阅消息</td><td>报名成功、审核结果、活动开始前 2 小时提醒、活动取消、候补转正共 5 类模板，需用户授权后下发。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-602</td><td>站内消息</td><td>消息中心按类型分组，未读红点，支持全部已读。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-603</td><td>发送失败处理</td><td>用户未授权或消息被拒时降级为站内消息，不阻塞主流程；发送结果记录到消息表便于排查。</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.7 后台管理（M7）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>说明与规则</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-701</td><td>审核工作台</td><td>待审核列表按提交时间排序，详情页展示全部字段与组织者信息，一键通过 / 驳回（必填理由）。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-702</td><td>活动管理</td><td>全量活动检索，支持强制下架、取消、转交组织者。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-703</td><td>用户管理</td><td>学生与组织者检索、角色分配、解绑微信、禁用账号；学籍白名单导入（Excel）。</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-704</td><td>组织管理</td><td>社团 / 院系组织的增删改，绑定组织者账号，设置组织可发布的活动分类。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-705</td><td>分类与运营位</td><td>活动分类维护、首页轮播图配置、公告发布。</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-706</td><td>举报处理</td><td>学生举报活动（虚假信息 / 违规内容 / 场地问题），管理员处理并记录结论。</td><td><span class="tag p2">P2</span></td></tr>
+    <tr><td>FR-707</td><td>操作日志</td><td>审核、补签、下架、角色变更等敏感操作留痕，支持按操作人与时间检索。</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>4.8 内容安全与风控（M8）</h3>
+<ul>
+  <li>活动标题、简介、详情、图片提交时调用微信内容安全接口（<code>msgSecCheck</code> / <code>imgSecCheck</code>），命中风险直接阻断并提示修改。</li>
+  <li>报名接口按用户维度限流：10 秒内最多 5 次；签到接口按 openid 维度限流，防止脚本刷名额。</li>
+  <li>活动封面与详情图只允许上传到自有对象存储，限制类型（jpg / png / webp）与大小（≤ 5 MB）。</li>
+  <li>管理端登录失败 5 次锁定 10 分钟，操作需二次确认（下架、删除、解绑）。</li>
+</ul>
+
+<h3>4.9 数据统计（M9）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:78px">编号</th><th style="width:150px">需求</th><th>指标</th><th style="width:56px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>FR-901</td><td>活动统计</td><td>浏览量、报名数、审核通过率、签到数、到场率、取消数</td><td><span class="tag p0">P0</span></td></tr>
+    <tr><td>FR-902</td><td>参与画像</td><td>按学院、年级、性别分布，报名高峰时段</td><td><span class="tag p1">P1</span></td></tr>
+    <tr><td>FR-903</td><td>全校看板</td><td>活动总数、参与人次、活跃组织 Top 10、分类占比、月度趋势</td><td><span class="tag p1">P1</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s5"><span class="num">05</span>页面与信息架构</h2>
+
+<h3>5.1 小程序页面清单</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:210px">路径</th><th style="width:150px">页面</th><th>核心内容</th><th style="width:90px">角色</th></tr></thead>
+  <tbody>
+    <tr><td><code>pages/index/index</code></td><td>首页</td><td>搜索、轮播、分类入口、热门活动、即将开始</td><td>全部</td></tr>
+    <tr><td><code>pages/activity/list</code></td><td>活动列表</td><td>筛选栏、瀑布流卡片、加载更多</td><td>全部</td></tr>
+    <tr><td><code>pages/activity/detail</code></td><td>活动详情</td><td>头图、信息区、报名进度、图文详情、底部操作栏</td><td>全部</td></tr>
+    <tr><td><code>pages/activity/signup</code></td><td>报名表单</td><td>个人信息确认、自定义字段、协议勾选、提交</td><td>学生</td></tr>
+    <tr><td><code>pages/signup/detail</code></td><td>报名详情</td><td>状态、签到码、签到倒计时、取消报名</td><td>学生</td></tr>
+    <tr><td><code>pages/checkin/scan</code></td><td>扫码签到</td><td>接收 token 参数、自动提交、结果展示</td><td>学生</td></tr>
+    <tr><td><code>pages/mine/index</code></td><td>我的</td><td>资料卡、我的报名、我的收藏、组织者入口、设置</td><td>全部</td></tr>
+    <tr><td><code>pages/mine/signups</code></td><td>我的报名</td><td>状态分组列表</td><td>学生</td></tr>
+    <tr><td><code>pages/mine/favorites</code></td><td>我的收藏</td><td>收藏列表、取消收藏</td><td>学生</td></tr>
+    <tr><td><code>pages/auth/bind</code></td><td>学号绑定</td><td>学号、姓名、学院、年级表单</td><td>新用户</td></tr>
+    <tr><td><code>pages/message/list</code></td><td>消息中心</td><td>消息列表、未读标记</td><td>全部</td></tr>
+    <tr><td><code>pages/org/index</code></td><td>组织者工作台</td><td>数据概览、我的活动、快捷入口</td><td>组织者</td></tr>
+    <tr><td><code>pages/org/edit</code></td><td>发布活动</td><td>分步表单：基本信息 → 时间地点 → 报名设置 → 预览提交</td><td>组织者</td></tr>
+    <tr><td><code>pages/org/signups</code></td><td>报名名单</td><td>筛选、搜索、批量审核、导出</td><td>组织者</td></tr>
+    <tr><td><code>pages/org/checkin</code></td><td>核销台</td><td>动态签到码、已到人数、扫码核销、补签</td><td>组织者</td></tr>
+    <tr><td><code>pages/org/stat</code></td><td>活动统计</td><td>报名 / 签到 / 画像</td><td>组织者</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">tabBar 四项：首页、活动、消息、我的。组织者工作台从“我的”进入，避免学生端出现无权限入口。</p>
+
+<h3>5.2 管理后台页面清单</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:170px">模块</th><th>页面</th></tr></thead>
+  <tbody>
+    <tr><td>登录</td><td>账号密码登录、找回密码</td></tr>
+    <tr><td>工作台</td><td>待办（待审核活动数、待处理举报）、数据概览</td></tr>
+    <tr><td>活动</td><td>审核工作台、活动列表、活动详情、举报处理</td></tr>
+    <tr><td>用户</td><td>学生列表、组织者列表、学籍白名单导入</td></tr>
+    <tr><td>组织</td><td>组织列表、成员管理</td></tr>
+    <tr><td>运营</td><td>分类管理、轮播图、公告</td></tr>
+    <tr><td>数据</td><td>全校看板、活动统计导出</td></tr>
+    <tr><td>系统</td><td>操作日志、账号与角色</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s6"><span class="num">06</span>数据模型</h2>
+
+<h3>6.1 表清单</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:190px">表名</th><th>说明</th><th style="width:230px">关键约束</th></tr></thead>
+  <tbody>
+    <tr><td><code>sys_user</code></td><td>用户主表，含角色、状态、openid</td><td><code>uk_openid</code></td></tr>
+    <tr><td><code>student_profile</code></td><td>学籍信息：学号、姓名、学院、年级、手机号</td><td><code>uk_student_no</code></td></tr>
+    <tr><td><code>organization</code></td><td>组织（社团 / 院系 / 部门）</td><td>—</td></tr>
+    <tr><td><code>org_member</code></td><td>组织成员与组织者身份</td><td><code>uk_org_user</code></td></tr>
+    <tr><td><code>activity</code></td><td>活动主表</td><td><code>idx_status_start</code></td></tr>
+    <tr><td><code>activity_category</code></td><td>活动分类</td><td><code>uk_code</code></td></tr>
+    <tr><td><code>activity_signup</code></td><td>报名记录</td><td><code>uk_activity_user</code>、<code>uk_signup_no</code></td></tr>
+    <tr><td><code>activity_checkin</code></td><td>签到记录</td><td><code>uk_signup</code></td></tr>
+    <tr><td><code>activity_favorite</code></td><td>收藏</td><td><code>uk_activity_user</code></td></tr>
+    <tr><td><code>activity_report</code></td><td>举报</td><td>—</td></tr>
+    <tr><td><code>sys_notice</code></td><td>站内消息 / 订阅消息记录</td><td><code>idx_user_read</code></td></tr>
+    <tr><td><code>audit_record</code></td><td>审核与敏感操作日志</td><td><code>idx_biz</code></td></tr>
+    <tr><td><code>sys_file</code></td><td>文件元信息</td><td>—</td></tr>
+    <tr><td><code>sys_role</code> / <code>sys_user_role</code></td><td>后台角色与授权</td><td><code>uk_user_role</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>6.2 核心表字段</h3>
+<h4>activity</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:200px">字段</th><th style="width:170px">类型</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>bigint</td><td>主键，雪花 ID</td></tr>
+    <tr><td><code>title</code></td><td>varchar(60)</td><td>活动标题</td></tr>
+    <tr><td><code>cover_url</code></td><td>varchar(500)</td><td>封面图</td></tr>
+    <tr><td><code>category_id</code></td><td>bigint</td><td>分类</td></tr>
+    <tr><td><code>org_id</code></td><td>bigint</td><td>主办组织</td></tr>
+    <tr><td><code>creator_id</code></td><td>bigint</td><td>创建人</td></tr>
+    <tr><td><code>summary</code></td><td>varchar(200)</td><td>一句话简介</td></tr>
+    <tr><td><code>content</code></td><td>text</td><td>活动详情，存 HTML 片段或结构化图文 JSON</td></tr>
+    <tr><td><code>start_time</code> / <code>end_time</code></td><td>datetime</td><td>活动起止</td></tr>
+    <tr><td><code>signup_start_time</code> / <code>signup_end_time</code></td><td>datetime</td><td>报名起止</td></tr>
+    <tr><td><code>cancel_deadline</code></td><td>datetime</td><td>取消报名截止，默认开始前 2 小时</td></tr>
+    <tr><td><code>location_name</code></td><td>varchar(120)</td><td>场地名称</td></tr>
+    <tr><td><code>latitude</code> / <code>longitude</code></td><td>decimal(10,7)</td><td>用于地图与定位签到</td></tr>
+    <tr><td><code>capacity</code></td><td>int</td><td>容量</td></tr>
+    <tr><td><code>signed_count</code></td><td>int</td><td>已占用名额，条件更新字段</td></tr>
+    <tr><td><code>waitlist_enabled</code></td><td>tinyint</td><td>是否开启候补</td></tr>
+    <tr><td><code>audit_required</code></td><td>tinyint</td><td>报名是否需审核</td></tr>
+    <tr><td><code>checkin_type</code></td><td>tinyint</td><td>1 扫码、2 扫码 + 定位、3 仅手动</td></tr>
+    <tr><td><code>status</code></td><td>tinyint</td><td>0 草稿、1 待审核、2 已驳回、3 已发布、4 进行中、5 已结束、6 已取消</td></tr>
+    <tr><td><code>reject_reason</code></td><td>varchar(300)</td><td>驳回理由</td></tr>
+    <tr><td><code>view_count</code> / <code>favorite_count</code></td><td>int</td><td>统计冗余字段</td></tr>
+    <tr><td><code>create_time</code> / <code>update_time</code> / <code>deleted</code></td><td>datetime / tinyint</td><td>审计与逻辑删除</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>activity_signup</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:200px">字段</th><th style="width:170px">类型</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>bigint</td><td>主键</td></tr>
+    <tr><td><code>activity_id</code> / <code>user_id</code></td><td>bigint</td><td>唯一索引组合</td></tr>
+    <tr><td><code>signup_no</code></td><td>varchar(32)</td><td>签到凭证号，唯一</td></tr>
+    <tr><td><code>status</code></td><td>tinyint</td><td>0 待审核、1 报名成功、2 候补中、3 已签到、4 已取消、5 审核未通过、6 未到场</td></tr>
+    <tr><td><code>waitlist_seq</code></td><td>int</td><td>候补序号</td></tr>
+    <tr><td><code>form_data</code></td><td>json</td><td>自定义字段答案</td></tr>
+    <tr><td><code>audit_user_id</code> / <code>audit_time</code></td><td>bigint / datetime</td><td>报名审核信息</td></tr>
+    <tr><td><code>cancel_time</code> / <code>checkin_time</code></td><td>datetime</td><td>取消与签到时间</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>activity_checkin</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:200px">字段</th><th style="width:170px">类型</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>bigint</td><td>主键</td></tr>
+    <tr><td><code>activity_id</code> / <code>signup_id</code> / <code>user_id</code></td><td>bigint</td><td><code>signup_id</code> 唯一，保证一次签到</td></tr>
+    <tr><td><code>checkin_type</code></td><td>tinyint</td><td>1 扫码、2 定位、3 补签</td></tr>
+    <tr><td><code>operator_id</code></td><td>bigint</td><td>补签操作人</td></tr>
+    <tr><td><code>latitude</code> / <code>longitude</code></td><td>decimal(10,7)</td><td>定位签到坐标</td></tr>
+    <tr><td><code>remark</code></td><td>varchar(200)</td><td>补签原因</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>6.3 关系说明</h3>
+<ul>
+  <li>一个组织有多个组织者（<code>org_member</code>），一个组织对应多个活动。</li>
+  <li>活动对报名记录是一对多，报名记录对签到记录是一对一。</li>
+  <li>用户对活动存在唯一报名记录与唯一收藏记录，均由唯一索引保证。</li>
+  <li>所有业务表带 <code>deleted</code> 逻辑删除标记，MyBatis-Plus 全局配置生效；<code>activity</code> 统计字段用冗余列而非实时 count，避免列表页聚合查询。</li>
+</ul>
+
+<h2 id="s7"><span class="num">07</span>接口设计</h2>
+
+<h3>7.1 通用约定</h3>
+<ul>
+  <li>风格：REST，前缀 <code>/api/app</code>（小程序）与 <code>/api/admin</code>（后台）。</li>
+  <li>鉴权：请求头 <code>Authorization: Bearer &lt;token&gt;</code>，JWT 载荷含 userId 与 role。</li>
+  <li>响应体：<code>{ "code": 0, "message": "ok", "data": {...} }</code>，业务异常统一 <code>code ≠ 0</code>，HTTP 状态码保持语义。</li>
+  <li>分页参数：<code>page</code>（从 1 开始）、<code>size</code>（默认 10，上限 50），返回 <code>records / total / page / size</code>。</li>
+  <li>错误码分段：10xxx 认证、20xxx 活动、30xxx 报名、40xxx 签到、50xxx 系统。</li>
+</ul>
+
+<h3>7.2 小程序端接口</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:80px">方法</th><th style="width:230px">路径</th><th>说明</th><th style="width:80px">鉴权</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/app/auth/login</code></td><td>微信 code 换 token</td><td>否</td></tr>
+    <tr><td>POST</td><td><code>/api/app/auth/bind</code></td><td>绑定学号信息</td><td>是</td></tr>
+    <tr><td>GET</td><td><code>/api/app/user/profile</code></td><td>当前用户信息</td><td>是</td></tr>
+    <tr><td>GET</td><td><code>/api/app/categories</code></td><td>分类列表</td><td>否</td></tr>
+    <tr><td>GET</td><td><code>/api/app/banners</code></td><td>首页轮播与公告</td><td>否</td></tr>
+    <tr><td>GET</td><td><code>/api/app/activities</code></td><td>活动列表（分类、时间、关键词、排序）</td><td>否</td></tr>
+    <tr><td>GET</td><td><code>/api/app/activities/hot</code></td><td>热门与即将开始</td><td>否</td></tr>
+    <tr><td>GET</td><td><code>/api/app/activities/{id}</code></td><td>活动详情（含当前用户报名状态）</td><td>可选</td></tr>
+    <tr><td>POST</td><td><code>/api/app/activities/{id}/favorite</code></td><td>收藏 / 取消收藏</td><td>是</td></tr>
+    <tr><td>POST</td><td><code>/api/app/activities/{id}/signup</code></td><td>提交报名（幂等键：userId + activityId）</td><td>是</td></tr>
+    <tr><td>GET</td><td><code>/api/app/signups</code></td><td>我的报名，按状态筛选</td><td>是</td></tr>
+    <tr><td>GET</td><td><code>/api/app/signups/{id}</code></td><td>报名详情（签到码）</td><td>是</td></tr>
+    <tr><td>POST</td><td><code>/api/app/signups/{id}/cancel</code></td><td>取消报名</td><td>是</td></tr>
+    <tr><td>POST</td><td><code>/api/app/signups/{id}/confirm</code></td><td>候补转正确认</td><td>是</td></tr>
+    <tr><td>POST</td><td><code>/api/app/checkin</code></td><td>扫码签到（token、经纬度）</td><td>是</td></tr>
+    <tr><td>GET</td><td><code>/api/app/messages</code></td><td>消息列表</td><td>是</td></tr>
+    <tr><td>POST</td><td><code>/api/app/messages/read</code></td><td>标记已读</td><td>是</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>7.3 组织者接口</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:80px">方法</th><th style="width:250px">路径</th><th>说明</th><th style="width:80px">鉴权</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/org/dashboard</code></td><td>本组织概览</td><td>组织者</td></tr>
+    <tr><td>GET</td><td><code>/api/org/activities</code></td><td>我的活动（按状态）</td><td>组织者</td></tr>
+    <tr><td>POST</td><td><code>/api/org/activities</code></td><td>新建活动</td><td>组织者</td></tr>
+    <tr><td>PUT</td><td><code>/api/org/activities/{id}</code></td><td>编辑活动</td><td>组织者</td></tr>
+    <tr><td>POST</td><td><code>/api/org/activities/{id}/submit</code></td><td>提交审核</td><td>组织者</td></tr>
+    <tr><td>POST</td><td><code>/api/org/activities/{id}/cancel</code></td><td>取消活动</td><td>组织者</td></tr>
+    <tr><td>GET</td><td><code>/api/org/activities/{id}/signups</code></td><td>报名名单（分页、状态、关键词）</td><td>组织者</td></tr>
+    <tr><td>POST</td><td><code>/api/org/activities/{id}/signups/audit</code></td><td>批量审核报名</td><td>组织者</td></tr>
+    <tr><td>GET</td><td><code>/api/org/activities/{id}/signups/export</code></td><td>导出 CSV</td><td>组织者</td></tr>
+    <tr><td>GET</td><td><code>/api/org/activities/{id}/checkin-qr</code></td><td>获取动态签到 token</td><td>组织者</td></tr>
+    <tr><td>POST</td><td><code>/api/org/activities/{id}/checkin/manual</code></td><td>手动补签</td><td>组织者</td></tr>
+    <tr><td>GET</td><td><code>/api/org/activities/{id}/stat</code></td><td>活动统计</td><td>组织者</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>7.4 管理端接口</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:80px">方法</th><th style="width:250px">路径</th><th>说明</th><th style="width:90px">鉴权</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/admin/auth/login</code></td><td>后台登录</td><td>否</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/activities/audit-list</code></td><td>待审核列表</td><td>审核员</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/activities/{id}/audit</code></td><td>通过 / 驳回</td><td>审核员</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/activities</code></td><td>全量活动检索</td><td>审核员</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/activities/{id}/offline</code></td><td>强制下架</td><td>管理员</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/users</code></td><td>用户检索</td><td>管理员</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/users/{id}/roles</code></td><td>角色分配</td><td>管理员</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/students/import</code></td><td>学籍白名单导入</td><td>管理员</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/dashboard</code></td><td>全校看板</td><td>审核员</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/logs</code></td><td>操作日志</td><td>管理员</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/students/import-template</code></td><td>学籍导入模板下载</td><td>管理员</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s8"><span class="num">08</span>非功能需求</h2>
+
+<h3>8.1 性能与并发</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:190px">项目</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td>接口响应</td><td>列表与详情接口 P95 ≤ 500 ms，报名与签到接口 P95 ≤ 800 ms（含三次数据库往返）</td></tr>
+    <tr><td>抢名额</td><td>单活动瞬时 200 并发提交，最终成功数严格等于容量，不超卖、不重复</td></tr>
+    <tr><td>容量</td><td>支撑 2 万注册用户、单学期 500 场活动、单活动 2000 人报名</td></tr>
+    <tr><td>首屏</td><td>小程序首页冷启动到首屏可见 ≤ 2 s，活动列表分页 10 条/页</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>8.2 安全</h3>
+<ul>
+  <li>传输全站 HTTPS；JWT 密钥与微信 AppSecret 走环境变量，不进仓库。</li>
+  <li>接口按角色鉴权，组织者资源做归属校验；所有写操作带当前用户上下文，禁止客户端传 userId。</li>
+  <li>报名与签到接口幂等：客户端带请求 ID，服务端用唯一索引 + 幂等表双保险。</li>
+  <li>敏感数据最小化：只采集学号、姓名、学院、年级、手机号，不采集身份证与家庭信息。</li>
+  <li>后台账号密码 bcrypt 存储，登录与敏感操作写审计日志。</li>
+</ul>
+
+<h3>8.3 兼容与可用性</h3>
+<ul>
+  <li>小程序基础库 ≥ 3.0，覆盖微信 8.0 以上版本；iOS 与 Android 双端主流机型验证。</li>
+  <li>后端单实例可运行，生产建议双实例 + Nginx 负载；数据库每日备份，保留 30 天。</li>
+  <li>关键失败有降级：订阅消息失败降级为站内消息，统计接口超时返回缓存值。</li>
+</ul>
+
+<h3>8.4 合规</h3>
+<ul>
+  <li>首次登录展示隐私政策与用户协议，明确收集范围与用途，需勾选同意。</li>
+  <li>提供账号注销与数据导出入口，注销后 30 天内清除个人信息，报名记录做匿名化保留。</li>
+  <li>小程序类目按“教育 - 校园服务”提交，涉及活动发布需提供主体资质。</li>
+</ul>
+
+<h2 id="s9"><span class="num">09</span>技术方案与版本</h2>
+
+<h3>9.1 版本（2026-10-28 核实）</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:190px">组件</th><th style="width:190px">版本</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>JDK</td><td>21（LTS）</td><td>Spring Boot 4 要求 17 及以上，教学与生产统一用 21</td></tr>
+    <tr><td>Spring Boot</td><td>4.1.1</td><td>按需求指定；Maven 中央仓库已有 4.1.2，可平滑升级</td></tr>
+    <tr><td>MyBatis-Plus</td><td>3.5.18.1</td><td>必须用 <code>mybatis-plus-spring-boot4-starter</code>，boot3 starter 不兼容 Boot 4 自动配置</td></tr>
+    <tr><td>MySQL</td><td>8.0 / 8.4</td><td>utf8mb4，时区统一 Asia/Shanghai</td></tr>
+    <tr><td>Redis</td><td>7.x</td><td>登录态黑名单、签到码 nonce、接口限流、热点缓存</td></tr>
+    <tr><td>JWT</td><td>jjwt 0.13.0</td><td><code>jjwt-api</code> + <code>jjwt-impl</code> + <code>jjwt-jackson</code></td></tr>
+    <tr><td>接口文档</td><td>springdoc-openapi 3.2.0</td><td>Spring Boot 4 对应 3.x 分支，2.x 不适用</td></tr>
+    <tr><td>数据库驱动</td><td>由 Boot BOM 管理</td><td><code>com.mysql:mysql-connector-j</code>，不手写版本</td></tr>
+    <tr><td>UniApp</td><td>Vue 3 + Vite 5</td><td>CLI 工程，<code>@dcloudio/uni-app</code> 最新稳定版；UI 用 uni-ui 或 wot-design-uni</td></tr>
+    <tr><td>管理后台</td><td>Vue 3.5 + Element Plus + Vite</td><td>与先修课程技术栈一致</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout warn">
+  <span class="t">版本注意</span>
+  MyBatis-Plus 从 3.5.13 起提供 boot4 starter，配置项与 boot3 版保持一致。若沿用旧教程里的 <code>mybatis-plus-boot-starter</code>，Spring Boot 4 启动时会因自动配置类不匹配而扫不到 Mapper。
+</div>
+
+<h3>9.2 后端结构</h3>
+<div class="tree">campus-activity
+├── activity-common          通用：统一响应、异常、工具、常量
+├── activity-domain          实体、DTO、VO、枚举
+├── activity-repository      Mapper 与自定义 SQL
+├── activity-service         业务逻辑：活动、报名、签到、统计
+├── activity-api             小程序端与后台端 Controller
+├── activity-job             定时任务：状态推进、候补顺延、未到场标记
+└── activity-admin           后台管理端（可选独立模块）</div>
+
+<h3>9.3 关键技术点</h3>
+<ul>
+  <li><strong>登录链路</strong>：<code>uni.login</code> → code → 后端 <code>code2session</code> → openid → 查用户 → 未绑定学号则返回 <code>needBind</code> 标记 → 绑定后签发 JWT。</li>
+  <li><strong>名额占用</strong>：单条条件 UPDATE + 事务，不做“先查再插”；报名记录写入与计数更新同事务，失败回滚。</li>
+  <li><strong>签到码</strong>：<code>HMAC(activityId + timeSlice + nonce, secret)</code>，服务端只校验最近两个时间片，无需落库。</li>
+  <li><strong>状态推进</strong>：XXL-Job 或 Spring <code>@Scheduled</code> 每 5 分钟扫描，按 <code>status + start_time</code> 索引批量更新。</li>
+  <li><strong>分页</strong>：MyBatis-Plus <code>PaginationInnerInterceptor</code> 注册，单页上限 50 条，防止全表拉取。</li>
+  <li><strong>逻辑删除</strong>：全局配置 <code>deleted</code> 字段，唯一索引需带 <code>deleted</code> 或在取消时复用行，避免逻辑删除与唯一索引冲突。</li>
+</ul>
+
+<h2 id="s10"><span class="num">10</span>里程碑</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:80px">阶段</th><th style="width:190px">内容</th><th>交付物</th><th style="width:130px">验收</th></tr></thead>
+  <tbody>
+    <tr><td>M1</td><td>需求与设计</td><td>PRD、原型图、数据库设计、接口清单</td><td>评审通过</td></tr>
+    <tr><td>M2</td><td>工程骨架与登录</td><td>前后端工程初始化、统一响应、JWT、微信登录与学号绑定</td><td>真机可登录并完成绑定</td></tr>
+    <tr><td>M3</td><td>活动与浏览</td><td>活动 CRUD、审核状态机、列表与详情页</td><td>组织者发布，学生可见</td></tr>
+    <tr><td>M4</td><td>报名</td><td>报名、取消、名额并发、我的报名</td><td>200 并发压测不超卖</td></tr>
+    <tr><td>M5</td><td>签到与通知</td><td>动态签到码、扫码签到、补签、订阅消息</td><td>现场签到全链路通过</td></tr>
+    <tr><td>M6</td><td>后台与统计</td><td>审核工作台、用户与组织管理、数据看板</td><td>管理员可独立完成审核</td></tr>
+    <tr><td>M7</td><td>联调与试运行</td><td>缺陷修复、性能优化、灰度上线、使用手册</td><td>一场真实活动跑通</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">作为教学项目时，M2 至 M6 可拆成 6 至 8 个实训任务，每个任务含接口契约、验收用例与代码评审点。</p>
+
+<h2 id="s11"><span class="num">11</span>风险与待确认</h2>
+
+<h3>11.1 风险</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:190px">风险</th><th style="width:80px">影响</th><th>应对</th></tr></thead>
+  <tbody>
+    <tr><td>热门活动瞬时抢名额</td><td>高</td><td>条件更新 + 唯一索引 + 接口限流；实测 200 并发后再决定是否上 Redis 预扣</td></tr>
+    <tr><td>订阅消息授权率低</td><td>中</td><td>关键节点引导授权，未授权降级站内消息 + 首页提醒条</td></tr>
+    <tr><td>学籍白名单维护滞后</td><td>中</td><td>提供 Excel 批量导入与失败明细；未匹配学生走人工审核通道</td></tr>
+    <tr><td>签到码被截图转发</td><td>中</td><td>30 秒轮换 + 时间片校验；高价值活动开启定位校验</td></tr>
+    <tr><td>组织者滥发活动</td><td>低</td><td>发布前审核 + 单组织每周发布上限 + 举报入口</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>11.2 待确认决策</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:40px">#</th><th>问题</th><th style="width:150px">当前假设</th><th style="width:90px">影响</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>管理后台是否在本期范围</td><td>包含，Vue 3 + Element Plus 独立工程</td><td>工期 +25%</td></tr>
+    <tr><td>2</td><td>报名是否需要组织者审核</td><td>做成活动级开关，默认关闭</td><td>报名状态机</td></tr>
+    <tr><td>3</td><td>是否需要候补队列</td><td>P1，首版可先不做自动转正</td><td>报名模块复杂度</td></tr>
+    <tr><td>4</td><td>定位签到是否启用</td><td>P2，字段与接口预留</td><td>签到准确率</td></tr>
+    <tr><td>5</td><td>部署环境</td><td>学校服务器 + 域名 + HTTPS，微信小程序需备案域名</td><td>上线时间</td></tr>
+    <tr><td>6</td><td>是否对接学工系统</td><td>V1 用 Excel 白名单</td><td>用户数据准确性</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s12"><span class="num">12</span>附录：验收用例</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:60px">编号</th><th style="width:200px">场景</th><th>预期结果</th></tr></thead>
+  <tbody>
+    <tr><td>AC-01</td><td>未绑定学号的学生点击报名</td><td>跳转绑定页，绑定成功后回到详情页，报名流程不丢失</td></tr>
+    <tr><td>AC-02</td><td>活动容量 1 人，2 个用户同时报名</td><td>仅 1 人成功，另一人返回“名额已满”，<code>signed_count</code> 为 1</td></tr>
+    <tr><td>AC-03</td><td>同一用户重复提交报名</td><td>第二次返回“已报名”，报名表无新增记录</td></tr>
+    <tr><td>AC-04</td><td>报名开启审核，组织者通过</td><td>状态由待审核变为报名成功，用户收到订阅消息，名额占用 +1</td></tr>
+    <tr><td>AC-05</td><td>名额满且开启候补，用户报名</td><td>状态为候补中并返回排队序号；有人取消后自动转正并收到通知</td></tr>
+    <tr><td>AC-06</td><td>活动开始前 1 小时取消报名（截止为开始前 2 小时）</td><td>返回“已超过取消时间”，报名记录保持有效</td></tr>
+    <tr><td>AC-07</td><td>使用 3 分钟前的签到码</td><td>返回“签到码已过期”，不写入签到记录</td></tr>
+    <tr><td>AC-08</td><td>未报名用户扫签到码</td><td>返回“未报名该活动”，提示先报名</td></tr>
+    <tr><td>AC-09</td><td>组织者补签一条报名记录</td><td>签到成功，记录操作人与原因，<code>audit_record</code> 有对应日志</td></tr>
+    <tr><td>AC-10</td><td>审核员驳回活动</td><td>组织者收到理由，状态为已驳回，学生端不可见，修改后可重新提交</td></tr>
+    <tr><td>AC-11</td><td>组织者访问其他组织的报名名单</td><td>返回 403，不泄露任何名单数据</td></tr>
+    <tr><td>AC-12</td><td>活动结束 1 小时后</td><td>未签到记录标记为未到场，活动统计中到场率正确</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="foot">
+  <p>本文档为 V1.0 需求基线，功能变更走变更记录并在评审后更新版本号。技术版本信息核实于 2026-10-28 的 Maven 中央仓库。</p>
+</div>
+
+</div>
+</body>
+</html>

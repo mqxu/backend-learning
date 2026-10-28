@@ -32,7 +32,7 @@
         <module>13-actuator</module>
         <module>14-deploy</module>
         <module>15-toolkit</module>
-        <module>zhihu-api</module>
+        <module>zhihu</module>
     </modules>
 
 
