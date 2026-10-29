@@ -13,11 +13,13 @@
 | 时机 | 发什么 | 学生产出 |
 | --- | --- | --- |
 | 第 0 天 | `contract.md`、`spec-template.md`、`ai-prompt.md`、`pitfalls.md`、`check.sh` | 填好的规格说明 |
-| 规格通过后 | `guide-01-auth.md` | 能登录、能鉴权、401 正确 |
+| 规格通过后 | `walkthrough.md`、`guide-01-auth.md` | 能登录、能鉴权、401 正确 |
 | 关卡 1 通过后 | `guide-02-authorize.md` | 三个角色权限点分开 |
 | 关卡 2 通过后 | `guide-03-ownership.md` | 归属判断成立，越权 403 |
 | 关卡 3 通过后 | `guide-04-frontend.md` | 前端联调走通 |
 | 四关全过后 | 完整代码（`src/`、`web/`）、`build.html`、`lecture.html` | 对照阅读笔记 |
+
+`walkthrough.md` 是二十步的逐步参考，每步给提示词、产出和验证，与 `docs/09-security-build.md` 的步骤编号一一对应。它一次发全，因为学生卡住时往往不知道某一步该怎么开头；但里面只有提示词和验收标准，没有现成代码，实现仍要自己想。
 
 规格说明是第一个卡点。学生把“接口与权限点的对应”和“归属判断放在哪层”写不清，就先别放去写代码，那两节空着的实现必然出问题。
 
@@ -60,6 +62,7 @@
 | `contract.md` | 学生 | 接口、权限、错误码、24 条验收行为 |
 | `spec-template.md` | 学生 | 规格说明模板，动手前填完 |
 | `ai-prompt.md` | 学生 | 提问结构、坏提问对照、每关示例提问 |
+| `walkthrough.md` | 学生 | 二十步逐步参考，每步给提示词、产出、验证 |
 | `pitfalls.md` | 学生 | AI 常见错误，按关卡分类 |
 | `check.sh` | 学生 | 24 条验收，可分关执行 |
 | `guide-01-auth.md` | 学生 | 关卡 1 任务卡 |
