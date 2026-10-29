@@ -1,6 +1,6 @@
 # 09-security 完整实现手册
 
-这份文档自成一体。只拿它和 AI，就能做出结构一致、行为一致的前后端。不需要看别的文件，也不需要任何脚本。
+这份文档自成一体。只拿它和 AI，就能做出和样例结构一致、行为一致的前后端。
 
 分五部分：项目全貌、规格、二十步、验收、常见错误。第三部分是操作主体，前两部分是每一步都要用到的参照，第四部分做完之后验收，第五部分卡住时查。
 
@@ -126,13 +126,13 @@
         └── Users.vue
 ```
 
-## 1.2 后端文件与关键成员
+## 1.2 后端文件与关键内容
 
 提示词里的类名、方法名一律以此表为准，不要改名。
 
 **启动与配置**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `SecurityApplication.java` | 启动类 | `@SpringBootApplication`、`@MapperScan("top.mqxu.security.mapper")` |
 | `config/JwtProperties.java` | 绑 `app.jwt` 前缀 | record：`secret`、`issuer`、`expireMinutes` |
@@ -140,7 +140,7 @@
 
 **common**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `Result.java` | 统一响应外壳 | 字段 `code`、`message`、`data`；`ok()`、`ok(T)`、`fail(ErrorCode)`、`fail(Integer, String)` |
 | `ErrorCode.java` | 错误码枚举 | 见 2.4 |
@@ -151,14 +151,14 @@
 
 **entity**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `User.java` | 映射 `sec_user` | `id`、`username`、`password`、`nickname`、`enabled`、`createdAt` |
 | `Task.java` | 映射 `sec_task` | `id`、`title`、`content`、`ownerId`、`status`、`score`、`comment`、`submittedAt`、`reviewedAt`；`markReviewed(int, String, LocalDateTime)` |
 
 **model**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `Role.java` | 角色与权限点 | 常量 `STUDENT`、`TEACHER`、`ADMIN`；`permissions()`、`authority()`、`static authorities(Collection<Role>)` |
 | `Account.java` | 账号与角色的组合 | record：`id`、`username`、`password`、`nickname`、`enabled`、`Set<Role> roles`；`roleNames()` |
@@ -168,7 +168,7 @@
 
 **mapper**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `UserMapper.java` | 账号单表 CRUD | `extends BaseMapper<User>` |
 | `TaskMapper.java` | 任务查询与更新 | `extends BaseMapper<Task>`；`selectAllRows()`、`selectRowsByOwnerId(Long)`、`selectRowById(Long)`、`updateReviewed(Long, Integer, String, LocalDateTime)` |
@@ -179,7 +179,7 @@
 
 **security**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `JwtTokenService.java` | 签发与解析 | `issue(UserDetails)` 返回 `IssuedToken`（record：`token`、`expiresAt`）、`parseUsername(String)` |
 | `JwtAuthenticationFilter.java` | 取令牌、验签、放上下文 | `extends OncePerRequestFilter` |
@@ -190,7 +190,7 @@
 
 **service**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `AccountUserDetailsService.java` | 按用户名取账号 | `implements UserDetailsService`，`loadUserByUsername(String)` |
 | `AuthService.java` | 登录换令牌 | `login(LoginRequest)` 返回 `LoginResponse` |
@@ -199,7 +199,7 @@
 
 **controller、dto、vo**
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `AuthController.java` | `/auth` | `login(LoginRequest)`、`me(SecurityUser)` |
 | `PublicController.java` | `/public` | `ping()` |
@@ -213,9 +213,9 @@
 | `UserProfile.java` | 账号出参 | record：`username`、`nickname`、`Set<String> roles`、`List<String> authorities`、`enabled`；`static of(Account)` |
 | `TaskView.java` | 任务出参 | record 十二个字段，见 2.2；`static of(TaskRow)` |
 
-## 1.3 前端文件与关键成员
+## 1.3 前端文件与关键内容
 
-| 文件 | 职责 | 关键成员 |
+| 文件 | 职责 | 关键内容 |
 | --- | --- | --- |
 | `src/types/api.ts` | 与后端对齐的类型 | `RoleCode`、`TaskStatusCode`、`ApiResult<T>`、`LoginPayload`、`LoginResponse`、`CurrentUser`、`UserProfile`、`TaskView`、`SubmitTaskPayload`、`ReviewTaskPayload`、`CreateUserPayload` |
 | `src/api/request.ts` | axios 与拦截器 | 导出 `http`，含 `get`、`post`、`del` 三个泛型方法 |
@@ -283,8 +283,6 @@
 | reviewed_at | DATETIME | 可空 |
 
 `schema.sql` 每次启动先删后建，`data.sql` 灌演示数据。建表顺序反过来删，先删有外键指向的表。
-
-种子数据的时间用 `DATE_SUB` 配合固定时刻，不要用 `NOW()` 减小时数。清晨启动会算出凌晨三五点，页面上一条凌晨的提交记录一眼就假。
 
 ## 2.2 接口
 
@@ -399,7 +397,9 @@
 
 # 第三部分 · 二十步
 
-每一步给四样：这一步做什么、发给 AI 的提示词（含产出清单）、产出落到哪些文件、怎么验证。提示词整段复制，只把版本号按本机改掉。
+每一步给四样：这一步做什么、发给 AI 的提示词（含产出清单）、产出落到哪些文件、怎么验证。提示词整段复制即可。
+
+第 01 到 07 步建的是内部结构，还没有对外接口，过滤链也没配，验证方式就是编译通过。第 08 步配好过滤链并加上第一个 Controller 之后才有 HTTP 可验，从那里开始每步给 curl 命令。在这之前 curl 任何地址都拿不到业务响应，多半是 302 跳到默认登录页，或者 401，那是 Security 的自动配置在起作用，不是代码写错了。
 
 ---
 
@@ -428,10 +428,10 @@ Maven 多模块工程，父 POM 是 spring-boot-starter-parent 4.1.1，我要加
 
 用一张表回答：groupId、artifactId、版本、scope、谁管版本。
 
-产出：09-security/pom.xml。
+产出：09-security/pom.xml，jjwt.version 与 mybatis-plus.version 要写成 properties，版本要可用并适配
 ```
 
-产出文件：`09-security/pom.xml`。`jjwt.version` 与 `mybatis-plus.version` 写成 properties，其余不写版本。
+产出文件：`09-security/pom.xml`。`jjwt.version` 与 `mybatis-plus.version` 写成了 properties，其余不写版本。
 
 验证：
 
@@ -439,7 +439,9 @@ Maven 多模块工程，父 POM 是 spring-boot-starter-parent 4.1.1，我要加
 mvn -pl 09-security dependency:tree | grep -E 'security|jjwt|mybatis'
 ```
 
-看到 Security 7.1.1、jjwt 0.13.0、MyBatis-Plus 3.5.17 才算对。
+看到有 7.1.1、jjwt 0.13.0、MyBatis-Plus 3.5.17 依赖信息才算对。
+
+![image-20261029095958559](https://infinityx7-oss.oss-cn-hangzhou.aliyuncs.com/markdown/image-20261029095958559.png)
 
 ### 02 · 数据源、建表与种子数据
 
@@ -465,15 +467,21 @@ application.yml 里的 spring.sql.init 段，mode 写 always，指向这两个�
 
 产出文件：`schema.sql`、`data.sql`、`application.yml`。
 
-种子数据十四个账号：admin、teacher01、teacher02、student01 到 student10、guest（停用）。密码明文分别是 `Admin#2026`、`Teacher#2026`、`Student#2026`、`Guest#2026`，库里存 BCrypt 密文。任务二十八条，十一条待批改、十七条已批改。
+种子数据十四个账号：admin、teacher01、teacher02、student01 到 student10、guest（停用）。密码明文分别是 `Admin#2026`、`Teacher#2026`、`Student#2026`、`Guest#2026`，库里存 BCrypt 密文。
 
 验证：
 
 ```sql
-SELECT COUNT(*) FROM sec_user;                  -- 14
-SELECT LEFT(password, 4) FROM sec_user LIMIT 1; -- $2a$
+SELECT COUNT(*) FROM sec_user;                 
+SELECT LEFT(password, 4) FROM sec_user LIMIT 1;  
 SELECT status, COUNT(*) FROM sec_task GROUP BY status;
 ```
+
+![image-20261029100228021](https://infinityx7-oss.oss-cn-hangzhou.aliyuncs.com/markdown/image-20261029100228021.png)
+
+![image-20261029100237561](https://infinityx7-oss.oss-cn-hangzhou.aliyuncs.com/markdown/image-20261029100237561.png)
+
+![image-20261029100247833](https://infinityx7-oss.oss-cn-hangzhou.aliyuncs.com/markdown/image-20261029100247833.png)
 
 ### 03 · 统一响应体与错误码
 
@@ -503,10 +511,10 @@ common 包下四个类：
 验证：
 
 ```bash
-curl -i http://127.0.0.1:8009/public/ping --noproxy '*'
+mvn -pl 09-security compile
 ```
 
-返回 `{"code":200,"message":"success","data":{"status":"ok"}}`。
+编译通过就行。这一步没有任何 Controller，也没有过滤链配置，此时 curl 任何地址都拿不到 `Result` 的 JSON，说明不了它写得对不对。这个外壳要到第 08 步加上第一个 Controller 才能看到效果。
 
 ---
 
@@ -543,7 +551,13 @@ TaskMapper 里用 SELECT_COLUMNS 和 FROM_JOIN 两个常量拼公共部分，提
 
 联表投影用 `model/TaskRow`，十一个字段。
 
-验证：启动后日志里能看到 MyBatis 打印的 SQL，`sql.init` 的两个脚本执行成功。
+验证：
+
+```bash
+mvn -pl 09-security compile
+```
+
+实体和 Mapper 这时还没有调用方，编译通过即可。启动时 `data.sql` 是 JDBC 直接执行的，不走 MyBatis，所以日志里不会有 SQL。想提前确认联表查询写得对，可以临时在启动类加一个 `CommandLineRunner` 调一次 `selectAllRows()` 打印条数，看完删掉。
 
 ### 05 · 角色、账号与用户适配
 
@@ -571,7 +585,25 @@ service/UserService.java 先只写 findByUsername(String) 返回 Optional<Accoun
 
 产出文件：`model/Role.java`、`model/Account.java`、`security/SecurityUser.java`、`service/AccountUserDetailsService.java`，以及 `UserService.findByUsername`。
 
-验证：登录后临时打印一次 `getAuthorities()`，确认里面既有 `ROLE_STUDENT` 也有 `task:submit`。这一步还没有登录接口，可以先在 `loadUserByUsername` 里打日志，跑一次测试看输出。
+验证：
+
+```bash
+mvn -pl 09-security compile
+```
+
+权限字符串拼得对不对，这时还没有接口能看出来。临时在启动类加一段验证，验完删掉：
+
+```java
+@Bean
+CommandLineRunner checkAuthorities(UserDetailsService uds) {
+    return args -> {
+        SecurityUser u = (SecurityUser) uds.loadUserByUsername("student01");
+        System.out.println(u.getAuthorities());
+    };
+}
+```
+
+控制台要能同时看到 `ROLE_STUDENT` 和 `task:submit`。只有前者说明权限点没摊平，只有后者说明角色名前缀漏了。
 
 ### 06 · 令牌的签发与解析
 
@@ -598,7 +630,26 @@ security/JwtTokenService.java：issue(UserDetails) 返回内部 record IssuedTok
 
 配置示例：`secret` 默认值给一串足够长的字符串，生产用 `JWT_SECRET` 环境变量覆盖；`issuer` 写工程名；`expire-minutes` 120。
 
-验证：签一张令牌、解析回来、故意改末位三位确认抛异常。
+验证：同样用临时代码，验完删掉：
+
+```java
+@Bean
+CommandLineRunner checkToken(JwtTokenService svc, UserDetailsService uds) {
+    return args -> {
+        var issued = svc.issue(uds.loadUserByUsername("student01"));
+        System.out.println("令牌: " + issued.token());
+        System.out.println("解析出: " + svc.parseUsername(issued.token()));
+        try {
+            svc.parseUsername(issued.token().substring(0, issued.token().length() - 3) + "abc");
+            System.out.println("篡改后没抛异常，验签漏了");
+        } catch (Exception e) {
+            System.out.println("篡改被拒: " + e.getClass().getSimpleName());
+        }
+    };
+}
+```
+
+打印的用户名要是 student01，最后一行要是“篡改被拒”。
 
 ### 07 · 令牌过滤器与 401、403 的输出
 
@@ -627,10 +678,10 @@ security/RestErrorWriter.java：一个公共方法 write(response, status, body)
 验证：
 
 ```bash
-curl -i http://127.0.0.1:8009/api/tasks/mine --noproxy '*'
+mvn -pl 09-security compile
 ```
 
-401，且 `Content-Type: application/json`。如果是 `text/html`，说明默认登录页还在接管。
+这三个类还没装配到过滤链上，HTTP 层面的效果要到第 08 步。等过滤链配好，再用 `curl -i` 看不带令牌的响应，`Content-Type` 应该是 `application/json`；如果是 `text/html`，说明默认登录页还在接管。
 
 ### 08 · 把过滤链装起来
 
@@ -660,9 +711,12 @@ config/SecurityConfig.java 一个类，五个东西：
 过滤链 Bean：csrf 关、cors 开、httpBasic 关、formLogin 关、logout 关、无状态会话，
 规则从具体到宽泛排列，异常处理挂上一步的两个处理器，JWT 过滤器加在用户名密码过滤器之前；
 配置类上要打开方法级鉴权。
+
+另外加一个 controller/PublicController.java：GET /public/ping 返回 Result.ok(Map.of("status", "ok", "message", "无需认证即可访问"))，
+用来验证放行规则真的生效。没有这个接口，放行规则对不对根本看不出来。
 ```
 
-产出文件：`config/SecurityConfig.java`。
+产出文件：`config/SecurityConfig.java`、`controller/PublicController.java`。
 
 两步验证。先只写 URL 规则：
 
@@ -672,9 +726,28 @@ curl -i http://127.0.0.1:8009/api/tasks/mine --noproxy '*'  # 401
 curl -i http://127.0.0.1:8009/admin/users --noproxy '*'     # 401
 ```
 
-再在 Controller 上标权限注解。这时还没有登录接口，注解效果验不出来，等第 09 步一起验。
+第一条的完整响应长这样，`data` 里两个字段都来自 `PublicController`：
 
-这一关有个开关漏了会让全部权限注解静默失效，程序照跑不报错，就是配置类上那个打开方法级鉴权的注解。
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "status": "ok",
+    "message": "无需认证即可访问"
+  }
+}
+```
+
+![放行接口的响应](https://infinityx7-oss.oss-cn-hangzhou.aliyuncs.com/markdown/image-20261029100343216.png)
+
+第二条要特别看响应头：`Content-Type` 应该是 `application/json`。如果还是 `text/html`，说明第 07 步的两个处理器没挂上。
+
+后两条返回 401 而不是 404，说明过滤链比 Controller 先跑，接口还没写也能拦住。这正是规则生效的证据。
+
+权限注解不在这一步标。第 10、11 步建 Controller 时顺手标上，那时才有接口可挂。
+
+这一关有个开关漏了会让全部权限注解静默失效，程序照跑不报错，就是配置类上那个打开方法级鉴权的注解。现在打开了也看不出效果，等第 10 步标上注解才验得出来。
 
 ### 09 · 登录接口
 
@@ -732,24 +805,9 @@ curl -s -o /dev/null -w '10 %{http_code}\n' -H "Authorization: Bearer ${TOKEN%??
 
 `/auth/me` 要能看到 `username` 为 student01、`authorities` 里有 `ROLE_STUDENT` 和 `task:submit`，并且没有 `password` 字段。最后一条期望 401。
 
-认证十条全过，再验授权六条：
+到这一步认证十条就能全过了。
 
-```bash
-S=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"student01","password":"Student#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
-T=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"teacher01","password":"Teacher#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
-A=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"Admin#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
-
-curl -s -o /dev/null -w '11 %{http_code}\n' -H "Authorization: Bearer $S" $B/api/tasks --noproxy '*'
-curl -s -o /dev/null -w '12 %{http_code}\n' -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d '{"score":100}' $B/api/tasks/2/review --noproxy '*'
-curl -s -o /dev/null -w '13 %{http_code}\n' -H "Authorization: Bearer $T" $B/api/tasks --noproxy '*'
-curl -s -o /dev/null -w '14 %{http_code}\n' -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' -d '{"title":"t","content":"c"}' $B/api/tasks --noproxy '*'
-curl -s -o /dev/null -w '15 %{http_code}\n' -H "Authorization: Bearer $T" $B/admin/users --noproxy '*'
-curl -s -H "Authorization: Bearer $A" $B/admin/users --noproxy '*' | python3 -m json.tool
-```
-
-期望依次是：403、403、200、403、403，最后一条 200 且元素里没有 `password`。
-
-第 11 条不过而接口却能访问，八成是方法级鉴权的开关没打开。
+授权那几条先别急着验。第 11 到 16 条打的 `/api/tasks` 和 `/admin/users` 这两个接口要到第 10、11 步才建，现在打过去是 404，不是 403，验不出权限规则对不对。等接口写好了在第 10、11 步分别验。
 
 ---
 
@@ -786,15 +844,31 @@ controller/TaskController.java：五个接口，三个标权限点，detail 不�
 
 产出文件：`model/TaskStatus.java`、`vo/TaskView.java`、`service/TaskService.java`、`controller/TaskController.java`。
 
-验证六条：
+验证。先验授权四条（11 到 14），这一步才有 `/api/tasks` 接口可打，第 09 步验不了就是因为它还不存在：
+
+```bash
+B=http://127.0.0.1:8009
+S=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"student01","password":"Student#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
+T=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"teacher01","password":"Teacher#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
+STAMP=$(date +%H%M%S)
+
+curl -s -o /dev/null -w '11 %{http_code}\n' -H "Authorization: Bearer $S" $B/api/tasks --noproxy '*'
+curl -s -o /dev/null -w '12 %{http_code}\n' -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d '{"score":100}' $B/api/tasks/2/review --noproxy '*'
+curl -s -o /dev/null -w '13 %{http_code}\n' -H "Authorization: Bearer $T" $B/api/tasks --noproxy '*'
+curl -s -o /dev/null -w '14 %{http_code}\n' -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' -d '{"title":"t","content":"c"}' $B/api/tasks --noproxy '*'
+```
+
+期望 403、403、200、403。第 11 条若返回 200，八成是方法级鉴权的开关没打开。
+
+再验归属六条：
 
 ```bash
 B=http://127.0.0.1:8009
 S=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"student01","password":"Student#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
 T=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"teacher01","password":"Teacher#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
 
-curl -s -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d '{"title":"验收提交","content":"内容"}' $B/api/tasks --noproxy '*' | python3 -m json.tool
-curl -s -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d '{"title":"伪造归属","content":"内容","owner":"student02"}' $B/api/tasks --noproxy '*' | python3 -m json.tool
+curl -s -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d "{\"title\":\"验收提交 $STAMP\",\"content\":\"内容\"}" $B/api/tasks --noproxy '*' | python3 -m json.tool
+curl -s -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d "{\"title\":\"伪造归属 $STAMP\",\"content\":\"内容\",\"owner\":\"student02\"}" $B/api/tasks --noproxy '*' | python3 -m json.tool
 curl -s -H "Authorization: Bearer $S" $B/api/tasks/mine --noproxy '*' | python3 -m json.tool
 curl -s -o /dev/null -w '20 %{http_code}\n' -H "Authorization: Bearer $S" $B/api/tasks/2 --noproxy '*'
 ```
@@ -804,7 +878,7 @@ curl -s -o /dev/null -w '20 %{http_code}\n' -H "Authorization: Bearer $S" $B/api
 再验批改与重复批改：
 
 ```bash
-ID=$(curl -s -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d '{"title":"等待批改","content":"内容"}' $B/api/tasks --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["id"])')
+ID=$(curl -s -X POST -H "Authorization: Bearer $S" -H 'Content-Type: application/json' -d "{\"title\":\"等待批改 $STAMP\",\"content\":\"内容\"}" $B/api/tasks --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["id"])')
 
 curl -s -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' -d '{"score":88,"comment":"归属判断对了"}' $B/api/tasks/$ID/review --noproxy '*' | python3 -m json.tool
 curl -s -H "Authorization: Bearer $S" $B/api/tasks/$ID --noproxy '*' | python3 -m json.tool
@@ -841,12 +915,22 @@ controller/UserAdminController.java：类上标管理员注解，三个方法，
 
 删除时操作人从 `@AuthenticationPrincipal` 取，传进服务层比较。
 
-验证：
+验证。先验授权两条（15、16），管理接口到这一步才存在：
 
 ```bash
 B=http://127.0.0.1:8009
+T=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"teacher01","password":"Teacher#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
 A=$(curl -s -X POST $B/auth/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"Admin#2026"}' --noproxy '*' | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
 
+curl -s -o /dev/null -w '15 %{http_code}\n' -H "Authorization: Bearer $T" $B/admin/users --noproxy '*'
+curl -s -H "Authorization: Bearer $A" $B/admin/users --noproxy '*' | python3 -m json.tool
+```
+
+第 15 条期望 403。第 16 条看列表里每个元素都没有 `password` 字段。
+
+再验账号管理两条（23、24）：
+
+```bash
 curl -s -X POST -H "Authorization: Bearer $A" -H 'Content-Type: application/json' \
   -d '{"username":"student99","password":"NewStu#2026","nickname":"新加的同学","roles":["STUDENT"]}' \
   $B/admin/users --noproxy '*'
@@ -902,6 +986,8 @@ mvn -pl 09-security test
 ```
 
 全绿。有一条红就先修，别继续。
+
+后端到这里就完整了。再把第四部分那份二十四条的脚本跑一遍，测试和脚本测的是同一件事，两边结果不一致说明有一边漏了断言。
 
 ---
 
@@ -1317,5 +1403,4 @@ echo; echo "通过 $PASS 条，失败 $FAIL 条"; [ "$FAIL" = 0 ] || exit 1
 - 你的过滤器怎么处理异常
 
 这三处是这套案例的分水岭。差异背后的理由，就是这一章要学的东西。
-
 
