@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <rect width="1000" height="440" fill="#ffffff"/>
+
+  <text x="30" y="38" font-size="17" font-weight="600" fill="#1f2329">一个指标从代码到面板，经过四段路</text>
+  <text x="30" y="60" font-size="12" fill="#6b7280">前两段在你自己的进程里，后两段在外部系统。前半段是“记下来”，后半段是“搬出去”。</text>
+
+  <!-- 第一栏：应用内 -->
+  <rect x="30" y="84" width="290" height="266" rx="9" fill="#f7f8fa" stroke="#e6e9ee"/>
+  <text x="175" y="108" font-size="12" font-weight="600" fill="#6b7280" text-anchor="middle">应用进程内</text>
+
+  <rect x="48" y="124" width="254" height="58" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="175" y="148" font-size="11.5" font-weight="600" fill="#0b63c5" text-anchor="middle">业务代码</text>
+  <text x="175" y="167" font-size="10.5" fill="#3d7cc9" text-anchor="middle">metrics.orderCreated()</text>
+
+  <line x1="175" y1="184" x2="175" y2="198" stroke="#9aa4b2" stroke-width="1.2"/>
+  <polygon points="175,202 171,195 179,195" fill="#9aa4b2"/>
+
+  <rect x="48" y="202" width="254" height="58" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="175" y="226" font-size="11.5" font-weight="600" fill="#0b63c5" text-anchor="middle">Meter</text>
+  <text x="175" y="245" font-size="10.5" fill="#3d7cc9" text-anchor="middle">Counter / Timer / Gauge</text>
+
+  <line x1="175" y1="262" x2="175" y2="276" stroke="#9aa4b2" stroke-width="1.2"/>
+  <polygon points="175,280 171,273 179,273" fill="#9aa4b2"/>
+
+  <rect x="48" y="280" width="254" height="58" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="175" y="304" font-size="11.5" font-weight="600" fill="#0b63c5" text-anchor="middle">MeterRegistry</text>
+  <text x="175" y="323" font-size="10.5" fill="#3d7cc9" text-anchor="middle">数值存在内存里，进程重启就归零</text>
+
+  <!-- 第二栏：端点 -->
+  <rect x="360" y="84" width="280" height="266" rx="9" fill="#f7f8fa" stroke="#e6e9ee"/>
+  <text x="500" y="108" font-size="12" font-weight="600" fill="#6b7280" text-anchor="middle">Actuator 端点</text>
+
+  <rect x="378" y="140" width="244" height="72" rx="7" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="500" y="164" font-size="11" font-weight="600" fill="#a4701c" text-anchor="middle">/actuator/metrics</text>
+  <text x="500" y="182" font-size="10" fill="#a4701c" text-anchor="middle">JSON，给人看</text>
+  <text x="500" y="198" font-size="10" fill="#a4701c" text-anchor="middle">可以按 tag 过滤单条序列</text>
+
+  <rect x="378" y="240" width="244" height="72" rx="7" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="500" y="264" font-size="11" font-weight="600" fill="#a4701c" text-anchor="middle">/actuator/prometheus</text>
+  <text x="500" y="282" font-size="10" fill="#a4701c" text-anchor="middle">纯文本，给机器读</text>
+  <text x="500" y="298" font-size="10" fill="#a4701c" text-anchor="middle">每行一条样本，带 HELP / TYPE</text>
+
+  <!-- 第三栏：外部 -->
+  <rect x="680" y="84" width="290" height="266" rx="9" fill="#f7f8fa" stroke="#e6e9ee"/>
+  <text x="825" y="108" font-size="12" font-weight="600" fill="#6b7280" text-anchor="middle">外部系统</text>
+
+  <rect x="698" y="140" width="254" height="72" rx="7" fill="#ffffff" stroke="#9aa4b2"/>
+  <text x="825" y="164" font-size="11" font-weight="600" fill="#1f2329" text-anchor="middle">Prometheus</text>
+  <text x="825" y="182" font-size="10" fill="#6b7280" text-anchor="middle">每 15 秒抓一次，长期存储</text>
+  <text x="825" y="198" font-size="10" fill="#6b7280" text-anchor="middle">按时间序列保存，能算 rate</text>
+
+  <line x1="825" y1="214" x2="825" y2="236" stroke="#9aa4b2" stroke-width="1.2"/>
+  <polygon points="825,240 821,233 829,233" fill="#9aa4b2"/>
+
+  <rect x="698" y="240" width="254" height="72" rx="7" fill="#ffffff" stroke="#9aa4b2"/>
+  <text x="825" y="264" font-size="11" font-weight="600" fill="#1f2329" text-anchor="middle">Grafana / 告警规则</text>
+  <text x="825" y="282" font-size="10" fill="#6b7280" text-anchor="middle">面板看趋势，规则触发了发通知</text>
+  <text x="825" y="298" font-size="10" fill="#6b7280" text-anchor="middle">数据全来自 Prometheus</text>
+
+  <!-- 连线：Registry 分叉到两个端点 -->
+  <polyline points="302,309 340,309 340,176 378,176" fill="none" stroke="#9aa4b2" stroke-width="1.3"/>
+  <polygon points="378,176 371,172 371,180" fill="#9aa4b2"/>
+  <polyline points="340,309 340,276 378,276" fill="none" stroke="#9aa4b2" stroke-width="1.3"/>
+  <polygon points="378,276 371,272 371,280" fill="#9aa4b2"/>
+
+  <!-- 连线：prometheus 端点 → Prometheus -->
+  <polyline points="622,276 660,276 660,176 698,176" fill="none" stroke="#9aa4b2" stroke-width="1.3"/>
+  <polygon points="698,176 691,172 691,180" fill="#9aa4b2"/>
+
+  <line x1="30" y1="372" x2="970" y2="372" stroke="#e6e9ee"/>
+
+  <text x="30" y="396" font-size="12" fill="#1f2329">端点都是拉取式：没人请求就不输出，但数值一直在内存里累积。</text>
+  <text x="30" y="418" font-size="12" fill="#6b7280">所以进程一重启，Counter 从 0 开始，Prometheus 上的曲线会看到一条明确的断点——这也是为什么告警规则要用 rate 而不是绝对值。</text>
+</svg>

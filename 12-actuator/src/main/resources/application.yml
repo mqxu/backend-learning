@@ -1,0 +1,38 @@
+server:
+  port: 8012
+
+spring:
+  application:
+    name: 12-应用监控
+
+# Actuator 的配置全在 management 下
+management:
+  endpoints:
+    web:
+      exposure:
+        # 默认只暴露 health，其余要显式开；生产上按需开，别用 "*"
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      # always 才会显示各组件详情，默认只在未认证时显示 UP/DOWN
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+  metrics:
+    tags:
+      # 给所有指标打上应用名，多个服务共用一个 Prometheus 时靠它区分
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        # 打开直方图，Prometheus 才能算 P95 / P99
+        http.server.requests: true
+
+# /actuator/info 显示的内容，键名随意，结构会原样输出
+info:
+  app:
+    name: backend-learning
+    module: 12-actuator
+    version: 1.0.0
+    description: 健康检查、指标采集与 Prometheus 对接示例
