@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="t1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#8b95a5"/>
+    </marker>
+    <marker id="t2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#c62828"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="360" fill="#f7f8fa"/>
+
+  <text x="30" y="34" font-size="14" fill="#1f2329" font-weight="600">一个请求要过三道关</text>
+  <text x="30" y="56" font-size="11.5" fill="#6b7280">每一关失败的含义不同，返回的状态码也不同；混用会让前端和监控都判断错</text>
+
+  <!-- 三道关 -->
+  <rect x="30" y="92" width="210" height="96" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="135" y="118" font-size="13" fill="#1f2329" text-anchor="middle">① 认证</text>
+  <text x="135" y="140" font-size="11" fill="#6b7280" text-anchor="middle">JwtAuthenticationFilter</text>
+  <text x="135" y="160" font-size="11" fill="#8b95a5" text-anchor="middle">验签、查账号、装 SecurityContext</text>
+  <text x="135" y="177" font-size="10.5" fill="#c62828" text-anchor="middle">失败 → 401，不知道你是谁</text>
+
+  <rect x="285" y="92" width="210" height="96" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="390" y="118" font-size="13" fill="#1f2329" text-anchor="middle">② 授权</text>
+  <text x="390" y="140" font-size="11" fill="#6b7280" text-anchor="middle">@PreAuthorize + hasAuthority</text>
+  <text x="390" y="160" font-size="11" fill="#8b95a5" text-anchor="middle">角色与权限点够不够</text>
+  <text x="390" y="177" font-size="10.5" fill="#c62828" text-anchor="middle">失败 → 403，知道你是谁但不许</text>
+
+  <rect x="540" y="92" width="210" height="96" rx="8" fill="#ffffff" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="645" y="118" font-size="13" fill="#1f2329" text-anchor="middle">③ 归属校验</text>
+  <text x="645" y="140" font-size="11" fill="#6b7280" text-anchor="middle">Service 里比对 ownerId</text>
+  <text x="645" y="160" font-size="11" fill="#8b95a5" text-anchor="middle">这条数据是不是你的</text>
+  <text x="645" y="177" font-size="10.5" fill="#c62828" text-anchor="middle">失败 → 403，有权限也不能越界</text>
+
+  <rect x="795" y="92" width="175" height="96" rx="8" fill="#ffffff" stroke="#12805c"/>
+  <text x="882" y="126" font-size="13" fill="#12805c" text-anchor="middle">返回数据</text>
+  <text x="882" y="150" font-size="11" fill="#8b95a5" text-anchor="middle">VO 里没有密码字段</text>
+
+  <line x1="30" y1="140" x2="30" y2="140" stroke="#8b95a5"/>
+  <line x1="244" y1="140" x2="281" y2="140" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#t1)"/>
+  <line x1="499" y1="140" x2="536" y2="140" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#t1)"/>
+  <line x1="754" y1="140" x2="791" y2="140" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#t1)"/>
+
+  <!-- 请求入口 -->
+  <rect x="30" y="222" width="210" height="52" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="135" y="245" font-size="12" fill="#1f2329" text-anchor="middle">请求带上 Bearer 令牌</text>
+  <text x="135" y="263" font-size="10.5" fill="#8b95a5" text-anchor="middle">没有令牌的请求在①就被挡下</text>
+  <line x1="135" y1="218" x2="135" y2="192" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#t1)"/>
+
+  <!-- 数据层 -->
+  <rect x="540" y="222" width="210" height="52" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="645" y="245" font-size="12" fill="#1f2329" text-anchor="middle">select 只查自己的行</text>
+  <text x="645" y="263" font-size="10.5" fill="#8b95a5" text-anchor="middle">查不到就是 404，不泄露存在性</text>
+  <line x1="645" y1="192" x2="645" y2="218" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#t1)"/>
+
+  <text x="30" y="320" font-size="11.5" fill="#6b7280">只做① → 任何人登录后能改别人的数据。</text>
+  <text x="30" y="340" font-size="11.5" fill="#6b7280">只做①和② → 同角色的两个人仍能互相改，因为权限点相同。</text>
+  <text x="560" y="320" font-size="11.5" fill="#9aa4b2">③ 最容易漏：接口能通，</text>
+  <text x="560" y="340" font-size="11.5" fill="#9aa4b2">但数据被别人读了。</text>
+</svg>
