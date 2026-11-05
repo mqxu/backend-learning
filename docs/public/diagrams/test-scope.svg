@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <rect width="1000" height="430" fill="#ffffff"/>
+
+  <text x="40" y="40" font-size="17" font-weight="600" fill="#1f2329">同一个请求，在三种测试里各走了多远</text>
+  <text x="40" y="62" font-size="12" fill="#6b7280">蓝色是真实参与运行的类，黄色是 Mockito 造出来的假实现，虚线框表示这一层根本没被加载。</text>
+
+  <!-- 行 1：单元测试 -->
+  <text x="40" y="112" font-size="13" font-weight="600" fill="#1f2329">单元测试</text>
+  <text x="40" y="132" font-size="10.5" fill="#6b7280">16 个 · 毫秒级</text>
+
+  <rect x="180" y="88" width="140" height="64" rx="7" fill="#f7f8fa" stroke="#d7dce3" stroke-dasharray="4 3"/>
+  <text x="250" y="114" font-size="11.5" fill="#a0a7b2" text-anchor="middle">HTTP 请求</text>
+  <text x="250" y="132" font-size="10" fill="#b6bcc6" text-anchor="middle">没有</text>
+
+  <line x1="322" y1="120" x2="336" y2="120" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="340" y="88" width="140" height="64" rx="7" fill="#f7f8fa" stroke="#d7dce3" stroke-dasharray="4 3"/>
+  <text x="410" y="114" font-size="11.5" fill="#a0a7b2" text-anchor="middle">DispatcherServlet</text>
+  <text x="410" y="132" font-size="10" fill="#b6bcc6" text-anchor="middle">没有</text>
+
+  <line x1="482" y1="120" x2="496" y2="120" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="500" y="88" width="140" height="64" rx="7" fill="#f7f8fa" stroke="#d7dce3" stroke-dasharray="4 3"/>
+  <text x="570" y="114" font-size="11.5" fill="#a0a7b2" text-anchor="middle">OrderController</text>
+  <text x="570" y="132" font-size="10" fill="#b6bcc6" text-anchor="middle">没有</text>
+
+  <line x1="642" y1="120" x2="656" y2="120" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="660" y="88" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="730" y="114" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">OrderService</text>
+  <text x="730" y="132" font-size="10" fill="#3d7cc9" text-anchor="middle">真实，直接 new</text>
+
+  <line x1="802" y1="120" x2="816" y2="120" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="820" y="88" width="140" height="64" rx="7" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="890" y="114" font-size="11.5" fill="#a4701c" text-anchor="middle" font-weight="600">InventoryClient</text>
+  <text x="890" y="132" font-size="10" fill="#a4701c" text-anchor="middle">Mock</text>
+
+  <!-- 行 2：切片测试 -->
+  <text x="40" y="196" font-size="13" font-weight="600" fill="#1f2329">切片测试</text>
+  <text x="40" y="216" font-size="10.5" fill="#6b7280">7 个 · 一两秒</text>
+
+  <rect x="180" y="172" width="140" height="64" rx="7" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="250" y="198" font-size="11.5" fill="#a4701c" text-anchor="middle" font-weight="600">MockMvc</text>
+  <text x="250" y="216" font-size="10" fill="#a4701c" text-anchor="middle">假请求，不走网络</text>
+
+  <line x1="322" y1="204" x2="336" y2="204" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="340" y="172" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="410" y="198" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">DispatcherServlet</text>
+  <text x="410" y="216" font-size="10" fill="#3d7cc9" text-anchor="middle">真实</text>
+
+  <line x1="482" y1="204" x2="496" y2="204" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="500" y="172" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="570" y="198" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">OrderController</text>
+  <text x="570" y="216" font-size="10" fill="#3d7cc9" text-anchor="middle">真实，含参数绑定与校验</text>
+
+  <line x1="642" y1="204" x2="656" y2="204" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="660" y="172" width="140" height="64" rx="7" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="730" y="198" font-size="11.5" fill="#a4701c" text-anchor="middle" font-weight="600">OrderService</text>
+  <text x="730" y="216" font-size="10" fill="#a4701c" text-anchor="middle">@MockitoBean</text>
+
+  <line x1="802" y1="204" x2="816" y2="204" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="820" y="172" width="140" height="64" rx="7" fill="#f7f8fa" stroke="#d7dce3" stroke-dasharray="4 3"/>
+  <text x="890" y="198" font-size="11.5" fill="#a0a7b2" text-anchor="middle">InventoryClient</text>
+  <text x="890" y="216" font-size="10" fill="#b6bcc6" text-anchor="middle">被 Service 挡住，用不到</text>
+
+  <!-- 行 3：集成测试 -->
+  <text x="40" y="280" font-size="13" font-weight="600" fill="#1f2329">集成测试</text>
+  <text x="40" y="300" font-size="10.5" fill="#6b7280">3 个 · 三五秒</text>
+
+  <rect x="180" y="256" width="140" height="64" rx="7" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="250" y="282" font-size="11.5" fill="#a4701c" text-anchor="middle" font-weight="600">MockMvc</text>
+  <text x="250" y="300" font-size="10" fill="#a4701c" text-anchor="middle">假请求，不走网络</text>
+
+  <line x1="322" y1="288" x2="336" y2="288" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="340" y="256" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="410" y="282" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">DispatcherServlet</text>
+  <text x="410" y="300" font-size="10" fill="#3d7cc9" text-anchor="middle">真实</text>
+
+  <line x1="482" y1="288" x2="496" y2="288" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="500" y="256" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="570" y="282" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">OrderController</text>
+  <text x="570" y="300" font-size="10" fill="#3d7cc9" text-anchor="middle">真实</text>
+
+  <line x1="642" y1="288" x2="656" y2="288" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="660" y="256" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="730" y="282" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">OrderService</text>
+  <text x="730" y="300" font-size="10" fill="#3d7cc9" text-anchor="middle">真实的 Bean</text>
+
+  <line x1="802" y1="288" x2="816" y2="288" stroke="#c7d2de" stroke-width="1.2"/>
+
+  <rect x="820" y="256" width="140" height="64" rx="7" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="890" y="282" font-size="11.5" fill="#0b63c5" text-anchor="middle" font-weight="600">InventoryClient</text>
+  <text x="890" y="300" font-size="10" fill="#3d7cc9" text-anchor="middle">真实的默认实现</text>
+
+  <line x1="40" y1="348" x2="960" y2="348" stroke="#e6e9ee"/>
+
+  <text x="40" y="374" font-size="12" fill="#1f2329">三种测试的差别不在“测得全不全”，而在“哪一层被换成假的”。</text>
+  <text x="40" y="396" font-size="12" fill="#6b7280">假的越少，越接近真实运行，跑得越慢；失败时能定位到的原因也越靠外——从“这条分支算错了”变成“这个 Bean 没装配上”。</text>
+</svg>
