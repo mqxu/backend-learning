@@ -857,7 +857,7 @@ mvn -pl 03-logging spring-boot:run
 
 ### 12.2 日志输出与 traceId
 
-![日志级别与 traceId 实测](./public/shots/03-logging-output.png)
+![日志级别与 traceId 实测](./public/shots/03-logging-output.webp)
 
 页面顶部是真实的应用控制台输出，对照着看四件事：
 
@@ -879,7 +879,7 @@ mvn -pl 03-logging spring-boot:run
 
 ### 12.3 脱敏与异常
 
-![脱敏与异常日志实测](./public/shots/03-logging-mask.png)
+![脱敏与异常日志实测](./public/shots/03-logging-mask.webp)
 
 `/logging/mask` 返回的是脱敏后的四个值：`138****5678`、`320102********1234`、`z*******@qq.com`、`张*`。日志里写进去的也是这些，原文只存在于请求参数里。
 

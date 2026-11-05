@@ -1174,7 +1174,7 @@ mvn -pl 04-web spring-boot:run
 
 ### 10.2 统一响应与分页
 
-![统一响应与 CRUD 实测](./public/shots/04-web-crud.png)
+![统一响应与 CRUD 实测](./public/shots/04-web-crud.webp)
 
 五个接口串成一个完整流程：
 
@@ -1188,7 +1188,7 @@ mvn -pl 04-web spring-boot:run
 
 ### 10.3 异常处理
 
-![异常处理实测](./public/shots/04-web-errors.png)
+![异常处理实测](./public/shots/04-web-errors.webp)
 
 四条错误各自走到了对应的处理器：
 
@@ -1203,7 +1203,7 @@ mvn -pl 04-web spring-boot:run
 
 ### 10.4 过滤器
 
-![过滤器实测](./public/shots/04-web-filter.png)
+![过滤器实测](./public/shots/04-web-filter.webp)
 
 - 4.10 没带密钥，返回 401，响应体是过滤器手写的 JSON（不是 `Result` 对象）
 - 4.11 带上 `X-Api-Key: demo-key` 后放行
@@ -1214,7 +1214,7 @@ mvn -pl 04-web spring-boot:run
 
 ### 10.5 拦截器与监听器
 
-![拦截器与监听器实测](./public/shots/04-web-interceptor.png)
+![拦截器与监听器实测](./public/shots/04-web-interceptor.webp)
 
 顶部控制台的日志顺序清晰地展示了回调时机：
 

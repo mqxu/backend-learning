@@ -947,7 +947,7 @@ java -jar 01-quickstart/target/01-quickstart-0.0.1-SNAPSHOT.jar
 
 ### 9.3 基础响应
 
-![基础响应接口实测](./public/shots/01-quickstart-basic.png)
+![基础响应接口实测](./public/shots/01-quickstart-basic.webp)
 
 这张图是脚本真实跑出来的：启动服务、发请求、把请求命令和响应原样记录下来。
 
@@ -958,7 +958,7 @@ java -jar 01-quickstart/target/01-quickstart-0.0.1-SNAPSHOT.jar
 
 ### 9.4 参数与状态码
 
-![参数绑定接口实测](./public/shots/01-quickstart-params.png)
+![参数绑定接口实测](./public/shots/01-quickstart-params.webp)
 
 六个请求连起来看：
 

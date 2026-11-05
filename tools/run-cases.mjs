@@ -7,7 +7,7 @@
  *   node tools/run-cases.mjs 01-quickstart --keep     # 跑完不杀进程
  *
  * 用例定义在 tools/cases/<module>.json，一份定义同时产出三样东西：
- *   docs/public/shots/<module>-<group>.png   接口运行截图
+ *   docs/public/shots/<module>-<group>.webp  接口运行截图（无损 WebP）
  *   docs/apifox/<module>.openapi.json        OpenAPI 3.0 描述
  *   tools/out/<module>.report.json           原始请求响应记录
  */
@@ -657,7 +657,7 @@ try {
     const slug = spec.groupSlug?.[g] ?? String(i + 1);
     const htmlPath = path.join(OUT_RAW, `${SLUG}-${slug}.html`);
     writeFileSync(htmlPath, html);
-    const png = path.join(OUT_SHOTS, `${SLUG}-${slug}.png`);
+    const png = path.join(OUT_SHOTS, `${SLUG}-${slug}.webp`);
     const size = await screenshot(htmlPath, png);
     log(`  图 ${path.relative(ROOT, png)}  ${size.width}×${size.height}`);
   }

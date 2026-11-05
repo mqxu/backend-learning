@@ -1129,7 +1129,7 @@ mvn -pl 05-mybatis spring-boot:run
 
 ### 15.2 增删改查
 
-![增删改查实测](./public/shots/05-mybatis-crud.png)
+![增删改查实测](./public/shots/05-mybatis-crud.webp)
 
 对照着看四件事：
 
@@ -1140,7 +1140,7 @@ mvn -pl 05-mybatis spring-boot:run
 
 ### 15.3 条件查询与统计
 
-![条件查询与统计实测](./public/shots/05-mybatis-query.png)
+![条件查询与统计实测](./public/shots/05-mybatis-query.webp)
 
 - 分页返回 `records` / `total` / `size` / `current` / `pages`，`total` 是**过滤后的总数**
 - 关键词 `张` 命中 `zhangsan`，`and` 嵌套结构生效
@@ -1149,7 +1149,7 @@ mvn -pl 05-mybatis spring-boot:run
 
 ### 15.4 多表与分页
 
-![多表查询实测](./public/shots/05-mybatis-join.png)
+![多表查询实测](./public/shots/05-mybatis-join.webp)
 
 三表 join 出来的成绩单字段是驼峰的（`studentName`、`courseName`），因为 `@Select` 里写了别名。
 
@@ -1157,7 +1157,7 @@ mvn -pl 05-mybatis spring-boot:run
 
 ### 15.5 事务与库存
 
-![事务与库存实测](./public/shots/05-mybatis-tx.png)
+![事务与库存实测](./public/shots/05-mybatis-tx.webp)
 
 这组最能说明事务的价值：
 

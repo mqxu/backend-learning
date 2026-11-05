@@ -1,6 +1,9 @@
 /**
- * 用 Chrome DevTools Protocol 把本地 HTML 整页截成 PNG。
+ * 用 Chrome DevTools Protocol 把本地 HTML 整页截成图片。
  * 只依赖 node 内置 fetch / WebSocket，不引入 puppeteer。
+ *
+ * 传 .png 就直接落 PNG；传 .webp 时先截 PNG 再用 cwebp 转无损 WebP，
+ * 体积约为 PNG 的三分之一，像素完全一致（界面截图里的文字不能有损）。
  */
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -128,8 +131,25 @@ export async function screenshot(htmlPath, pngPath, opts = {}) {
         clip: { x: 0, y: 0, width: w, height, scale },
       });
 
-      const { writeFileSync } = await import('node:fs');
-      writeFileSync(pngPath, Buffer.from(shot.data, 'base64'));
+      const { writeFileSync, unlinkSync } = await import('node:fs');
+      const buffer = Buffer.from(shot.data, 'base64');
+      if (pngPath.endsWith('.webp')) {
+        // Chrome 只能截 PNG/JPEG，转 WebP 交给 cwebp。
+        // 用无损编码：界面截图里的文字不能有损，否则细笔画会糊
+        const tmp = `${pngPath}.tmp.png`;
+        writeFileSync(tmp, buffer);
+        try {
+          await new Promise((resolve, reject) => {
+            const encoder = spawn('cwebp', ['-quiet', '-lossless', '-m', '6', '-metadata', 'none', tmp, '-o', pngPath]);
+            encoder.on('error', () => reject(new Error('找不到 cwebp，先执行 brew install webp')));
+            encoder.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`cwebp 退出码 ${code}`))));
+          });
+        } finally {
+          unlinkSync(tmp);
+        }
+      } else {
+        writeFileSync(pngPath, buffer);
+      }
       return { width: w, height };
     } finally {
       cdp.close();

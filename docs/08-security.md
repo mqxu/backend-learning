@@ -54,9 +54,9 @@ curl "http://127.0.0.1:8008/api/admin/dashboard" -H "Authorization: Bearer $TOKE
 
 | 组 | 覆盖 | 截图 |
 | --- | --- | --- |
-| 登录与鉴权 | 密码登录、token、匿名访问、账号禁用与锁定 | `08-security-auth.png` |
-| 角色与权限 | hasRole、hasAnyRole、hasAllRoles、hasAuthority | `08-security-rbac.png` |
-| 短信登录与分阶段 | 短信验证码换 token、stage1/2 的路径规则 | `08-security-stage.png` |
+| 登录与鉴权 | 密码登录、token、匿名访问、账号禁用与锁定 | `08-security-auth.webp` |
+| 角色与权限 | hasRole、hasAnyRole、hasAllRoles、hasAuthority | `08-security-rbac.webp` |
+| 短信登录与分阶段 | 短信验证码换 token、stage1/2 的路径规则 | `08-security-stage.webp` |
 
 ### 这一节的路线
 
@@ -901,7 +901,7 @@ curl "http://127.0.0.1:8008/api/hello"
 curl "http://127.0.0.1:8008/api/hello" -H "Authorization: Bearer $TOKEN"
 ```
 
-![登录、匿名 401、带 token 访问、密码错误、账号禁用与锁定](./public/shots/08-security-auth.png)
+![登录、匿名 401、带 token 访问、密码错误、账号禁用与锁定](./public/shots/08-security-auth.webp)
 
 图里有八个请求，几种失败各自的样子：
 
@@ -931,7 +931,7 @@ curl "http://127.0.0.1:8008/stage3/audit/logs" -H "Authorization: Basic $(echo -
 curl -X DELETE "http://127.0.0.1:8008/api/articles/1001" -H "Authorization: Bearer $ALICE_TOKEN"
 ```
 
-![角色、hasAllRoles、hasAnyRole、权限点的放行与拒绝](./public/shots/08-security-rbac.png)
+![角色、hasAllRoles、hasAnyRole、权限点的放行与拒绝](./public/shots/08-security-rbac.webp)
 
 四个结论：
 
@@ -963,7 +963,7 @@ curl "http://127.0.0.1:8008/stage1/hello"
 curl "http://127.0.0.1:8008/stage1/hello" -H "Authorization: Basic $(echo -n alice:123456 | base64)"
 ```
 
-![短信登录与 stage1 / stage2 的路径规则](./public/shots/08-security-stage.png)
+![短信登录与 stage1 / stage2 的路径规则](./public/shots/08-security-stage.webp)
 
 `stage2` 的第一个请求 200，第二个 401——同一个路径，方法不同，规则不同。`stage1` 那两个请求证明 Basic 认证可用。
 

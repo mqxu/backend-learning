@@ -7,11 +7,11 @@
 
 学生看到的是自己的提交和分数：
 
-![学生视角](./public/shots/15-cases-task-commit-student.png)
+![学生视角](./public/shots/15-cases-task-commit-student.webp)
 
 教师看到的是全部提交，可以打分写评语：
 
-![教师视角](./public/shots/15-cases-task-commit-teacher.png)
+![教师视角](./public/shots/15-cases-task-commit-teacher.webp)
 
 三条命令跑起来：
 
@@ -104,6 +104,10 @@ public enum Role {
 
 ## 4. 第一关：认证
 
+登录换到令牌之后，`/auth/me` 就能返回身份；同一个接口在带令牌前后是两个结果。这一组请求覆盖了整条认证链路：
+
+![登录与令牌](./public/shots/15-cases-task-commit-auth.webp)
+
 ### 4.1 过滤器链
 
 ```java
@@ -193,6 +197,10 @@ private void authenticate(HttpServletRequest request, String token) {
 代价是每个请求多一次数据库查询。真要优化，可以加一层短 TTL 的缓存（比如 60 秒），而不是把角色塞进 token。
 
 ## 5. 第二关：授权
+
+同一批接口换个角色，结果就不同：学生调 `/admin/users` 拿到 403，管理员拿到 200。这不是两个接口，是同一份代码的两个结果。
+
+![管理端与越权](./public/shots/15-cases-task-commit-admin.webp)
 
 ### 5.1 URL 级与方法级
 
@@ -369,6 +377,10 @@ spring:
 `mode: always` 意味着**每次启动都会删表重建**。这在教学环境里是优点（每次都是干净数据），在生产环境是灾难。上线前必须改成 `never`。
 
 ## 9. 接口一览
+
+免认证的 `/public/ping` 与未登录访问受保护接口，是这张表里最容易验证的两行：
+
+![免认证与 401](./public/shots/15-cases-task-commit-public.webp)
 
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |

@@ -52,9 +52,9 @@ curl "http://127.0.0.1:8007/schedule/tasks/records?limit=12"
 
 | 组 | 路径 | 内容 | 截图 |
 | --- | --- | --- | --- |
-| 周期任务 | `/schedule/tasks`、`/schedule/tasks/records` | 三类任务的执行统计与明细 | `07-schedule-periodic.png` |
-| 动态任务 | `/schedule/tasks/dynamic` | 运行期注册、查看、取消 | `07-schedule-dynamic.png` |
-| 外部任务 | `/schedule/weather` | 取天气、发邮件 | `07-schedule-weather.png` |
+| 周期任务 | `/schedule/tasks`、`/schedule/tasks/records` | 三类任务的执行统计与明细 | `07-schedule-periodic.webp` |
+| 动态任务 | `/schedule/tasks/dynamic` | 运行期注册、查看、取消 | `07-schedule-dynamic.webp` |
+| 外部任务 | `/schedule/weather` | 取天气、发邮件 | `07-schedule-weather.webp` |
 
 ### 这一节的路线
 
@@ -638,7 +638,7 @@ curl "http://127.0.0.1:8007/schedule/tasks"
 curl "http://127.0.0.1:8007/schedule/tasks/records?limit=12"
 ```
 
-![三类周期任务的执行统计与记录](./public/shots/07-schedule-periodic.png)
+![三类周期任务的执行统计与记录](./public/shots/07-schedule-periodic.webp)
 
 截图里能读出三件事：
 
@@ -664,7 +664,7 @@ curl -X DELETE "http://127.0.0.1:8007/schedule/tasks/dynamic/dynamicReport"
 curl -X DELETE "http://127.0.0.1:8007/schedule/tasks/dynamic/dynamicReport"
 ```
 
-![动态任务的注册、执行与取消](./public/shots/07-schedule-dynamic.png)
+![动态任务的注册、执行与取消](./public/shots/07-schedule-dynamic.webp)
 
 四个响应串起来看：
 
@@ -693,7 +693,7 @@ curl "http://127.0.0.1:8007/schedule/weather"
 curl -X POST "http://127.0.0.1:8007/schedule/weather/send"
 ```
 
-![天气查询与邮件发送](./public/shots/07-schedule-weather.png)
+![天气查询与邮件发送](./public/shots/07-schedule-weather.webp)
 
 查询返回：
 

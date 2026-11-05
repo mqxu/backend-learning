@@ -75,8 +75,8 @@ business_orders_failed_total{application="12-应用监控",reason="stock_empty"}
 
 | 组 | 覆盖 | 截图 |
 | --- | --- | --- |
-| 业务打点 | 三次下单、一次慢请求、两次失败 | `12-actuator-business.png` |
-| 监控端点 | 健康检查、info、指标清单、单指标、Prometheus | `12-actuator-endpoint.png` |
+| 业务打点 | 三次下单、一次慢请求、两次失败 | `12-actuator-business.webp` |
+| 监控端点 | 健康检查、info、指标清单、单指标、Prometheus | `12-actuator-endpoint.webp` |
 
 ### 这一节的路线
 
@@ -693,7 +693,7 @@ curl "http://127.0.0.1:8012/business/fail?reason=stock_empty"
 curl "http://127.0.0.1:8012/business/fail?reason=pay_timeout"
 ```
 
-![业务打点实测](./public/shots/12-actuator-business.png)
+![业务打点实测](./public/shots/12-actuator-business.webp)
 
 返回体里的 `costMs` 是第一单 7 毫秒、后面两单 0 毫秒——第一次请求包含了 JIT 预热和连接初始化的开销。这个数字不影响指标，只是说明为什么"第一次总是慢"。
 
@@ -701,7 +701,7 @@ curl "http://127.0.0.1:8012/business/fail?reason=pay_timeout"
 
 这一组端点对应下面这张实测截图，包含健康检查、info、指标清单、单个指标与 Prometheus 输出：
 
-![监控端点实测](./public/shots/12-actuator-endpoint.png)
+![监控端点实测](./public/shots/12-actuator-endpoint.webp)
 
 正常启动时 `UP`，HTTP 200。想看到 DOWN，用命令行参数覆盖配置：
 

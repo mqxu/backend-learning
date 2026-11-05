@@ -43,7 +43,7 @@ open 11-test/target/site/jacoco/index.html
 
 把测试结果和覆盖率画在一起是这样的：
 
-![测试执行结果](./public/shots/11-test-report.png)
+![测试执行结果](./public/shots/11-test-report.webp)
 
 五张卡片：28 个用例、全部通过、0 失败、行覆盖 94.5%、分支覆盖 88.9%。这些数字全部来自 surefire 与 JaCoCo 的真实输出，没有一个是估的。
 
@@ -51,8 +51,8 @@ open 11-test/target/site/jacoco/index.html
 
 | 组 | 覆盖 | 截图 |
 | --- | --- | --- |
-| 试算接口 | 普通用户、金卡、快捷试算、模块信息 | `11-test-calc.png` |
-| 异常分支 | 金额非法、缺字段、库存不足、JSON 格式错 | `11-test-errors.png` |
+| 试算接口 | 普通用户、金卡、快捷试算、模块信息 | `11-test-calc.webp` |
+| 异常分支 | 金额非法、缺字段、库存不足、JSON 格式错 | `11-test-errors.webp` |
 
 ### 这一节的路线
 
@@ -1694,7 +1694,7 @@ mvn -pl 11-test spring-boot:run
 
 三个正常请求：
 
-![试算接口实测](./public/shots/11-test-calc.png)
+![试算接口实测](./public/shots/11-test-calc.webp)
 
 | # | 请求 | 返回 |
 | --- | --- | --- |
@@ -1707,7 +1707,7 @@ mvn -pl 11-test spring-boot:run
 
 四个失败请求：
 
-![异常分支实测](./public/shots/11-test-errors.png)
+![异常分支实测](./public/shots/11-test-errors.webp)
 
 | # | 请求 | HTTP | 业务码 | message |
 | --- | --- | --- | --- | --- |

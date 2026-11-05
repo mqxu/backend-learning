@@ -56,9 +56,9 @@ curl -X DELETE "http://127.0.0.1:8009/file/docs/2026/11/04/bdab85345f114969ad739
 
 | 组 | 覆盖 | 截图 |
 | --- | --- | --- |
-| 上传 | 单文件、图片、批量 | `09-file-upload.png` |
-| 校验 | 扩展名、文件头、路径穿越 | `09-file-validate.png` |
-| 下载与删除 | 存储配置、下载、预览、取地址、删除 | `09-file-download.png` |
+| 上传 | 单文件、图片、批量 | `09-file-upload.webp` |
+| 校验 | 扩展名、文件头、路径穿越 | `09-file-validate.webp` |
+| 下载与删除 | 存储配置、下载、预览、取地址、删除 | `09-file-download.webp` |
 
 ### 这一节的路线
 
@@ -619,7 +619,7 @@ curl -X POST "http://127.0.0.1:8009/file/upload/batch?dir=batch" \
   -F "files=@tools/fixtures/note.txt" -F "files=@tools/fixtures/readme.md"
 ```
 
-![单文件、图片与批量上传](./public/shots/09-file-upload.png)
+![单文件、图片与批量上传](./public/shots/09-file-upload.webp)
 
 批量上传的返回是一个数组，每个元素的 `objectKey` 各不相同。中途有一个不合格，前面已经写进去的会被删掉：
 
@@ -655,7 +655,7 @@ curl -X POST "http://127.0.0.1:8009/file/upload?dir=../evil" \
   -F "file=@tools/fixtures/note.txt"
 ```
 
-![三类校验失败的真实返回](./public/shots/09-file-validate.png)
+![三类校验失败的真实返回](./public/shots/09-file-validate.webp)
 
 三个返回都带上具体原因：
 
@@ -687,7 +687,7 @@ curl -X DELETE "http://127.0.0.1:8009/file/docs/2026/11/04/bdab85345f114969ad739
 curl "http://127.0.0.1:8009/file/download/docs/2026/11/04/bdab85345f114969ad739985b647dc81.txt"
 ```
 
-![存储配置、下载、预览、取地址与删除](./public/shots/09-file-download.png)
+![存储配置、下载、预览、取地址与删除](./public/shots/09-file-download.webp)
 
 删除后再下载返回：
 

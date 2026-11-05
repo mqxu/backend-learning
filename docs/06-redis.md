@@ -40,13 +40,13 @@ curl "http://127.0.0.1:8006/cache/goods/manual/1"
 
 | 组 | 路径前缀 | 解决什么 | 实测截图 |
 | --- | --- | --- | --- |
-| 缓存写法 | `/cache/goods` | 手动缓存、注解缓存、改数据后怎么让缓存失效 | `06-redis-cache.png` |
-| 缓存防护 | `/cache/goods` | 穿透、击穿、雪崩三种失效场景 | `06-redis-protect.png` |
-| 分布式锁 | `/lock` | 20 个并发扣同一件库存，怎样不超卖 | `06-redis-lock.png` |
-| 接口限流 | `/limit` | 一分钟最多 5 次，第 6 次拒绝 | `06-redis-limit.png` |
-| 数据类型 | `/redis`、`/rank` | String、Hash、List、Set、ZSet 各自的用法 | `06-redis-datatype.png` |
+| 缓存写法 | `/cache/goods` | 手动缓存、注解缓存、改数据后怎么让缓存失效 | `06-redis-cache.webp` |
+| 缓存防护 | `/cache/goods` | 穿透、击穿、雪崩三种失效场景 | `06-redis-protect.webp` |
+| 分布式锁 | `/lock` | 20 个并发扣同一件库存，怎样不超卖 | `06-redis-lock.webp` |
+| 接口限流 | `/limit` | 一分钟最多 5 次，第 6 次拒绝 | `06-redis-limit.webp` |
+| 数据类型 | `/redis`、`/rank` | String、Hash、List、Set、ZSet 各自的用法 | `06-redis-datatype.webp` |
 
-另外还有一组 `/sms` 与 `/user`，用验证码登录换 JWT，演示 Redis 存验证码的完整流程，截图在 `06-redis-auth.png`。
+另外还有一组 `/sms` 与 `/user`，用验证码登录换 JWT，演示 Redis 存验证码的完整流程，截图在 `06-redis-auth.webp`。
 
 ### 这一节的路线
 
@@ -1173,7 +1173,7 @@ curl -X POST "http://127.0.0.1:8006/sms/login" \
 
 这一步的实测截图：
 
-![验证码发送、登录、token 复用与无 token 访问](./public/shots/06-redis-auth.png)
+![验证码发送、登录、token 复用与无 token 访问](./public/shots/06-redis-auth.webp)
 
 图里有五个请求，重点看两处：
 
@@ -1190,7 +1190,7 @@ curl "http://127.0.0.1:8006/cache/goods/anno/2"
 curl "http://127.0.0.1:8006/cache/goods/anno/2"
 ```
 
-![直查库、手动缓存、注解缓存的对照](./public/shots/06-redis-cache.png)
+![直查库、手动缓存、注解缓存的对照](./public/shots/06-redis-cache.webp)
 
 看三组 `source`：
 
@@ -1230,7 +1230,7 @@ curl "http://127.0.0.1:8006/cache/goods/manual/99999"
 curl "http://127.0.0.1:8006/cache/goods/manual-mutex/3"
 ```
 
-![空值缓存与互斥重建](./public/shots/06-redis-protect.png)
+![空值缓存与互斥重建](./public/shots/06-redis-protect.webp)
 
 两次查不存在的 99999，`source` 从 `db` 变成 `cache-empty`，`costMs` 从 2.35 降到 0.55。第二次没有查库，命中的是那个 `"NULL"` 标记。
 
@@ -1251,7 +1251,7 @@ seq 20 | xargs -P 20 -I{} curl -s -X POST "http://127.0.0.1:8006/lock/buy/no-loc
 curl "http://127.0.0.1:8006/lock/stock/1"
 ```
 
-![无锁与加锁的并发对照](./public/shots/06-redis-lock.png)
+![无锁与加锁的并发对照](./public/shots/06-redis-lock.webp)
 
 无锁的结果：
 
@@ -1290,7 +1290,7 @@ curl "http://127.0.0.1:8006/limit/access?user=tao"
 }
 ```
 
-![固定窗口限流](./public/shots/06-redis-limit.png)
+![固定窗口限流](./public/shots/06-redis-limit.webp)
 
 `ttlSeconds` 一直是 60 附近，说明计数器的过期时间被正确设置了。如果这个值是 `-1`，说明过期没设上，计数器会永久累积。
 
@@ -1307,7 +1307,7 @@ curl -X POST "http://127.0.0.1:8006/rank/increase?id=3&delta=800"
 curl "http://127.0.0.1:8006/rank/top?top=5"
 ```
 
-![五种数据类型与排行榜](./public/shots/06-redis-datatype.png)
+![五种数据类型与排行榜](./public/shots/06-redis-datatype.webp)
 
 Set 那一条故意传了两个 `java`，返回的集合里只有一个，这是去重。排行榜那一条先用 `/rank/warmup` 把 10 条商品的销量灌进 ZSet，再给 3 号书加了 800 分，它的分数从 1520 变成 2320，名次从第 3 升到第 2——第 1 名的保温杯是 4300 分，还没被超过。
 

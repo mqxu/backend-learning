@@ -91,10 +91,13 @@ node tools/merge-openapi.mjs
 | 工具 | 作用 |
 | --- | --- |
 | `tools/run-cases.mjs` | 接口实跑：启动服务、发请求、出截图、出 OpenAPI |
-| `tools/shot.mjs` | 用 Chrome DevTools Protocol 把 HTML 整页截成 PNG |
+| `tools/shot.mjs` | 用 Chrome DevTools Protocol 把 HTML 整页截成 WebP（无损） |
 | `tools/shot-test.mjs` | 把 surefire 结果与 JaCoCo 覆盖率渲染成图 |
-| `tools/merge-openapi.mjs` | 合并 14 个模块的 OpenAPI，生成导入说明 |
+| `tools/merge-openapi.mjs` | 合并全部模块的 OpenAPI，生成导入说明 |
 | `tools/cases/*.json` | 每个模块的接口用例清单（综合案例在 `tools/cases/15-cases/`） |
+
+截图依赖本机装了 Chrome 与 `cwebp`（`brew install webp`）。图是 2x 分辨率渲染后转的无损 WebP，
+体积约为 PNG 的三分之一，文字不会糊。
 
 接口文档位于 [docs/apifox](docs/apifox/README.md)，可直接导入 Apifox。
 

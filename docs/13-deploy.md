@@ -72,7 +72,7 @@ backend-learning/13-deploy       1.0.0    230MB
 
 | 主题 | 文件 | 实测 |
 | --- | --- | --- |
-| 镜像与容器 | `13-deploy/Dockerfile`、`.dockerignore` | `13-deploy-info.png`、`13-deploy-health.png` |
+| 镜像与容器 | `13-deploy/Dockerfile`、`.dockerignore` | `13-deploy-info.webp`、`13-deploy-health.webp` |
 | 编排 | `13-deploy/docker-compose.yml` | `docker compose config` 校验通过 |
 | 流水线 | `.github/workflows/ci.yml` | 两段 job：编译测试 + 构建镜像冒烟 |
 
@@ -1168,11 +1168,11 @@ mvn -pl 13-deploy test
 
 ## 11. 接口实测
 
-![部署信息实测](./public/shots/13-deploy-info.png)
+![部署信息实测](./public/shots/13-deploy-info.webp)
 
 三个接口：`/deploy/hello` 返回纯文本，`/deploy/info` 返回构建与运行信息，`/deploy/pipeline` 列出五步命令。
 
-![探活实测](./public/shots/13-deploy-health.png)
+![探活实测](./public/shots/13-deploy-health.webp)
 
 三个健康端点：整体 `health` 带 `components` 与 `groups`，`liveness` 与 `readiness` 各自只返回一个 `status`。两个探针分开的好处是：启动慢的时候 readiness 是 DOWN、liveness 是 UP，编排器只摘流量不重启。
 

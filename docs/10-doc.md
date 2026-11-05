@@ -54,9 +54,9 @@ curl "http://127.0.0.1:8010/v3/api-docs" | head -40
 
 | 组 | 覆盖 | 截图 |
 | --- | --- | --- |
-| 图书接口 | 分页、条件过滤、详情、新增 | `10-doc-book.png` |
-| 校验与维护 | ISBN 重复、参数校验、分类枚举、删除 | `10-doc-rules.png` |
-| 文档元信息 | OpenAPI JSON、分组 JSON、Swagger UI、运维接口 | `10-doc-openapi.png` |
+| 图书接口 | 分页、条件过滤、详情、新增 | `10-doc-book.webp` |
+| 校验与维护 | ISBN 重复、参数校验、分类枚举、删除 | `10-doc-rules.webp` |
+| 文档元信息 | OpenAPI JSON、分组 JSON、Swagger UI、运维接口 | `10-doc-openapi.webp` |
 
 ### 这一节的路线
 
@@ -506,7 +506,7 @@ curl -X POST "http://127.0.0.1:8010/books" \
   -d '{"title":"重构：改善既有代码的设计","author":"Martin Fowler","isbn":"9787115508645","category":"TECH","price":118.00,"stock":15,"publishDate":"2019-05-01"}'
 ```
 
-![分页、过滤、详情与新增](./public/shots/10-doc-book.png)
+![分页、过滤、详情与新增](./public/shots/10-doc-book.webp)
 
 分页返回的是统一结构：
 
@@ -544,7 +544,7 @@ curl -X DELETE "http://127.0.0.1:8010/books/6"
 curl "http://127.0.0.1:8010/books/6"
 ```
 
-![ISBN 重复、参数校验、分类枚举与删除](./public/shots/10-doc-rules.png)
+![ISBN 重复、参数校验、分类枚举与删除](./public/shots/10-doc-rules.webp)
 
 三种失败的状态码分得很清楚：
 
@@ -586,7 +586,7 @@ curl "http://127.0.0.1:8010/v3/api-docs/ops"
 curl -I "http://127.0.0.1:8010/swagger-ui/index.html"
 ```
 
-![OpenAPI JSON、分组文档与 Swagger UI](./public/shots/10-doc-openapi.png)
+![OpenAPI JSON、分组文档与 Swagger UI](./public/shots/10-doc-openapi.webp)
 
 实测体积（解压后）：完整文档 15.6KB，图书分组 14.7KB。差的那 1KB 就是 `/ops/health` 那一个接口。
 

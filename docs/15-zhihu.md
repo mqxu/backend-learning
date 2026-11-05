@@ -7,11 +7,11 @@
 
 启动之后，一个匿名用户可以浏览问题列表：
 
-![问题列表与筛选](./public/shots/15-cases-zhihu-browse.png)
+![问题列表与筛选](./public/shots/15-cases-zhihu-browse.webp)
 
 登录之后可以提问、回答、投票、评论，动态流里能看到关注的人的新回答：
 
-![动态流与关注](./public/shots/15-cases-zhihu-social.png)
+![动态流与关注](./public/shots/15-cases-zhihu-social.webp)
 
 三条命令把它跑起来：
 
@@ -433,7 +433,7 @@ if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPass
 
 ## 7. 问题列表：三个容易被忽略的细节
 
-![登录与当前用户](./public/shots/15-cases-zhihu-auth.png)
+![登录与当前用户](./public/shots/15-cases-zhihu-auth.webp)
 
 ### 7.1 条件要用 and 包住
 
@@ -535,7 +535,7 @@ private List<QuestionVO> toVOs(List<Question> questions) {
 
 ## 8. 回答：事务与计数
 
-![发布与修改问题](./public/shots/15-cases-zhihu-question.png)
+![发布与修改问题](./public/shots/15-cases-zhihu-question.webp)
 
 ### 8.1 事务边界
 
@@ -612,7 +612,7 @@ public AnswerVO accept(Long answerId) {
 
 ## 9. 互动：投票、评论、关注、动态流
 
-![回答、投票、评论](./public/shots/15-cases-zhihu-answer.png)
+![回答、投票、评论](./public/shots/15-cases-zhihu-answer.webp)
 
 ### 9.1 投票的三种分支
 

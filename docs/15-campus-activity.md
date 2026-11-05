@@ -7,15 +7,15 @@
 
 学生打开小程序，看到的是活动列表：
 
-![活动列表与详情](./public/shots/15-cases-campus-activity-public.png)
+![活动列表与详情](./public/shots/15-cases-campus-activity-public.webp)
 
 登录、绑学籍、报名之后，能在「我的报名」里看到记录：
 
-![登录、绑定与报名](./public/shots/15-cases-campus-activity-app.png)
+![登录、绑定与报名](./public/shots/15-cases-campus-activity-app.webp)
 
 团委老师打开管理后台，看到的是待审核、用户和日志：
 
-![管理端](./public/shots/15-cases-campus-activity-admin.png)
+![管理端](./public/shots/15-cases-campus-activity-admin.webp)
 
 三条命令：
 
@@ -208,6 +208,10 @@ curl -X POST http://127.0.0.1:8016/api/admin/auth/login \
 两种登录签发的是同一种令牌，载荷里带角色。拦截器只负责解析，具体权限由 `@RequireLogin` 与业务判断决定。
 
 ## 5. 绑定学籍：白名单先行
+
+登录只拿到 openid，绑定之后才有学号与学院。这一步的请求与响应：
+
+![登录与绑定学籍](./public/shots/15-cases-campus-activity-app-auth.webp)
 
 ```java
 public UserVO bind(Long userId, BindRequest request) {

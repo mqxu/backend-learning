@@ -993,7 +993,7 @@ java -jar 02-config/target/02-config-0.0.1-SNAPSHOT.jar --spring.profiles.active
 
 ### 10.2 取值与绑定
 
-![配置取值与绑定实测](./public/shots/02-config-binding.png)
+![配置取值与绑定实测](./public/shots/02-config-binding.webp)
 
 五个接口连着看：
 
@@ -1009,7 +1009,7 @@ java -jar 02-config/target/02-config-0.0.1-SNAPSHOT.jar --spring.profiles.active
 
 ### 10.3 多环境与优先级
 
-![多环境与配置优先级实测](./public/shots/02-config-profiles.png)
+![多环境与配置优先级实测](./public/shots/02-config-profiles.webp)
 
 `/config/profiles` 返回 `activeProfiles` 是 `["dev"]`，`envService` 是 dev 的实现。
 

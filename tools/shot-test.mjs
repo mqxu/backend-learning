@@ -188,7 +188,7 @@ const html = `<!doctype html>
 
 const outHtml = path.join(ROOT, 'tools/out', `${MODULE}-test-report.html`);
 writeFileSync(outHtml, html);
-const png = path.join(ROOT, 'docs/public/shots', `${MODULE}-report.png`);
+const png = path.join(ROOT, 'docs/public/shots', `${MODULE}-report.webp`);
 const size = await screenshot(outHtml, png);
-console.log(`图 docs/public/shots/${MODULE}-report.png  ${size.width}×${size.height}`);
+console.log(`图 docs/public/shots/${MODULE}-report.webp  ${size.width}×${size.height}`);
 console.log(`用例 ${total.tests}，失败 ${total.failures + total.errors}，行覆盖 ${pct(sum('lineCovered'), lineTotal)}`);

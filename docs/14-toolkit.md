@@ -49,12 +49,12 @@ curl -X POST "http://127.0.0.1:8014/toolkit/short-link" \
 
 | 组 | 覆盖 | 截图 |
 | --- | --- | --- |
-| 验证码 | 字符验证码、算术验证码、校验失败 | `14-toolkit-captcha.png` |
-| 文本处理 | 结构化信息提取、敏感词检测与替换 | `14-toolkit-text.png` |
-| 短链 | 生成、统计、302 跳转 | `14-toolkit-shortlink.png` |
-| 数据脱敏 | 明文入库、客服视角、管理员视角、密码校验 | `14-toolkit-sensitive.png` |
-| 分片上传 | 初始化、上传、查状态、合并、缺片拒绝 | `14-toolkit-chunk.png` |
-| 导出与巡检 | Excel 导出、模板下载、接口巡检、系统信息 | `14-toolkit-export.png` |
+| 验证码 | 字符验证码、算术验证码、校验失败 | `14-toolkit-captcha.webp` |
+| 文本处理 | 结构化信息提取、敏感词检测与替换 | `14-toolkit-text.webp` |
+| 短链 | 生成、统计、302 跳转 | `14-toolkit-shortlink.webp` |
+| 数据脱敏 | 明文入库、客服视角、管理员视角、密码校验 | `14-toolkit-sensitive.webp` |
+| 分片上传 | 初始化、上传、查状态、合并、缺片拒绝 | `14-toolkit-chunk.webp` |
+| 导出与巡检 | Excel 导出、模板下载、接口巡检、系统信息 | `14-toolkit-export.webp` |
 
 ### 这一节的路线
 
@@ -442,7 +442,7 @@ private String debugAnswer(String style, AbstractCaptcha captcha) {
 
 ### 3.4 实测
 
-![验证码实测](./public/shots/14-toolkit-captcha.png)
+![验证码实测](./public/shots/14-toolkit-captcha.webp)
 
 三组：字符验证码（`image` 是几千字符的 Base64）、校验失败（返回"还可尝试 2 次"）、算术验证码（`code` 是算好的数字）。
 
@@ -570,7 +570,7 @@ public SensitiveResult filter(String text) {
 
 ### 4.4 实测
 
-![文本处理实测](./public/shots/14-toolkit-text.png)
+![文本处理实测](./public/shots/14-toolkit-text.webp)
 
 提取那条：原文里五个字段全部被找出并打码，`phones`、`emails`、`urls`、`idCards` 各自成数组。注意 `ips` 是空的——输入里没有 IP。
 
@@ -638,7 +638,7 @@ public String resolve(String code) {
 
 ### 5.4 实测
 
-![短链实测](./public/shots/14-toolkit-shortlink.png)
+![短链实测](./public/shots/14-toolkit-shortlink.webp)
 
 三组：生成（返回 `code`、`shortUrl`、原 `url`、过期时间戳）、统计（`clicks` 是 0，因为统计请求在跳转之前）、跳转（302，响应体为空）。
 
@@ -852,7 +852,7 @@ public boolean verifyPassword(String id, String rawPassword) {
 
 ### 7.4 实测
 
-![数据脱敏实测](./public/shots/14-toolkit-sensitive.png)
+![数据脱敏实测](./public/shots/14-toolkit-sensitive.webp)
 
 四组：新增客户（返回明文，因为创建者是管理员）、客服查看（`139****1111`、`320102********1239`）、管理员查看（完整值）、密码校验（`true`）。
 
@@ -966,7 +966,7 @@ private String safeName(String fileName) {
 
 ### 8.6 实测
 
-![分片上传实测](./public/shots/14-toolkit-chunk.png)
+![分片上传实测](./public/shots/14-toolkit-chunk.webp)
 
 七组：初始化（`totalChunks: 1`，因为测试文件只有 68 字节）、上传分片、查状态（`uploaded: [0]`、`missing: []`）、合并（返回 `md5` 与下载地址）、另开一个两片的上传、缺片合并被拒（400 / 41042）。
 
@@ -1035,7 +1035,7 @@ return new ImportResult(total, success, errors.size(), errors, errorFileUrl);
 
 ### 9.3 实测
 
-![导出与巡检实测](./public/shots/14-toolkit-export.png)
+![导出与巡检实测](./public/shots/14-toolkit-export.webp)
 
 Excel 导出和模板下载返回的是二进制，截图里显示成乱码（`PK` 开头，那是 zip 的文件头，`.xlsx` 本质是一个 zip 包）。这是正常的——用 `curl -O` 存成文件再用 Excel 打开就正常了。
 
