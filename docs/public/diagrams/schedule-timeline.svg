@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" width="1000" height="460" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="tick" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+      <path d="M0,0 L8,0 L4,7 Z" fill="#9aa4b2"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="460" fill="#f7f8fa"/>
+
+  <!-- ============ fixedRate ============ -->
+  <text x="40" y="38" font-size="14" font-weight="600" fill="#0b63c5">fixedRate = 3000：从“开始”算周期</text>
+  <text x="40" y="60" font-size="11" fill="#8b95a5">任务耗时 1200ms，下一次开始 = 上一次开始 + 3000</text>
+
+  <!-- 轨道 -->
+  <line x1="80" y1="150" x2="940" y2="150" stroke="#d7dce3" stroke-width="1"/>
+
+  <!-- 任务块 -->
+  <rect x="80" y="86" width="108" height="64" rx="6" fill="#dbeafe" stroke="#0b63c5"/>
+  <text x="134" y="112" font-size="12" fill="#0b4a8f" text-anchor="middle">执行</text>
+  <text x="134" y="132" font-size="10" fill="#3b6ea5" text-anchor="middle">1200ms</text>
+
+  <rect x="349" y="86" width="108" height="64" rx="6" fill="#dbeafe" stroke="#0b63c5"/>
+  <text x="403" y="112" font-size="12" fill="#0b4a8f" text-anchor="middle">执行</text>
+  <text x="403" y="132" font-size="10" fill="#3b6ea5" text-anchor="middle">1200ms</text>
+
+  <rect x="618" y="86" width="108" height="64" rx="6" fill="#dbeafe" stroke="#0b63c5"/>
+  <text x="672" y="112" font-size="12" fill="#0b4a8f" text-anchor="middle">执行</text>
+  <text x="672" y="132" font-size="10" fill="#3b6ea5" text-anchor="middle">1200ms</text>
+
+  <!-- 间隔标注：开始到开始 -->
+  <line x1="80" y1="76" x2="349" y2="76" stroke="#0b63c5" stroke-width="1.2" marker-end="url(#tick)" stroke-dasharray="4 3"/>
+  <text x="214" y="70" font-size="10" fill="#0b63c5" text-anchor="middle">开始到开始 3000</text>
+
+  <line x1="349" y1="76" x2="618" y2="76" stroke="#0b63c5" stroke-width="1.2" marker-end="url(#tick)" stroke-dasharray="4 3"/>
+  <text x="483" y="70" font-size="10" fill="#0b63c5" text-anchor="middle">开始到开始 3000</text>
+
+  <text x="268" y="172" font-size="10" fill="#8b95a5" text-anchor="middle">执行结束后到下次开始之间空闲 1800</text>
+
+  <!-- ============ fixedDelay ============ -->
+  <text x="40" y="232" font-size="14" font-weight="600" fill="#0f766e">fixedDelay = 3000：从“结束”算周期</text>
+  <text x="40" y="254" font-size="11" fill="#8b95a5">任务耗时 1200ms，下一次开始 = 上一次结束 + 3000</text>
+
+  <line x1="80" y1="344" x2="940" y2="344" stroke="#d7dce3" stroke-width="1"/>
+
+  <rect x="80" y="280" width="108" height="64" rx="6" fill="#d1fae5" stroke="#0f766e"/>
+  <text x="134" y="306" font-size="12" fill="#115e59" text-anchor="middle">执行</text>
+  <text x="134" y="326" font-size="10" fill="#2f7d75" text-anchor="middle">1200ms</text>
+
+  <rect x="456" y="280" width="108" height="64" rx="6" fill="#d1fae5" stroke="#0f766e"/>
+  <text x="510" y="306" font-size="12" fill="#115e59" text-anchor="middle">执行</text>
+  <text x="510" y="326" font-size="10" fill="#2f7d75" text-anchor="middle">1200ms</text>
+
+  <rect x="832" y="280" width="108" height="64" rx="6" fill="#d1fae5" stroke="#0f766e"/>
+  <text x="886" y="306" font-size="12" fill="#115e59" text-anchor="middle">执行</text>
+  <text x="886" y="326" font-size="10" fill="#2f7d75" text-anchor="middle">1200ms</text>
+
+  <!-- 等待标注 -->
+  <line x1="188" y1="312" x2="456" y2="312" stroke="#0f766e" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#tick)"/>
+  <text x="322" y="306" font-size="10" fill="#0f766e" text-anchor="middle">等待 3000</text>
+
+  <line x1="564" y1="312" x2="832" y2="312" stroke="#0f766e" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#tick)"/>
+  <text x="698" y="306" font-size="10" fill="#0f766e" text-anchor="middle">等待 3000</text>
+
+  <!-- 主间隔：开始到开始 -->
+  <line x1="80" y1="270" x2="456" y2="270" stroke="#0f766e" stroke-width="1.2" marker-end="url(#tick)"/>
+  <text x="268" y="264" font-size="10" fill="#0f766e" text-anchor="middle">开始到开始 = 1200 + 3000 = 4200</text>
+
+  <!-- ============ 时间轴 ============ -->
+  <line x1="80" y1="392" x2="940" y2="392" stroke="#8b95a5" stroke-width="1"/>
+  <g font-size="10" fill="#8b95a5" text-anchor="middle">
+    <line x1="80" y1="392" x2="80" y2="400" stroke="#8b95a5"/>
+    <text x="80" y="414">0</text>
+    <line x1="259" y1="392" x2="259" y2="400" stroke="#8b95a5"/>
+    <text x="259" y="414">2000</text>
+    <line x1="438" y1="392" x2="438" y2="400" stroke="#8b95a5"/>
+    <text x="438" y="414">4000</text>
+    <line x1="618" y1="392" x2="618" y2="400" stroke="#8b95a5"/>
+    <text x="618" y="414">6000</text>
+    <line x1="797" y1="392" x2="797" y2="400" stroke="#8b95a5"/>
+    <text x="797" y="414">8000</text>
+    <line x1="940" y1="392" x2="940" y2="400" stroke="#8b95a5"/>
+    <text x="940" y="414">9600 ms</text>
+  </g>
+
+  <text x="40" y="444" font-size="11" fill="#6b7280">耗时超过周期时，fixedRate 的两次执行会紧挨着甚至堆积；fixedDelay 永远不会堆积，代价是实际频率被拉低。</text>
+</svg>

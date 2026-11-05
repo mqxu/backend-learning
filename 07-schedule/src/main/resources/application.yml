@@ -1,0 +1,44 @@
+server:
+  port: 8007
+
+spring:
+  application:
+    name: 07-定时任务
+
+  # 调度线程池：默认只有 1 个线程，一个任务跑慢了会拖住其他任务
+  task:
+    scheduling:
+      pool:
+        size: 4
+      thread-name-prefix: sched-
+
+  mail:
+    host: smtp.qq.com
+    port: 587
+    # 发送方邮箱与 SMTP 授权码从环境变量注入，不要写进仓库
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+# 天气服务配置（和风天气）
+weather:
+  api:
+    key: ${WEATHER_API_KEY:}
+    city: 101190101                 # 南京的城市 ID
+    url: https://devapi.qweather.com/v7/weather/3d
+  # true 时返回内置的模拟天气数据，不调外部接口，方便本地跑通与自动化测试
+  mock: true
+  # 天气早报的执行时间，改这里不用改代码；六位：秒 分 时 日 月 周
+  cron: "0 22 9 * * ?"
+
+email:
+  # 多个收件人用逗号分隔
+  recipients: ${MAIL_TO:demo@example.com}
+  # true 时不真正发信，只打日志
+  mock: true
