@@ -80,7 +80,7 @@ mqxu:
     expire-seconds: 7200
   sms:
     # true 时不调用短信 SDK，验证码只写日志与 Redis，方便本地调试
-    mock-enabled: false
+    mock-enabled: true
     # 验证码有效期（秒）
     code-expire-seconds: 300
     # 同一个手机号两次发送的最小间隔（秒），前端倒计时用同一个数字

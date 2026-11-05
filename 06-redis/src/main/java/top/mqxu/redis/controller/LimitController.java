@@ -38,8 +38,10 @@ public class LimitController {
         String key = "limit:access:" + user + ":" + windowIndex;
 
         Long count = stringRedisTemplate.opsForValue().increment(key);
-        if (count != null && count == 1L) {
-            // 只在计数器刚建出来时设过期，之后每次自增不再刷新，保证窗口按自然时间滚动
+        // 计数器第一次建出来时才需要设过期；并发下"第一次"可能被多个请求同时判定，
+        // 所以这里补一次兜底：发现 key 没有过期时间就补上，避免计数器永久留存
+        Long ttl = stringRedisTemplate.getExpire(key);
+        if (ttl == null || ttl < 0) {
             stringRedisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
         }
 

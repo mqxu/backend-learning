@@ -1,179 +1,169 @@
-# 06 · 缓存与分布式锁 —— 用 Redis 提升性能
+# 06 · 缓存与分布式锁 —— 让读更快，让写在并发下正确
 
-> - 难度：进阶
-> - 前置模块：05-mybatis
-> - 预计时长：约 120 分钟
-> - 对应代码：[06-redis](https://github.com/mqxu/backend-learning/tree/main/06-redis)
+前面五个模块，请求每来一次就打一次库。商品详情这种读多写少的数据，这样做很浪费：同一个 id 一秒被查一千次，数据库就要执行一千次一模一样的 SELECT。
 
-## 1. 本节导读
+这一篇做两件事：把热数据放进 Redis，让大部分读请求不再碰库；在必须碰库的写路径上，用锁保证并发时不写错。
 
-上一节把数据放进了 MySQL。数据库读的是磁盘，一个稍复杂的查询加上网络往返，响应时间通常在毫秒到几十毫秒。而相当一部分请求读的是同一批数据，比如商品详情、首页分类、热门榜单，每次都去查库既慢又浪费。这一节把这些数据放进 Redis，同时处理由此带来的缓存一致性、并发和限流问题。
-
-学完本节，你将能：
-
-1. 用 `StringRedisTemplate` 与 `RedisTemplate` 操作 Redis 的五种常用数据结构；
-2. 自己写 Cache-Aside 缓存，并加上空值缓存、互斥锁、TTL 抖动三处防护；
-3. 用 Spring 缓存注解 `@Cacheable` / `@CachePut` / `@CacheEvict` 把缓存逻辑从业务代码里抽走；
-4. 用 Redisson 实现分布式锁，并知道手写 `SETNX` 锁差在哪里；
-5. 用 ZSet 做排行榜，用计数器做接口限流；
-6. 说清楚缓存穿透、击穿、雪崩分别对应代码里的哪几行。
-
-**前置知识**：完成 `05-mybatis`，会用 MyBatis-Plus 查库；了解 `@Transactional`。
-
-**本节用到的 Redis 版本**：8.2.2；Spring Boot 4.1.1 自带的 Lettuce 7.5.2；Redisson 4.8.0。
+所有代码都在 `06-redis` 模块里，接口可以直接用 curl 打。
 
 ---
 
-## 2. 概念铺垫
+## 0. 先看结果
 
-### 2.1 缓存放在哪一层
+三个命令先把项目跑起来：
 
-一次请求经过的层次越多，能加缓存的位置就越多：
+```bash
+# 1. 启动 Redis（已有 Redis 可跳过）
+docker run -d --name redis-demo -p 6379:6379 redis:7-alpine --requirepass abc123
 
+# 2. 启动模块
+mvn -pl 06-redis spring-boot:run
+
+# 3. 连续请求两次同一个商品
+curl "http://127.0.0.1:8006/cache/goods/manual/1"
+curl "http://127.0.0.1:8006/cache/goods/manual/1"
 ```
-浏览器缓存 → CDN → Nginx 缓存 → 应用层缓存（Redis / 本地 Map）→ 数据库缓存
+
+两次返回的数据一样，但第二次末尾的 `source` 从 `db` 变成了 `cache`：
+
+```json
+{
+  "data": { "id": 1, "name": "机械键盘 K87", "price": 399, "stock": 120 },
+  "source": "cache",
+  "costMs": 8.5
+}
 ```
 
-本节讲的是应用层缓存。它离业务最近，能缓存数据库查询结果，也能缓存计算结果，灵活度最高。
+`source` 是这一篇最重要的字段。它告诉你这次请求到底走了哪条路：`db` 表示真查了库，`cache` 表示直接读 Redis，`cache-empty` 表示命中了一个"这条数据不存在"的标记，`db-fallback` 表示没抢到重建锁、退回去查了库。
 
-要判断一份数据适不适合放进缓存，看两点：
+这个模块一共有五组接口，对应五件事：
 
-| 特征 | 适合缓存 | 不适合缓存 |
-| --- | --- | --- |
-| 读写比例 | 读多写少，比如商品详情 | 写多读少，比如订单流水 |
-| 一致性要求 | 允许短暂不一致，比如销量、榜单 | 必须强一致，比如余额、库存扣减结果 |
-
-第二条是初学时最容易踩的坑。把库存放进缓存、下单时改缓存不改库，看着很快，一旦缓存和库对不上，账就错了。本节里库存扣减的例子始终以数据库为准，Redis 只用来加锁，不用来存库存。
-
-### 2.2 Redis 的数据结构与适用场景
-
-Redis 不是简单的 key-value，它的 value 有明确的数据结构，用对了能省掉很多应用层的处理。
-
-| 结构 | 一句话说明 | 典型场景 | 本节接口 |
+| 组 | 路径前缀 | 解决什么 | 实测截图 |
 | --- | --- | --- | --- |
-| String | 一个 key 对应一个值，可当计数器 | 缓存对象、验证码、计数器 | `/redis/string`、`/redis/counter/incr` |
-| Hash | 一个 key 下挂多个字段 | 对象的部分字段读写、购物车 | `/redis/hash` |
-| List | 有序、可重复的队列 | 最新动态、消息队列 | `/redis/list` |
-| Set | 无序、自动去重 | 点赞去重、共同关注 | `/redis/set`、`/redis/set/intersect` |
-| ZSet | 带分数、自动按分数排序 | 排行榜、延迟队列 | `/redis/zset`、`/rank/*` |
+| 缓存写法 | `/cache/goods` | 手动缓存、注解缓存、改数据后怎么让缓存失效 | `06-redis-cache.png` |
+| 缓存防护 | `/cache/goods` | 穿透、击穿、雪崩三种失效场景 | `06-redis-protect.png` |
+| 分布式锁 | `/lock` | 20 个并发扣同一件库存，怎样不超卖 | `06-redis-lock.png` |
+| 接口限流 | `/limit` | 一分钟最多 5 次，第 6 次拒绝 | `06-redis-limit.png` |
+| 数据类型 | `/redis`、`/rank` | String、Hash、List、Set、ZSet 各自的用法 | `06-redis-datatype.png` |
 
-ZSet 值得单独说一句。要有序，常规做法是查出来后在内存里排序，数据量一大就慢。ZSet 把排序做在写入时，读的时候按分数区间直接取，取前 10 名的时间与总条数无关。
+另外还有一组 `/sms` 与 `/user`，用验证码登录换 JWT，演示 Redis 存验证码的完整流程，截图在 `06-redis-auth.png`。
 
-### 2.3 缓存的更新策略与一致性
+### 这一节的路线
 
-数据既在库里又在缓存里，改动时先动谁、后动谁，有几种常见组合：
-
-| 策略 | 做法 | 问题 |
+| 步骤 | 内容 | 对应小节 |
 | --- | --- | --- |
-| 先更新库，再更新缓存 | `update db` → `set cache` | 并发下两次更新写入缓存的顺序可能颠倒，缓存留下旧值 |
-| 先删缓存，再更新库 | `del cache` → `update db` | 删完到更新完之间若有读请求，会把旧值重新写回缓存 |
-| 先更新库，再删缓存 | `update db` → `del cache` | 出现不一致的概率最小，工业界最常用 |
-
-本节采用第三种。它并非绝对一致：极端情况下，一个读请求在库更新前读到旧值，然后被阻塞，等库更新、缓存删除之后才把旧值写回缓存。要彻底避免，需要延迟双删或订阅 binlog 更新缓存。作为教学，记住“更新库后删缓存，并且让缓存尽量短命”这两条就够了。
-
-### 2.4 缓存穿透、击穿、雪崩
-
-这三件事名字相近，成因完全不同，对策也不一样。
-
-| 问题 | 成因 | 现象 | 对策 |
-| --- | --- | --- | --- |
-| 穿透 | 反复查询一个库里也不存在的 key | 缓存永远不命中，请求全部落到数据库 | 缓存空值（本节做法）、布隆过滤器 |
-| 击穿 | 某个热点 key 到期的瞬间，大量并发同时未命中 | 数据库在很短时间里承受全部压力 | 未命中时用互斥锁只放一个请求回源 |
-| 雪崩 | 大批 key 在同一时刻集中过期 | 数据库压力在某个时间点陡增 | 过期时间加随机值，避免同时到期 |
-
-三者在代码里对应的位置：
-
-- 穿透 → `GoodsCacheService.cacheIt()` 里，查不到数据时写入 `NULL` 标记，存活 2 分钟；
-- 击穿 → `GoodsCacheService.getByIdWithMutex()` 里，未命中先用 `SETNX` 抢锁；
-- 雪崩 → `GoodsCacheService.ttlWithJitter()` 里，基础 TTL 加上 0 到 30 秒的随机值。
-
-顺带一个容易混淆的概念，缓存预热：服务刚启动时缓存是空的，所有请求都会回源。做法是在启动后主动把热点数据灌进缓存，`/rank/warmup` 就是这个思路。
-
-### 2.5 本地缓存与分布式缓存
-
-应用部署多台机器后，缓存放在哪里需要做选择：
-
-| 维度 | 本地缓存（Caffeine / Map） | 分布式缓存（Redis） |
-| --- | --- | --- |
-| 访问速度 | 纳秒级，不走网络 | 百微秒级，一次网络往返 |
-| 容量 | 受单机内存限制 | 可独立扩容 |
-| 一致性 | 各机器各自一份，改一处别的机器不知道 | 全局一份，天然一致 |
-| 适用 | 变更极少、容得下脏数据的配置类数据 | 需要共享和一致性的业务数据 |
-
-工程上常见的组合是两级缓存：Redis 兜底，本地缓存挡住最热的一小部分。代价是本地缓存那一层要额外处理失效通知，否则会出现同一份数据不同机器看到不同值。本节只讲 Redis。
-
-### 2.6 分布式锁的三个必要条件
-
-单机用 `synchronized` 就够了，多台机器时它只能锁住当前进程。Redis 是所有机器共享的，可以用它做跨机器的锁。一个能用的分布式锁必须同时满足：
-
-1. **互斥**：同一时刻只有一个持有者。
-2. **能自动释放**：持有者进程崩溃时锁不能永久留在 Redis 里，所以要给锁设过期时间。
-3. **只释放自己的锁**：A 因为业务超时导致锁自动过期，B 拿到锁开始执行，此时 A 执行完去删锁，删掉的是 B 的锁。解决办法是锁的值带上持有者标识，删除前先比对，比对与删除要在一次原子操作里完成，所以用 Lua。
-
-Redisson 的 `RLock` 把这三条都封装好了，还额外提供看门狗续期、可重入计数。自己用 `SETNX` 写，最容易漏掉的是第 3 条。
+| 1 | 想清楚缓存省掉的是什么、为什么写路径要删缓存 | 1 |
+| 2 | 装 Redis、建库、确认能连上 | 2 |
+| 3 | 建模块、配依赖 | 3 |
+| 4 | 写配置，重点是两个容易失效的参数 | 4 |
+| 5 | 建表灌数据 | 5 |
+| 6 | 写代码：Template、CacheManager、缓存、锁、限流、登录 | 6 |
+| 7 | 跑起来，逐条看真实响应 | 7 |
+| 8 | 41 个测试与九道练习 | 7.8、8 |
 
 ---
 
-## 3. 环境准备
+## 1. 先把三个问题想清楚
 
-### 3.1 安装并启动 Redis
+代码不多，但如果这三个问题没想明白，配出来的缓存大概率是错的。
 
-macOS 用 Homebrew：
+### 1.1 缓存省掉的不是时间，是数据库的活
+
+新手常把缓存理解成"让接口变快"。更准确的说法是：**把本该由数据库承担的读请求，转移给内存**。
+
+这两者的区别在于出问题时的表现。如果只是"变快"，缓存挂了顶多慢一点；而实际上一千个并发打到一个没有缓存的库上，库的连接池会先耗尽，然后整个服务不可用。所以缓存的真实价值是**削掉峰值**，让数据库只承受它扛得住的请求量。
+
+由此推出一条规矩：**缓存里的数据可以旧，但不能成为唯一来源**。数据库永远是事实来源。任何时刻把 Redis 整个清空，系统应该还能正常工作，只是慢一阵。这条规矩决定了后面所有写法的方向。
+
+### 1.2 写路径删缓存，而不是改缓存
+
+改完数据库之后，缓存怎么处理？三种做法：
+
+| 做法 | 问题 |
+| --- | --- |
+| 先删缓存，再改库 | 删完到改完之间，有请求进来会把旧值重新读进缓存，之后一直是旧值 |
+| 先改库，再改缓存 | 两个并发写，A 先改库、B 后改库，但 B 先写缓存、A 后写缓存，缓存里留下 A 的旧值 |
+| 先改库，再删缓存 | 只有极短的不一致窗口，下次读取自然回源 |
+
+第三种是 Cache Aside 的标准做法，代码里也是这么写的：
+
+```java
+public boolean updatePrice(Long id, BigDecimal price) {
+    Goods goods = new Goods();
+    goods.setId(id);
+    goods.setPrice(price);
+    boolean updated = goodsMapper.updateById(goods) > 0;
+    if (updated) {
+        evict(id);          // 只删，不写新值
+    }
+    return updated;
+}
+```
+
+"删"比"改"少一次计算，也少一次并发冲突的机会：删是一个幂等动作，谁先删谁后删结果都一样；而"改"要把新值算出来再写进去，算的过程中数据可能又变了。
+
+![Cache Aside 的读写两条路径](./public/diagrams/cache-aside.svg)
+
+### 1.3 分布式锁解决的是"多台机器"的问题
+
+`synchronized` 只在同一个 JVM 里有效。服务部署两台，两台各有一个 JVM，各自的锁互不相干，20 个请求分到两台机器上，还是会有 10 个同时进临界区。
+
+所以锁要放在一个所有实例都能看到的地方，Redis 就是最常见的选择。它的本质是一个约定：**谁能往 Redis 里写进这个 key，谁就拿到锁**。因为 Redis 的 `SET key value NX` 是原子的，二十个请求同时发，只有一个能成功。
+
+---
+
+## 2. 准备 Redis 与 MySQL
+
+### 2.1 启动 Redis
+
+用 Docker 最省事：
 
 ```bash
-brew install redis
-brew services start redis
+docker run -d --name redis-demo \
+  -p 6379:6379 \
+  redis:7-alpine \
+  --requirepass abc123
 ```
 
-或者用 Docker：
+本机已经装过 Redis 的话，确认一下版本和密码：
 
 ```bash
-docker run -d --name redis -p 6379:6379 redis:8.2 redis-server --requirepass abc123
-```
-
-本模块的配置文件里 Redis 密码是 `abc123`，与本仓库开发环境保持一致。如果用 Homebrew 安装，在 `/opt/homebrew/etc/redis.conf` 里加上：
-
-```
-requirepass abc123
-```
-
-改完重启 Redis，用下面的命令确认连通：
-
-```bash
-redis-cli --no-auth-warning -a abc123 ping
+redis-cli -a abc123 ping
 # PONG
 ```
 
-### 3.2 数据库
+`PONG` 就说明通了。如果是 `NOAUTH Authentication required`，说明密码没带上；如果是 `Connection refused`，说明服务没启动。
 
-复用 `05-mybatis` 建的库 `backend_learning`，本模块自己建一张商品表 `t_goods`，与 `05-mybatis` 的表互不影响。
+### 2.2 建库
+
+模块和 05 共用 `backend_learning` 这个库。没建过的话：
 
 ```sql
-CREATE TABLE `t_goods` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `name` varchar(100) NOT NULL COMMENT '商品名称',
-  `category` varchar(32) NOT NULL COMMENT '分类',
-  `price` decimal(10,2) NOT NULL COMMENT '价格',
-  `stock` int NOT NULL DEFAULT '0' COMMENT '库存',
-  `sales` int NOT NULL DEFAULT '0' COMMENT '销量',
-  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：1 上架，0 下架',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_category` (`category`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='商品表';
+CREATE DATABASE backend_learning DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 ```
 
-> 可以借助 AI 自行生成一些数据
+这张 `t_goods` 表由模块启动时自动创建，不用手工执行。
 
-### 3.3 依赖
+### 2.3 两个容易忽略的设置
 
-`06-redis/pom.xml` 一共引了五个依赖：
+**Redis 用单独的 db。** 配置里写的是 `database: 10`，不是默认的 0。原因是开发机上往往同时跑着别的项目，共用 db 0 时执行一次 `FLUSHDB` 会把别人的数据一起清掉。分一个 db 出来，实验怎么折腾都不影响别人。
+
+**MySQL 的 `sql.init.mode` 要写 `always`。** MySQL 不是内嵌数据库，Spring Boot 默认不会为它执行 `schema.sql`。不写这个配置，表根本不会建，启动后第一次查询就是 `Table doesn't exist`。
+
+---
+
+## 3. 创建模块
+
+### 3.1 POM
+
+`06-redis/pom.xml` 的依赖部分：
 
 ```xml
 <properties>
     <mybatis-plus.version>3.5.17</mybatis-plus.version>
     <redisson.version>4.8.0</redisson.version>
+    <cloopen.version>1.0.4</cloopen.version>
+    <jjwt.version>0.13.0</jjwt.version>
 </properties>
 
 <dependencies>
@@ -183,13 +173,13 @@ CREATE TABLE `t_goods` (
         <artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
 
-    <!-- Lettuce 的 pool 配置由 commons-pool2 提供，缺了它池参数会静默失效 -->
+    <!-- Lettuce 的连接池参数由 commons-pool2 提供，缺了它池配置会静默失效 -->
     <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-pool2</artifactId>
     </dependency>
 
-    <!-- 缓存抽象：Boot 4 把缓存自动配置拆成独立的 spring-boot-cache 模块 -->
+    <!-- 缓存抽象：Boot 4 把它拆成了独立模块，starter-data-redis 不再附带 -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-cache</artifactId>
@@ -202,7 +192,7 @@ CREATE TABLE `t_goods` (
         <version>${redisson.version}</version>
     </dependency>
 
-    <!-- 给缓存提供一个真实的数据库做对照 -->
+    <!-- 数据源，给缓存提供一个真实的数据库做对照 -->
     <dependency>
         <groupId>com.baomidou</groupId>
         <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
@@ -214,20 +204,91 @@ CREATE TABLE `t_goods` (
         <artifactId>mysql-connector-j</artifactId>
         <scope>runtime</scope>
     </dependency>
+
+    <!-- 短信 SDK，模拟模式下用不到，接真实通道时才走它 -->
+    <dependency>
+        <groupId>com.cloopen</groupId>
+        <artifactId>java-sms-sdk</artifactId>
+        <version>${cloopen.version}</version>
+    </dependency>
+
+    <!-- JWT：api 编译期用，impl 与 jackson 只在运行期需要 -->
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>${jjwt.version}</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>${jjwt.version}</version>
+        <scope>runtime</scope>
+    </dependency>
 </dependencies>
 ```
 
-三个与 Boot 4 相关的注意点：
+三个地方值得单独说：
 
-**缓存自动配置被拆出去了。** 在 Boot 3 里，`spring-boot-starter-data-redis` 会连带引入缓存自动配置，用 `@Cacheable` 不需要额外加依赖。Boot 4 把缓存自动配置挪到了独立的 `spring-boot-cache` 模块，所以要用 `@Cacheable` 必须显式加 `spring-boot-starter-cache`，否则注解不会报错，但也不会生效。配置属性的前缀仍是 `spring.cache`，没有变。
+**`spring-boot-starter-cache` 要单独引。** Boot 3 里 `starter-data-redis` 会带上缓存抽象，Boot 4 把它拆出去了。不引这个依赖，`@Cacheable` 注解能编译通过（注解在 `spring-context` 里），但运行时不生效，方法每次都会执行，而且不会报错。这种"不报错的失效"最难查。
 
-**Redisson 4.x 自带 Boot 4 的自动配置。** 从 4.x 开始，`redisson-spring-boot-starter` 里带了针对 Boot 4 的自动配置类，会自动读取 `spring.data.redis.*` 建 `RedissonClient`，不需要再手写配置类。适配的 Spring Data Redis 版本是 4.1（`redisson-spring-data-41`）。
+**`commons-pool2` 少了不会报错。** 配置里写了 `lettuce.pool.max-active: 8`，但没有这个依赖时，连接池参数会被忽略，Lettuce 退回单连接共享模式。高并发下表现是"配置没起作用"，而日志里什么提示都没有。
 
-**连接池参数需要 `commons-pool2`。** `spring.data.redis.lettuce.pool.*` 这几个参数只有类路径下存在 `commons-pool2` 时才会被采用，否则会被忽略，而且不会有任何提示。
+**Redisson 用 4.x。** 3.x 的自动配置绑的是 Boot 3 的 `RedisAutoConfiguration` 路径，在 Boot 4 上不生效，结果是 `RedissonClient` 注入失败。4.8.0 起自带 Boot 4 的自动配置。
 
-### 3.4 连接与业务参数
+### 3.2 目录结构
 
-`06-redis/src/main/resources/application.yml`：
+```
+06-redis
+├── pom.xml
+└── src
+    ├── main
+    │   ├── java/top/mqxu/redis
+    │   │   ├── RedisApplication.java
+    │   │   ├── common/          Result、ErrorCode、BusinessException、
+    │   │   │                    GlobalExceptionHandler、RedisCache、
+    │   │   │                    RedisKeys、JwtUtils、CommonUtils
+    │   │   ├── config/          RedisConfig、WebConfig、AuthInterceptor、
+    │   │   │                    DemoProperties、SmsProperties、CloopenConfig
+    │   │   ├── controller/      Cache、Lock、Limit、Rank、Redis、Sms、User
+    │   │   ├── dto/             CacheResult、LoginRequest、LoginResponse、UserInfo
+    │   │   ├── entity/          Goods
+    │   │   ├── mapper/          GoodsMapper
+    │   │   └── service/         GoodsService、GoodsCacheService、
+    │   │                        GoodsSpringCacheService、StockService、
+    │   │                        SmsService(impl)
+    │   └── resources
+    │       ├── application.yml
+    │       ├── schema.sql
+    │       └── data.sql
+    └── test/java/top/mqxu/redis
+        ├── GoodsCacheTest.java      13 个用例
+        ├── LockAndLimitTest.java    10 个用例
+        ├── RedisTypeOpsTest.java     9 个用例
+        ├── PracticeTest.java         5 个用例
+        └── HomeworkTest.java         4 个用例
+```
+
+分层的原则和前面几个模块一样：`controller` 只做参数接收和结果包装，`service` 写业务，`mapper` 只声明接口。
+
+### 3.3 先编译一次
+
+```bash
+mvn -pl 06-redis -am compile
+```
+
+`-am` 表示连同依赖的父模块一起构建。第一次会下载 Redisson 与短信 SDK，慢一些。编译通过再往下写，比写完一堆再排查依赖问题省事。
+
+---
+
+## 4. 配置
+
+### 4.1 application.yml 全文
 
 ```yaml
 server:
@@ -237,15 +298,13 @@ spring:
   application:
     name: 06-缓存与分布式锁
 
-  # Redis 连接。Redisson 也会读这里的配置来建自己的客户端
   data:
     redis:
       host: localhost
       port: 6379
       password: abc123
-      database: 0
+      database: 10
       timeout: 3s
-      # Lettuce 默认多条命令复用同一个连接，池化后按连接池取用
       lettuce:
         pool:
           max-active: 8
@@ -253,15 +312,14 @@ spring:
           min-idle: 2
           max-wait: 1s
 
-  # 缓存抽象。Boot 4 的缓存自动配置在 spring-boot-cache 模块里，属性前缀仍是 spring.cache
   cache:
     type: redis
     redis:
-      time-to-live: 10m         # 统一默认过期时间，方法上没写 TTL 时用它
-      cache-null-values: true   # 允许缓存 null，配合空值缓存防穿透
-      key-prefix: "cache:"      # 缓存 key 统一前缀，便于区分业务 key
+      time-to-live: 10m
+      cache-null-values: true
+      key-prefix: "cache:"
       use-key-prefix: true
-      enable-statistics: true   # 打开后 Redis 里能读到命中率指标
+      enable-statistics: true
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -274,7 +332,6 @@ spring:
       minimum-idle: 2
       connection-timeout: 3000
 
-  # 启动时先建表再灌数据。MySQL 是非内嵌库，必须显式写 always
   sql:
     init:
       mode: always
@@ -284,45 +341,143 @@ spring:
 
 mybatis-plus:
   configuration:
-    map-underscore-to-camel-case: true   # 驼峰映射
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印 SQL，方便观察缓存命中时是否还有查询
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     banner: false
     db-config:
       id-type: auto
       table-underline: true
 
-# 本模块业务参数，集中放一处便于调整
 demo:
   cache:
-    ttl: 10m            # 手动缓存的默认存活时间
-    null-ttl: 2m        # 空值标记的存活时间，通常比正常值短
-    jitter-seconds: 30  # TTL 随机抖动幅度，避免大批 key 同时过期
+    ttl: 10m
+    null-ttl: 2m
+    jitter-seconds: 30
   lock:
-    wait-seconds: 3     # 抢锁最长等待
-    lease-seconds: 10   # 持锁自动释放时间
+    wait-seconds: 3
+    lease-seconds: 10
   limit:
-    window-seconds: 60  # 限流窗口
-    max-requests: 5     # 窗口内允许的请求数
+    window-seconds: 60
+    max-requests: 5
+
+mqxu:
+  jwt:
+    secret: sms-login-demo-secret-key-please-replace-in-production-2026
+    expire-seconds: 7200
+  sms:
+    mock-enabled: true
+    code-expire-seconds: 300
+    send-interval-seconds: 60
+    send-daily-limit: 10
+    max-fail-count: 5
+    ccp:
+      serverIp: app.cloopen.com
+      port: 8883
+      accountSId: 你的账号
+      accountToken: 你的令牌
+      appId: 你的应用 ID
+      templateId: 1
 ```
 
-`demo.*` 这一段通过 `config/DemoProperties.java` 绑定成对象，比散落在各个类里的常量好调。
+### 4.2 逐段说明
+
+**`spring.data.redis`**：连接信息。`timeout: 3s` 是命令超时，不是连接超时。默认值是 60 秒，缓存场景下这个值太长——Redis 卡住时，线程会跟着卡一分钟，接口全部超时。设成 2 到 3 秒，快速失败再由业务降级。
+
+**`spring.cache.redis`**：注解缓存的参数。这一段的四个值，只有在**不自定义 CacheManager** 时才生效。第 6.2 节会自定义一个，所以这些值连同 `demo.cache.*` 一起在代码里又写了一遍。两处都保留是有意的：注解缓存由 `demo.cache.ttl` 控制，而 `spring.cache.*` 留给读者对照，注释里写明了哪边是生效的。
+
+**`demo.*`**：本模块自己的业务参数，用 `@ConfigurationProperties` 绑定。放在一处便于调整，也避免 `@Value` 散落在各个类里。
+
+**`mqxu.jwt.secret`**：签名密钥。真实项目里从环境变量注入，仓库里只放一个占位值。密钥长度不能少于 32 字节，`Keys.hmacShaKeyFor` 会检查。
+
+**`mqxu.sms.mock-enabled`**：`true` 时不调用短信 SDK，验证码只写日志和 Redis，接口直接把验证码返回给调用方。`false` 时会真的调用容联云并扣费，本地调试别关。
+
+### 4.3 一个参数为什么写两遍
+
+`time-to-live: 10m` 和 `demo.cache.ttl: 10m` 是同一个值。原因是 `spring.cache.redis.*` 属于 Spring Boot 的自动配置，一旦我们自己定义了 `RedisCacheManager` bean，自动配置就退让了，这一段配置便没人读。
+
+这不是 Boot 的 bug，而是"谁创建谁负责"：bean 由我们创建，参数自然由我们给。第 6.2 节的 `cacheManager` 方法里能看到 `entryTtl(properties.getCache().getTtl())`，读的就是 `demo.cache.ttl`。
 
 ---
 
-## 4. 动手实战
+## 5. 建表与初始数据
 
-### 步骤 1：序列化——不配的话，Redis 里全是乱码
+`schema.sql`：
 
-`RedisTemplate` 默认用 JDK 序列化，key 和 value 写进 Redis 之后都是二进制，用 `redis-cli` 完全看不清，跨语言也无法读取。所以第一步先把序列化换掉：
+```sql
+DROP TABLE IF EXISTS t_goods;
+
+CREATE TABLE t_goods
+(
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+    name        VARCHAR(100)    NOT NULL COMMENT '商品名称',
+    category    VARCHAR(32)     NOT NULL COMMENT '分类',
+    price       DECIMAL(10, 2)  NOT NULL COMMENT '价格',
+    stock       INT             NOT NULL DEFAULT 0 COMMENT '库存',
+    sales       INT             NOT NULL DEFAULT 0 COMMENT '销量',
+    status      TINYINT         NOT NULL DEFAULT 1 COMMENT '状态：1 上架，0 下架',
+    create_time DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    KEY idx_category (category)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='商品表';
+```
+
+`data.sql` 灌了 10 条商品，销量各不相同，方便后面做排行榜：
+
+```sql
+INSERT INTO t_goods (id, name, category, price, stock, sales, status)
+VALUES (1, '机械键盘 K87', '数码', 399.00, 120, 860, 1),
+       (2, '人体工学椅 Pro', '家居', 1299.00, 45, 320, 1),
+       (3, '《深入理解 Java 虚拟机》', '图书', 89.00, 200, 1520, 1),
+       (4, '降噪耳机 X5', '数码', 899.00, 60, 640, 1),
+       (5, '智能手环 5 代', '数码', 249.00, 300, 2100, 1),
+       (6, '不锈钢保温杯', '家居', 79.00, 500, 4300, 1),
+       (7, '跑鞋 轻量版', '运动', 469.00, 80, 275, 1),
+       (8, '《代码整洁之道》', '图书', 69.00, 150, 980, 1),
+       (9, '手冲咖啡豆 250g', '食品', 128.00, 90, 1760, 1),
+       (10, '瑜伽垫 加厚', '运动', 159.00, 130, 510, 0);
+```
+
+`schema.sql` 第一行是 `DROP TABLE IF EXISTS`。这看起来危险，但它让每次启动都是干净状态——库存被并发实验扣成 0 之后，重启一次就恢复了。生产环境不会这么做，这里是为了教学可重复。
+
+商品 1 的初始库存是 120，做并发实验前会先用 `/lock/reset` 重置成 10，方便观察差异。
+
+---
+
+## 6. 写代码
+
+### 6.1 启动类
+
+```java
+@SpringBootApplication
+@MapperScan("top.mqxu.redis.mapper")
+@EnableConfigurationProperties({DemoProperties.class, SmsProperties.class})
+public class RedisApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(RedisApplication.class, args);
+    }
+}
+```
+
+`@EnableConfigurationProperties` 把两个 `@ConfigurationProperties` 类注册成 bean。不写这行，`DemoProperties` 注入时会报找不到 bean——除非类上再加 `@Component`，两种方式选一种，这里选显式声明，能一眼看出有哪些配置类。
+
+### 6.2 RedisConfig：两个必须自己写的 bean
+
+这个类是整篇最值得细看的地方。它只有两个 bean，但少了任何一个都会出问题，而且报错信息都不太直观。
 
 ```java
 @Configuration
+@EnableCaching
+@RequiredArgsConstructor
 public class RedisConfig {
 
-    /**
-     * 缓存值统一用 JSON 序列化。
-     */
+    private static final String CACHE_PREFIX = "cache:";
+
+    private final DemoProperties properties;
+
     private GenericJacksonJsonRedisSerializer jsonSerializer() {
         return GenericJacksonJsonRedisSerializer.builder()
                 .enableDefaultTyping(BasicPolymorphicTypeValidator.builder()
@@ -350,120 +505,112 @@ public class RedisConfig {
         template.setHashValueSerializer(valueSerializer);
         return template;
     }
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(properties.getCache().getTtl())
+                .computePrefixWith(name -> CACHE_PREFIX + name + "::")
+                .serializeKeysWith(SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(SerializationPair.fromSerializer(jsonSerializer()));
+
+        RedisCacheWriter writer = RedisCacheWriter.create(connectionFactory,
+                configurer -> configurer.immediateWrites().collectStatistics());
+
+        return RedisCacheManager.builder(writer)
+                .cacheDefaults(config)
+                .build();
+    }
 }
 ```
 
-这里有三处需要解释。
+#### 为什么 key 用 String，值用 JSON
 
-**为什么序列化器要用 builder 而不是 `new`。** Spring Data Redis 4.1 提供了两个 JSON 序列化器：`GenericJackson2JsonRedisSerializer` 基于 Jackson 2，为了兼容保留；`GenericJacksonJsonRedisSerializer` 基于 Jackson 3，是 Boot 4 环境下的选择。后者没有可用的单参构造器，要通过 `builder()` 创建。
-
-**为什么必须打开 default typing。** `RedisTemplate<String, Object>` 写入时只知道值是个 `Object`，读出来却要还原成原来的类型。类型信息不写进 JSON，反序列化时无从判断，结果只能得到一个 `LinkedHashMap`，强转成 `Goods` 会抛 `ClassCastException`。打开后写进 Redis 的值长这样：
+`RedisTemplate` 默认的序列化器是 JDK 序列化。用它存一个 `Goods`，`redis-cli` 里看到的是这样：
 
 ```
-{"@class":"top.mqxu.redis.entity.Goods","category":"数码","createTime":"2026-10-14T08:00:29","id":1,"name":"机械键盘 K87","price":["java.math.BigDecimal",399.00],"sales":860,"status":1,"stock":120,"updateTime":"2026-10-14T08:00:29"}
+"\xac\xed\x00\x05sr\x00\x1etop.mqxu.redis.entity.Goods..."
 ```
 
-`@class` 就是类型信息。附带的安全问题也在这里：类型信息是可以被篡改的，如果反序列化时不设限制，往 Redis 里写一段精心构造的 JSON 就可能让应用加载任意类。所以用 `BasicPolymorphicTypeValidator` 把允许还原的类型限制在几类前缀内：本项目的 `top.mqxu.`，以及 `java.lang.`、`java.util.`、`java.math.` 这些值类型与集合。这里没有用 `allowIfBaseType(Object.class)`，那个写法等价于放行一切，起不到限制作用。
+三个问题：读不出来（排查时只能靠猜）、Java 客户端之间能通但与其它语言不通、反序列化时类名或字段一改就报错。
 
-`java.lang.` 这一项不能省。往 `Map<String, Object>` 这类声明类型是 `Object` 的结构里放一个 `Long` 或 `String`，Jackson 会把它们写成 `["java.lang.Long", 1791936436000]` 这种带类型信息的形式，白名单里没有 `java.lang.` 就会在反序列化时抛 `InvalidTypeIdException`，报“subtype class not allowed”。
+换成 JSON 之后：
 
-**为什么要 `enableSpringCacheNullValueSupport()`。** 声明式缓存打开 `cache-null-values` 后，会把 `null` 包装成 `NullValue` 对象存进 Redis。默认的序列化器不认识这个类型，会直接抛异常。这个方法会注册对应的处理。需要留意的是，Spring 写空值用的是 JDK 序列化，不是 JSON，所以缓存里的空值用 `redis-cli` 看到的是一串二进制，这与普通值不同。
+```
+127.0.0.1:6379[10]> GET goods:detail:1
+"{\"@class\":\"top.mqxu.redis.entity.Goods\",\"id\":1,\"name\":\"机械键盘 K87\",...}"
+```
 
-时间格式那一行也值得说明。Jackson 3 把日期相关的开关从 `SerializationFeature` 挪到了 `DateTimeFeature`，沿用旧写法会编译不过。
+`@class` 是 `enableDefaultTyping` 写进去的类型信息。`RedisTemplate<String, Object>` 的泛型是 `Object`，读出来时不知道具体类型，靠这个字段还原成 `Goods`。
 
-### 步骤 2：Redis 数据类型的操作与接口
+`BasicPolymorphicTypeValidator` 限制了允许反序列化的包名，只有列出来的前缀才认。不加限制的话，攻击者可以构造一个恶意类名，让服务端在反序列化时执行任意代码。
 
-五种数据类型在 `RedisController` 里各给了一个接口。这里只用 `StringRedisTemplate`，因为演示的都是字符串形式的简单值，无需序列化配置。
+#### 为什么还需要 CacheManager
+
+`RedisTemplate` 只服务于手写代码。`@Cacheable` 走的是 Spring 的缓存抽象，用的是 `CacheManager`，两者不共用配置。
+
+不定义 `cacheManager` 时，Boot 会自动建一个，值用 JDK 序列化。而 `Goods` 没有实现 `Serializable`，第一次写缓存就抛：
+
+```
+java.lang.IllegalStateException: Cannot serialize value of type
+    top.mqxu.redis.entity.Goods without a serializer
+```
+
+给实体加 `implements Serializable` 能让它不报错，但值又变回二进制了。所以这里自定义一个，复用同一个 JSON 序列化器。
+
+#### `immediateWrites()` 是做什么的
+
+这是 Spring Data Redis 4 的新行为。4.0 起，缓存写操作（`put`、`evict`、`clear`）默认是**延迟执行**的：方法调用返回时，命令可能还没发到 Redis。设计意图是提高吞吐，代价是"写完立刻读"可能读不到。
+
+演示场景里这个特性非常容易误导人：调用 `evictAll()` 之后立刻 `redis-cli KEYS 'cache:goods::*'`，发现 key 还在，会以为缓存没清掉。所以这里显式打开立即写：
 
 ```java
-@RestController
-@RequestMapping("/redis")
-@RequiredArgsConstructor
-public class RedisController {
+RedisCacheWriter.create(connectionFactory,
+        configurer -> configurer.immediateWrites().collectStatistics());
+```
 
-    private final StringRedisTemplate stringRedisTemplate;
+顺带用 `collectStatistics()` 打开了命中率统计，对应 `enable-statistics: true`。`cache.clear()` 这类操作要马上看到结果的地方，这个开关是必需的。
 
-    /** String：最基础的类型，文本、数字、序列化后的 JSON 都放它里面 */
-    @PostMapping("/string")
-    public Map<String, Object> setString(@RequestParam String key,
-                                        @RequestParam String value,
-                                        @RequestParam(defaultValue = "600") long ttlSeconds) {
-        stringRedisTemplate.opsForValue().set(key, value, Duration.ofSeconds(ttlSeconds));
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("key", key);
-        result.put("value", value);
-        result.put("ttlSeconds", stringRedisTemplate.getExpire(key));
-        return result;
-    }
+### 6.3 五种数据类型
 
-    /** Hash：一个 key 下挂多个字段，适合只读写对象的某几个属性 */
-    @PostMapping("/hash")
-    public Map<Object, Object> putHash(@RequestParam String key, @RequestParam Map<String, String> fields) {
-        // RequestParam 收到的 Map 里包含 key 这个参数本身，写进 hash 前先剔掉
-        Map<String, String> values = new LinkedHashMap<>(fields);
-        values.remove("key");
-        stringRedisTemplate.opsForHash().putAll(key, values);
-        return stringRedisTemplate.opsForHash().entries(key);
-    }
+Redis 的 key 都是字符串，区别在 value 的结构。选错类型，后面每一步都会别扭。`RedisController` 把五种类型各给了一组接口。
 
-    /** ZSet：元素带分数，写入后天然按分数排序 */
-    @GetMapping("/zset/top")
-    public List<Map<String, Object>> topZSet(@RequestParam String key,
-                                             @RequestParam(defaultValue = "5") int top) {
-        Set<ZSetOperations.TypedTuple<String>> tuples =
-                stringRedisTemplate.opsForZSet().reverseRangeWithScores(key, 0, top - 1L);
-        if (tuples == null) {
-            return List.of();
-        }
-        return tuples.stream()
-                .map(tuple -> Map.<String, Object>of("member", tuple.getValue(), "score", tuple.getScore()))
-                .toList();
-    }
+| 类型 | 结构 | 适合存 | 本模块的接口 |
+| --- | --- | --- | --- |
+| String | 单个值 | 缓存对象 JSON、计数器 | `/redis/string`、`/redis/counter/incr` |
+| Hash | 一个 key 下多个字段 | 对象的多个属性、验证码 | `/redis/hash` |
+| List | 有序、可重复 | 队列、最新动态 | `/redis/list` |
+| Set | 无序、不重复 | 去重、交集 | `/redis/set`、`/redis/set/intersect` |
+| ZSet | 带分数、自动排序 | 排行榜、延迟队列 | `/redis/zset`、`/rank/*` |
 
-    /** 计数器：INCR 在 Redis 里是单线程原子的，适合统计访问量、做限流 */
-    @PostMapping("/counter/incr")
-    public Map<String, Object> increment(@RequestParam String key,
-                                         @RequestParam(defaultValue = "1") long delta) {
-        Long current = stringRedisTemplate.opsForValue().increment(key, delta);
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("key", key);
-        result.put("current", current);
-        return result;
-    }
+Hash 有个实际好处：只改一个字段时不用把整个对象读出来再写回去。验证码就存在 Hash 里：
+
+```
+sms:captcha:13800001234
+  code   -> 7209
+  status -> 0
+```
+
+`code` 是验证码，`status` 标记是否用过。用 String 存 JSON 也能实现，但改状态时要读整个 JSON、改字段、再写回，中间有一段竞态窗口。
+
+`RedisController` 里 Hash 那个接口有一个易错点：
+
+```java
+@PostMapping("/hash")
+public Map<Object, Object> putHash(@RequestParam String key, @RequestParam Map<String, String> fields) {
+    // RequestParam 收到的 Map 里包含 key 这个参数本身，写进 hash 前先剔掉
+    Map<String, String> values = new LinkedHashMap<>(fields);
+    values.remove("key");
+    stringRedisTemplate.opsForHash().putAll(key, values);
+    return stringRedisTemplate.opsForHash().entries(key);
 }
 ```
 
-`/redis/hash` 里那句 `values.remove("key")` 不是多余的。`@RequestParam Map<String, String>` 会把该请求的全部参数收进 Map，包括 `key` 本身，不去掉的话 hash 里会多出一个叫 `key` 的字段。
+`@RequestParam Map<String, String>` 会把**所有**查询参数收进来，包括 `key` 自己。不剔除的话，Hash 里会多出一个 `key -> goods:1` 的字段。
 
-`getExpire` 的返回值有约定：正数是剩余秒数，`-1` 表示没有设置过期时间，`-2` 表示 key 不存在。
+### 6.4 手动缓存：Cache Aside 的完整写法
 
-### 步骤 3：Cache-Aside 手动维护缓存
-
-先建表和示例数据。`schema.sql`：
-
-```sql
-DROP TABLE IF EXISTS t_goods;
-
-CREATE TABLE t_goods
-(
-    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-    name        VARCHAR(100)    NOT NULL COMMENT '商品名称',
-    category    VARCHAR(32)     NOT NULL COMMENT '分类',
-    price       DECIMAL(10, 2)  NOT NULL COMMENT '价格',
-    stock       INT             NOT NULL DEFAULT 0 COMMENT '库存',
-    sales       INT             NOT NULL DEFAULT 0 COMMENT '销量',
-    status      TINYINT         NOT NULL DEFAULT 1 COMMENT '状态：1 上架，0 下架',
-    create_time DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    KEY idx_category (category)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4 COMMENT ='商品表';
-```
-
-`data.sql` 插入 10 条商品，覆盖数码、家居、图书、运动、食品五个分类，销量各不相同，后面的排行榜直接用它。
-
-缓存逻辑写在 `GoodsCacheService` 里。核心是读的时候先看缓存，未命中再查库并回填：
+`GoodsCacheService` 是这一节的核心。读：
 
 ```java
 public CacheResult<Goods> getById(Long id) {
@@ -479,24 +626,26 @@ public CacheResult<Goods> getById(Long id) {
     cacheIt(key, goods);
     return new CacheResult<>(goods, "db", costMs(start));
 }
+```
 
+四行代码，四个决定：
+
+1. `KEY_PREFIX + id`：key 带业务前缀。不带前缀时，`1`、`2` 这样的裸 key 会和别的业务撞车，也没法按前缀批量清理。
+2. `cached != null` 判断命中。注意这只能判断"有没有值"，不能判断值是不是空标记，所以下面 `fromCache` 里还要再分一次。
+3. 未命中才查库。查库放在缓存判断之后，这是"缓存优先"的具象写法。
+4. 查完回填。
+
+回填的方法里藏着防穿透和防雪崩：
+
+```java
 private void cacheIt(String key, Goods goods) {
     if (goods == null) {
-        // 查不到也写一条标记，避免同一个不存在的 id 反复打库
         redisTemplate.opsForValue().set(key, NULL_PLACEHOLDER, properties.getCache().getNullTtl());
         return;
     }
     redisTemplate.opsForValue().set(key, goods, ttlWithJitter());
 }
-```
 
-`CacheResult` 里带一个 `source` 字段，取值有 `db`、`cache`、`cache-empty`、`db-fallback` 几种，这是为了在 curl 输出里直接看出这次请求是打库还是命中缓存，不用去数日志。
-
-**空值防穿透**：`cacheIt` 在 `goods == null` 时写入字符串 `"NULL"`，存活 2 分钟。为什么比正常值短？因为商品可能是先创建、后查询，空值标记留太久会挡住新数据。
-
-**TTL 抖动防雪崩**：
-
-```java
 private Duration ttlWithJitter() {
     long base = properties.getCache().getTtl().toSeconds();
     long jitter = ThreadLocalRandom.current().nextLong(properties.getCache().getJitterSeconds() + 1L);
@@ -504,24 +653,86 @@ private Duration ttlWithJitter() {
 }
 ```
 
-**写库后删缓存**：
+查不到数据时写一个字符串 `"NULL"` 进去，过期时间 2 分钟（比正常值短）。这样下一次请求同一个不存在的 id，会命中这个标记直接返回，不再打库。
+
+过期时间加随机抖动，范围是 600 到 630 秒。原因在 6.6 节讲。
+
+### 6.5 注解缓存：少写代码，多记四条规则
+
+`GoodsSpringCacheService` 用注解实现同样的功能，方法体里只有数据库操作：
 
 ```java
-public boolean updatePrice(Long id, BigDecimal price) {
-    Goods goods = new Goods();
-    goods.setId(id);
-    goods.setPrice(price);
-    boolean updated = goodsMapper.updateById(goods) > 0;
-    if (updated) {
-        evict(id);
+@Cacheable(cacheNames = "goods", key = "#id")
+public Goods getById(Long id) {
+    return goodsMapper.selectById(id);
+}
+
+@Cacheable(cacheNames = "goods", key = "'all'")
+public List<Goods> listAll() {
+    return goodsMapper.selectList(null);
+}
+
+@CachePut(cacheNames = "goods", key = "#id")
+public Goods updatePrice(Long id, BigDecimal price) {
+    Goods update = new Goods();
+    update.setId(id);
+    update.setPrice(price);
+    if (goodsMapper.updateById(update) == 0) {
+        return null;
     }
-    return updated;
+    return goodsMapper.selectById(id);
+}
+
+@CacheEvict(cacheNames = "goods", key = "#id")
+public void evict(Long id) {
+}
+
+@Caching(evict = {
+        @CacheEvict(cacheNames = "goods", key = "#id"),
+        @CacheEvict(cacheNames = "goods", key = "'all'")
+})
+public void evictDetailAndList(Long id) {
+}
+
+@CacheEvict(cacheNames = "goods", allEntries = true)
+public void evictAll() {
 }
 ```
 
-### 步骤 4：互斥锁防击穿
+四个注解的分工：
 
-热点 key 刚过期的瞬间，几十个请求会同时发现缓存没有，一起涌向数据库。做法是未命中时先抢一把锁，只有抢到的那个请求回源并回填：
+| 注解 | 什么时候用 | 行为 |
+| --- | --- | --- |
+| `@Cacheable` | 查询 | 命中直接返回，方法体不执行 |
+| `@CachePut` | 更新 | 方法体一定执行，返回值写进缓存 |
+| `@CacheEvict` | 删除 | 默认方法执行后删缓存 |
+| `@Caching` | 组合 | 一次做多个缓存操作 |
+
+四条容易踩的规则：
+
+**key 里的字符串要加单引号。** `key = "'all'"` 是字面量 `all`；写成 `key = "all"` 会被当成 SpEL 表达式，去找一个叫 `all` 的变量，运行时报错。
+
+**同一个类内部调用不走代理。** `this.getById(1)` 不会触发缓存，因为调用没经过 Spring 生成的代理对象。要在同一个类里复用，得注入自己或者拆到另一个类。
+
+**`@CacheEvict` 默认在方法执行后清。** 方法抛异常就不清了。需要"先清再执行"时加 `beforeInvocation = true`。
+
+**列表缓存要单独维护。** `getById` 的 key 是 id，`listAll` 的 key 是 `all`，两者互不相干。改了某个商品，如果只清 id 对应的 key，`all` 里还是旧数据。所以有 `evictDetailAndList` 一次清两个。
+
+`@Cacheable` 查不到时返回 `null`，配合 `cache-null-values` 把 null 也存起来，防穿透的效果和手写的空值标记一样，只是 key 里存的是 Spring 自己的 `NullValue` 包装。
+
+### 6.6 三个失效场景，对应三处代码
+
+这三个词经常被混着说，其实触发条件完全不同：
+
+| 场景 | 触发条件 | 后果 | 代码里的应对 |
+| --- | --- | --- | --- |
+| 穿透 | 查一个**不存在**的 key | 每次都不命中，全部打库 | `cacheIt` 写 `"NULL"` 标记 |
+| 击穿 | 某个**热点 key 刚好过期** | 瞬间大量请求同时回源 | `getByIdWithMutex` 抢锁重建 |
+| 雪崩 | **大批 key 同时过期** 或 Redis 挂了 | 数据库被压垮 | `ttlWithJitter` 加随机抖动 |
+
+穿透的应对在 `cacheIt` 里，前面已经看过。这里补一句它的局限：如果攻击者每次换一个不存在的 id，空值标记也帮不上忙，因为每个 id 都是新的。那种情况要靠布隆过滤器在入口处拦掉。
+
+击穿的应对是互斥重建：
 
 ```java
 public CacheResult<Goods> getByIdWithMutex(Long id) {
@@ -546,7 +757,6 @@ public CacheResult<Goods> getByIdWithMutex(Long id) {
     }
 
     try {
-        // 拿到锁后复查一次：可能上一个持锁线程刚好写完缓存
         Object checked = redisTemplate.opsForValue().get(key);
         if (checked != null) {
             return fromCache(checked, start);
@@ -555,137 +765,58 @@ public CacheResult<Goods> getByIdWithMutex(Long id) {
         cacheIt(key, goods);
         return new CacheResult<>(goods, "db", costMs(start));
     } finally {
-        // 这里的锁只服务于重建，简单删除即可；对外的业务锁要求比对唯一值后再删，见步骤 8
         stringRedisTemplate.delete(lockKey);
     }
 }
 ```
 
-三个细节：拿到锁之后要再查一次缓存，因为可能在等锁期间别的线程已经写好了；没抢到锁的请求不要直接失败，短暂等待后重读缓存；这里删锁用的是直接 `delete`，因为锁的值固定是 `"1"`，不区分持有者，只用于重建，无所谓误删。对外提供服务的业务锁必须比对持有者，见步骤 8。
+三处细节：
 
-### 步骤 5：Spring 缓存注解
+- 抢到锁后要**再查一次缓存**。从"发现没命中"到"拿到锁"之间，可能前一个持锁线程已经把值写进去了。
+- 没抢到锁的请求等 80 毫秒再读，而不是直接查库。这一等就是它和"不加锁"的区别：二十个请求只有一个查库，其余的重读缓存。
+- 锁的过期时间设 5 秒。如果重建过程中进程挂了，锁会自动释放，不会把商品永久锁死。
 
-手动写缓存样板代码太多，Spring 的缓存抽象可以把读写缓存的逻辑从业务方法里拿掉。注意方法所在的类必须是 Spring 容器里的 Bean，且从外部调用，注解才生效。
+雪崩的应对就是那 30 秒的随机抖动。假设 1000 个商品在同一时刻被预热进缓存，TTL 都是 600 秒，那 600 秒后它们会同时失效，1000 个查询一起打到库上。加了抖动之后，过期时间散在 600 到 630 秒之间，压力被摊平。
+
+### 6.7 分布式锁：从超卖现场开始
+
+先看没有锁会发生什么。`StockService` 里有两个方法，逻辑一样，只是一个在读写之间停了 20 毫秒：
 
 ```java
-@Service
-@RequiredArgsConstructor
-public class GoodsSpringCacheService {
-
-    private final GoodsMapper goodsMapper;
-
-    /**
-     * 命中缓存时方法体不会执行。
-     * 查不到数据会返回 null，配合 spring.cache.redis.cache-null-values=true 把 null 也存进缓存，
-     * 不需要额外写空值标记就能起到防穿透的作用。
-     */
-    @Cacheable(cacheNames = "goods", key = "#id")
-    public Goods getById(Long id) {
-        return goodsMapper.selectById(id);
+public boolean deduct(Long id, int quantity) {
+    Goods goods = goodsMapper.selectById(id);
+    if (goods == null || goods.getStock() < quantity) {
+        return false;
     }
+    Goods update = new Goods();
+    update.setId(id);
+    update.setStock(goods.getStock() - quantity);
+    return goodsMapper.updateById(update) > 0;
+}
 
-    /** 查列表，结果放在 goods 区域下固定的 all 键上 */
-    @Cacheable(cacheNames = "goods", key = "'all'")
-    public List<Goods> listAll() {
-        return goodsMapper.selectList(null);
+public boolean deductWithDelayedWindow(Long id, int quantity) {
+    Goods goods = goodsMapper.selectById(id);
+    if (goods == null || goods.getStock() < quantity) {
+        return false;
     }
-
-    /** 更新数据库，并把新值写回缓存 */
-    @CachePut(cacheNames = "goods", key = "#id")
-    public Goods updatePrice(Long id, BigDecimal price) {
-        Goods update = new Goods();
-        update.setId(id);
-        update.setPrice(price);
-        if (goodsMapper.updateById(update) == 0) {
-            return null;
-        }
-        return goodsMapper.selectById(id);
-    }
-
-    /** 同时清掉单个商品与列表两处缓存 */
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "goods", key = "#id"),
-            @CacheEvict(cacheNames = "goods", key = "'all'")
-    })
-    public void evictDetailAndList(Long id) {
-        // 改动了商品数据，明细与列表都要失效
-    }
-
-    /** 清空整个 goods 缓存区域 */
-    @CacheEvict(cacheNames = "goods", allEntries = true)
-    public void evictAll() {
-        // 只负责清缓存
-    }
+    sleepQuietly(20);        // 把并发窗口放大，方便复现
+    Goods update = new Goods();
+    update.setId(id);
+    update.setStock(goods.getStock() - quantity);
+    return goodsMapper.updateById(update) > 0;
 }
 ```
 
-三个注解的区别：
+问题出在"读—判断—写"这三步不是原子的。库存 10，两个线程同时读到 10，都判断 10 >= 1 成立，都算出 9，都写回 9。卖了 2 件，库存只减少了 1。
 
-| 注解 | 执行时机 | 对缓存的作用 |
-| --- | --- | --- |
-| `@Cacheable` | 调用前先查缓存，命中就不执行方法 | 未命中时把返回值写入 |
-| `@CachePut` | 一定执行方法 | 把返回值覆盖写入 |
-| `@CacheEvict` | 方法执行后（默认） | 删除指定 key 或整个区域 |
+第 7.5 节的实测结果是：**20 个并发请求全部返回成功，库存从 10 变成 9**。20 件商品卖出去了，账面只扣了 1 件。
 
-`@Cacheable` 与 `@CachePut` 容易混淆：前者是“有就不算”，后者是“算完就覆盖”。标注了 `@CachePut` 的方法一定会执行，所以不能拿它做查询。
-
-缓存区域 `goods` 下会有两类 key，前缀由 `spring.cache.redis.key-prefix` 决定：
-
-```
-cache:goods::3       # 单个商品，key 是 id
-cache:goods::all     # 商品列表，key 是固定字符串 all
-```
-
-### 步骤 6：缓存配置与两个必须处理的细节
-
-声明式缓存的值也要序列化成 JSON，并且 TTL、空值策略要从配置文件读到。写一个 `RedisCacheConfiguration` Bean：
-
-```java
-@Bean
-public RedisCacheConfiguration redisCacheConfiguration(CacheProperties cacheProperties) {
-    GenericJacksonJsonRedisSerializer valueSerializer = jsonSerializer();
-
-    RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
-
-    CacheProperties.Redis redis = cacheProperties.getRedis();
-    if (redis.getTimeToLive() != null) {
-        config = config.entryTtl(redis.getTimeToLive());
-    }
-    if (redis.getKeyPrefix() != null) {
-        config = config.prefixCacheNameWith(redis.getKeyPrefix());
-    }
-    if (!redis.isCacheNullValues()) {
-        config = config.disableCachingNullValues();
-    }
-    return config;
-}
-```
-
-这里有个反直觉的地方：只要容器里存在这个 Bean，Boot 的自动配置就会整体采用它，不再读 `spring.cache.redis.*` 的默认值。所以配置里写的时间、前缀、空值开关都要手动搬过来，漏一个就不生效，而不会有任何警告。
-
-另一个细节是缓存的写入默认是异步的。Spring Data Redis 4 把缓存的写入和删除交给后台线程，调用方不等命令真正执行完就返回。演示时改完数据紧接着读缓存，结果会变得不确定。所以显式改成同步：
-
-```java
-@Bean
-public RedisCacheManagerBuilderCustomizer immediateWriteCacheWriter(RedisConnectionFactory connectionFactory) {
-    return builder -> builder.cacheWriter(RedisCacheWriter.create(connectionFactory,
-            configurer -> configurer.immediateWrites().collectStatistics()));
-}
-```
-
-如果确认业务能接受异步写入，去掉这个 Bean 即可。
-
-### 步骤 7：Redisson 分布式锁
-
-用锁扣库存：
+加锁的版本：
 
 ```java
 public boolean deductWithLock(Long id, int quantity) {
     RLock lock = redissonClient.getLock(LOCK_PREFIX + id);
     try {
-        // 最多等 waitSeconds，拿到锁后 leaseSeconds 自动释放，进程崩了也不会一直占着
         boolean locked = lock.tryLock(properties.getLock().getWaitSeconds(),
                 properties.getLock().getLeaseSeconds(), TimeUnit.SECONDS);
         if (!locked) {
@@ -703,7 +834,6 @@ public boolean deductWithLock(Long id, int quantity) {
         Thread.currentThread().interrupt();
         return false;
     } finally {
-        // 只有持锁的线程能释放自己的锁
         if (lock.isHeldByCurrentThread()) {
             lock.unlock();
         }
@@ -711,14 +841,18 @@ public boolean deductWithLock(Long id, int quantity) {
 }
 ```
 
-`tryLock` 的两个参数含义不同：第一个是获取锁的最长等待时间，超时返回 `false`；第二个是锁的自动释放时间，单位秒。不传第二个参数时 Redisson 会启用看门狗，每 10 秒给锁续期一次，直到进程退出或主动释放。这里显式传了时间，看门狗不介入，适合锁内逻辑很短的场景。
+`tryLock` 的两个参数分别管两件事：
 
-### 步骤 8：手写 SETNX 锁与 Lua 解锁
+- `waitSeconds = 3`：抢不到锁时最多等 3 秒。设 0 表示不等待、立刻返回失败。
+- `leaseSeconds = 10`：拿到锁后 10 秒自动释放。这是防止持锁进程崩溃导致死锁的兜底。Redisson 还有看门狗机制，不指定 lease 时会每 10 秒自动续期，进程活着锁就一直有效；一旦指定了 lease，看门狗就不再续期。
 
-为了看清 Redisson 省掉了什么，模块里也保留了一份手写实现：
+锁的粒度是 `lock:goods:stock:{id}`，按商品分开。用一把全局锁也能保证正确，但所有商品的下单会串行执行，吞吐掉一个数量级。
+
+### 6.8 手写一把锁：SETNX 与 Lua 解锁
+
+Redisson 封得很好，但不看清里面的机制，遇到问题会无从下手。`LockController` 里有一版手写实现：
 
 ```java
-/** 释放锁时先比对持有者标记，值对得上才删，避免误删别人持有的锁 */
 private static final DefaultRedisScript<Long> UNLOCK_SCRIPT = new DefaultRedisScript<>(
         "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
         Long.class);
@@ -731,8 +865,9 @@ public Map<String, Object> buyWithSetNx(@RequestParam Long id,
     Boolean locked = stringRedisTemplate.opsForValue()
             .setIfAbsent(lockKey, token, Duration.ofSeconds(10));
     if (!Boolean.TRUE.equals(locked)) {
-        // 抢不到锁直接返回，不做等待
-        return Map.of("strategy", "setnx", "success", false, "reason", "没抢到锁，已有请求在处理");
+        // 没抢到锁
+        ...
+        return busy;
     }
     try {
         return result(id, stockService.deduct(id, quantity), "setnx");
@@ -742,54 +877,17 @@ public Map<String, Object> buyWithSetNx(@RequestParam Long id,
 }
 ```
 
-与 Redisson 的差别在实际运行结果里很明显：
+三个关键点：
 
-| 对比项 | Redisson `tryLock` | 手写 SETNX |
-| --- | --- | --- |
-| 抢不到锁 | 在等待时间内排队，轮到就执行 | 立即返回失败 |
-| 解锁安全 | 框架保证 | 要自己用 Lua 比对持有者 |
-| 锁续期 | 看门狗自动续 | 过期时间写死，业务超时就会提前丢锁 |
-| 可重入 | 支持 | 不支持 |
+**加锁用 `setIfAbsent(key, value, ttl)`。** 它对应 Redis 的 `SET key value NX EX 10`，一条命令同时完成"不存在才写"和"设过期"。分成 `SETNX` 再 `EXPIRE` 两条命令的话，中间进程崩溃就会留下一个永不过期的锁。
 
-`redis.call('get', ...) == ARGV[1]` 的比对与 `del` 在同一个 Lua 脚本里执行，Redis 执行脚本期间不会插入其他命令，所以这两步是原子的。如果拆成先 `get` 再 `del` 两条命令，中间可能正好锁过期、别人拿到新锁，删掉的就是别人的锁。
+**值的唯一性。** `token` 是随机 UUID，标记这把锁是谁加的。
 
-### 步骤 9：ZSet 排行榜
+**解锁必须用 Lua 比对。** 假设线程 A 加的锁 10 秒后自动过期了，此时线程 B 加锁成功。A 执行完业务去解锁，如果直接 `DEL`，删掉的是 B 的锁。用 Lua 把"比对 + 删除"合成一个原子操作，值对不上就不删。
 
-排行数据放在 ZSet 里，商品 id 当成员，销量当分数。
+这也是 Redisson 内部做的事，只是它还额外处理了可重入、续期、等待队列。
 
-```java
-/** 把数据库里的销量灌进 ZSet，做一次预热 */
-@PostMapping("/warmup")
-public Map<String, Object> warmUp() {
-    List<Goods> goodsList = goodsService.listAll();
-    for (Goods goods : goodsList) {
-        stringRedisTemplate.opsForZSet()
-                .add(SALES_RANK_KEY, String.valueOf(goods.getId()), goods.getSales());
-    }
-    Map<String, Object> result = new LinkedHashMap<>();
-    result.put("warmed", goodsList.size());
-    result.put("size", stringRedisTemplate.opsForZSet().size(SALES_RANK_KEY));
-    return result;
-}
-
-/** 给某个商品加分，ZSet 会自动把它挪到正确位置 */
-@PostMapping("/increase")
-public Map<String, Object> increase(@RequestParam Long id,
-                                    @RequestParam(defaultValue = "1") double delta) {
-    Double score = stringRedisTemplate.opsForZSet().incrementScore(SALES_RANK_KEY, String.valueOf(id), delta);
-    Map<String, Object> result = new LinkedHashMap<>();
-    result.put("goodsId", id);
-    result.put("score", score);
-    result.put("rank", rankOf(id));
-    return result;
-}
-```
-
-`incrementScore` 是原子操作，多个请求同时给同一商品加分不会丢。查名次用 `reverseRank`，返回值从 0 开始，所以要加 1；不在榜上返回 `null`，接口转成 `-1`。
-
-### 步骤 10：计数器限流
-
-固定窗口限流，把时间按窗口长度切成一段，每段一个计数器，key 里带上窗口编号：
+### 6.9 限流：一个计数器加一个窗口编号
 
 ```java
 @GetMapping("/access")
@@ -801,943 +899,444 @@ public Map<String, Object> access(@RequestParam(defaultValue = "guest") String u
     String key = "limit:access:" + user + ":" + windowIndex;
 
     Long count = stringRedisTemplate.opsForValue().increment(key);
-    if (count != null && count == 1L) {
-        // 只在计数器刚建出来时设过期，之后每次自增不再刷新，保证窗口按自然时间滚动
+    Long ttl = stringRedisTemplate.getExpire(key);
+    if (ttl == null || ttl < 0) {
         stringRedisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
     }
-    // ......
+    ...
     result.put("allowed", count != null && count <= maxRequests);
     return result;
 }
 ```
 
-过期时间只在计数器刚创建时设置，这一点不能省。如果每次自增都刷新过期时间，只要请求不断，计数器就永不过期，限流会退化成“从第一次请求起总共只放行 5 次”。
+思路是把时间切成固定的窗口，每个窗口一个计数器。`windowIndex` 是当前时间除以窗口长度取整，比如 60 秒窗口下，14:20:00 到 14:20:59 会得到同一个编号。
 
-固定窗口有个固有缺陷：窗口边界处可能通过两倍流量，比如第 59 秒来 5 个、第 61 秒又来 5 个。要避免就得换滑动窗口或令牌桶，`12-test` 之外的课程不再展开。
+key 里带窗口编号意味着**下一分钟自动换了新 key**，旧 key 靠过期时间回收，不需要定时清理。
+
+过期时间的设置有个坑。直觉写法是"只在 count 等于 1 时设过期"：
+
+```java
+if (count != null && count == 1L) {
+    stringRedisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
+}
+```
+
+并发下有问题：两个请求同时 `INCR`，一个拿到 1，另一个拿到 2，拿到 1 的那个还没执行 `EXPIRE` 时，如果进程崩了，这个 key 就永远没有过期时间，计数器永久累积，该用户之后一直被限流。
+
+所以改成每次检查 TTL，发现没有过期时间就补一次。多一次网络往返，换来的是不会漏设。
+
+固定窗口有个固有问题：窗口边界处会放过两倍的请求。窗口是 14:20:00–14:20:59，用户在 14:20:59 发 5 次，14:21:00 再发 5 次，两次都在各自窗口内合法，但实际是 1 秒内 10 次。要严格就得用滑动窗口（用 ZSet 存每次请求的时间戳），代价是内存占用高得多。
+
+### 6.10 验证码登录：Redis 的四个 key
+
+短信登录是 Redis 用得最典型的地方：验证码有时效、只能用一次、发送要限频。四种约束，四个 key。
+
+`RedisKeys` 集中定义：
+
+```java
+public class RedisKeys {
+    /** 验证码，Hash：code 是验证码，status 是 0 未使用 / 1 已使用 */
+    public static String getSmsKey(String phone) {
+        return "sms:captcha:" + phone;
+    }
+
+    /** 发送间隔，存在即代表还在冷却中 */
+    public static String getSmsSendIntervalKey(String phone) {
+        return "sms:send:interval:" + phone;
+    }
+
+    /** 当日发送次数 */
+    public static String getSmsSendCountKey(String phone) {
+        return "sms:send:count:" + phone;
+    }
+
+    /** 验证码连续输错次数 */
+    public static String getSmsFailCountKey(String phone) {
+        return "sms:fail:" + phone;
+    }
+}
+```
+
+发送流程在 `SmsServiceImpl.sendSms`：
+
+```java
+public String sendSms(String phone) {
+    if (!CommonUtils.checkPhone(phone)) {
+        throw new BusinessException(ErrorCode.PHONE_ERROR);
+    }
+
+    // 发送间隔：SET NX EX 只让一次请求占住这个 key
+    String intervalKey = RedisKeys.getSmsSendIntervalKey(phone);
+    Boolean acquired = redisCache.setIfAbsent(intervalKey, 1, smsProperties.getSendIntervalSeconds());
+    if (!Boolean.TRUE.equals(acquired)) {
+        throw new BusinessException(ErrorCode.PHONE_CODE_SEND_TOO_MANY);
+    }
+
+    // 当日条数
+    Long sentToday = redisCache.increment(RedisKeys.getSmsSendCountKey(phone), SECONDS_PER_DAY);
+    if (sentToday != null && sentToday > smsProperties.getSendDailyLimit()) {
+        throw new BusinessException(ErrorCode.PHONE_CODE_SEND_LIMIT);
+    }
+
+    int code = CommonUtils.generateCode();
+
+    // 先发短信，成功之后再写 Redis
+    if (!send(phone, code)) {
+        redisCache.delete(intervalKey);
+        throw new BusinessException(ErrorCode.PHONE_CODE_SEND_FAILED);
+    }
+
+    Map<String, Object> value = new HashMap<>();
+    value.put("code", String.valueOf(code));
+    value.put("status", "0");
+    redisCache.hMSet(RedisKeys.getSmsKey(phone), value, smsProperties.getCodeExpireSeconds());
+
+    return smsProperties.isMockEnabled() ? String.valueOf(code) : null;
+}
+```
+
+顺序值得注意：**先发短信，成功了再写 Redis**。反过来写的话，短信发送失败时 Redis 里留下了一个用户永远收不到的验证码，而冷却 key 还在，用户一分钟内不能重发。
+
+验证在 `login` 里，五道检查：
+
+| 顺序 | 检查 | 失败时的错误码 |
+| --- | --- | --- |
+| 1 | 手机号格式 | 40001 |
+| 2 | 验证码非空 | 40003 |
+| 3 | Hash 是否存在 | 40005（不存在或已过期） |
+| 4 | 状态是否已使用 | 40006 |
+| 5 | 验证码是否匹配 | 40004，连续错 5 次变 40010 |
+
+第 4 步是"只能用一次"的实现。验证通过后不是删 key，而是把 `status` 改成 `1`：
+
+```java
+redisCache.hSet(redisKey, FIELD_STATUS, STATUS_USED, smsProperties.getCodeExpireSeconds());
+```
+
+不删是为了给重复提交一个明确的回复。删掉的话第二次提交只能报"验证码已过期"，用户会以为是自己输错了。
+
+第 5 步的失败计数同样用 `INCR`：
+
+```java
+if (!inputCode.equals(cached.get(FIELD_CODE))) {
+    Long failCount = redisCache.increment(
+            RedisKeys.getSmsFailCountKey(phone), smsProperties.getCodeExpireSeconds());
+    if (failCount != null && failCount >= smsProperties.getMaxFailCount()) {
+        redisCache.delete(redisKey);
+        redisCache.delete(RedisKeys.getSmsFailCountKey(phone));
+        throw new BusinessException(ErrorCode.PHONE_CODE_ERROR_TOO_MANY);
+    }
+    throw new BusinessException(ErrorCode.PHONE_CODE_ERROR);
+}
+```
+
+四位验证码只有 9000 种可能，不限次数的话几分钟就能穷举。错 5 次直接作废，逼用户重新获取。
+
+登录成功后签发 JWT：
+
+```java
+String token = jwtUtils.create(phone);
+return new LoginResponse(token, phone, jwtUtils.getExpireSeconds());
+```
+
+服务端不存 session，`/user/me` 的登录态完全靠 token 里的签名。拦截器负责验签：
+
+```java
+@Override
+public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    if (HttpMethod.OPTIONS.matches(request.getMethod())) {
+        return true;
+    }
+    String header = request.getHeader("Authorization");
+    if (header == null || !header.startsWith("Bearer ")) {
+        throw new BusinessException(ErrorCode.TOKEN_INVALID);
+    }
+    Claims claims = jwtUtils.parse(header.substring("Bearer ".length()));
+    request.setAttribute(ATTR_CLAIMS, claims);
+    return true;
+}
+```
+
+`WebConfig` 里配置了哪些路径需要登录：
+
+```java
+registry.addInterceptor(authInterceptor)
+        .addPathPatterns("/**")
+        // 只有 /user/** 代表"登录后才有的接口"，其余都是可以直接观察的演示接口
+        .excludePathPatterns("/sms/**", "/redis/**", "/cache/**",
+                "/lock/**", "/limit/**", "/rank/**", "/error");
+```
+
+拦截 `/**` 再逐个放行，比只拦截 `/user/**` 安全：以后新增的接口默认是需要登录的，漏配的后果是"访问不了"，而不是"谁都能访问"。
+
+`OPTIONS` 请求要放行。浏览器发跨域预检时不会带 `Authorization`，拦下来会导致所有跨域请求失败。
+
+### 6.11 排行榜：ZSet 的典型用法
+
+`RankController` 把商品的销量灌进 ZSet：
+
+```java
+@PostMapping("/warmup")
+public Map<String, Object> warmUp() {
+    List<Goods> goodsList = goodsService.listAll();
+    for (Goods goods : goodsList) {
+        stringRedisTemplate.opsForZSet()
+                .add(SALES_RANK_KEY, String.valueOf(goods.getId()), goods.getSales());
+    }
+    ...
+}
+
+@PostMapping("/increase")
+public Map<String, Object> increase(@RequestParam Long id,
+                                    @RequestParam(defaultValue = "1") double delta) {
+    Double score = stringRedisTemplate.opsForZSet()
+            .incrementScore(SALES_RANK_KEY, String.valueOf(id), delta);
+    ...
+}
+
+@GetMapping("/top")
+public List<Map<String, Object>> top(@RequestParam(defaultValue = "5") int top) {
+    Set<ZSetOperations.TypedTuple<String>> tuples =
+            stringRedisTemplate.opsForZSet().reverseRangeWithScores(SALES_RANK_KEY, 0, top - 1L);
+    ...
+}
+```
+
+ZSet 的成员是商品 id，分数是销量。`incrementScore` 加分会自动把成员挪到正确位置，取前五名是 `reverseRangeWithScores(key, 0, 4)`，时间复杂度 O(log N + 5)。
+
+用 MySQL 做同样的事要 `ORDER BY sales DESC LIMIT 5`，每次都要排序全表。数据量小时差别不明显，几十万行时差距就出来了。
+
+排行榜的分数变化不需要同步回数据库。它是一个"参考数据"，丢了重新 warmup 一次就能恢复——这也符合 1.1 节那条规矩：缓存里的东西不能是唯一来源。
 
 ---
 
-## 5. 完整代码与目录结构
+## 7. 运行与实测
 
-```
-06-redis
-└── src
-    ├── main
-    │   ├── java/top/mqxu/redis
-    │   │   ├── RedisApplication.java          # @EnableCaching + @EnableConfigurationProperties
-    │   │   ├── config
-    │   │   │   ├── RedisConfig.java           # 序列化 + 缓存配置 + 同步写入
-    │   │   │   └── DemoProperties.java        # demo.* 的绑定
-    │   │   ├── controller
-    │   │   │   ├── RedisController.java       # 五种数据类型与计数器
-    │   │   │   ├── CacheController.java       # 直查库 / 手动缓存 / 注解缓存 对照
-    │   │   │   ├── LockController.java        # 三种扣库存写法对照
-    │   │   │   ├── RankController.java        # ZSet 排行榜
-    │   │   │   └── LimitController.java       # 固定窗口限流
-    │   │   ├── service
-    │   │   │   ├── GoodsService.java          # 只查库，作为对照
-    │   │   │   ├── GoodsCacheService.java     # 手动缓存：空值 / 互斥锁 / TTL 抖动
-    │   │   │   ├── GoodsSpringCacheService.java # 注解缓存
-    │   │   │   └── StockService.java          # 扣库存：不加锁 / Redisson / 直接扣
-    │   │   ├── entity/Goods.java
-    │   │   ├── mapper/GoodsMapper.java
-    │   │   └── dto/CacheResult.java           # 带 source 与耗时的返回体
-    │   └── resources
-    │       ├── application.yml                # Redis / 缓存 / 数据源 / demo.* 参数
-    │       ├── schema.sql                     # t_goods 建表
-    │       └── data.sql                       # 10 条商品
-    └── test/java/top/mqxu/redis
-        ├── RedisTypeOpsTest.java              # 9 个用例，五种数据类型接口
-        ├── GoodsCacheTest.java                # 13 个用例，缓存三种做法
-        ├── LockAndLimitTest.java              # 10 个用例，并发扣库存、限流、排行榜
-        ├── PracticeTest.java                  # 5 个用例，随堂练习参考答案
-        └── HomeworkTest.java                  # 4 个用例，课后练习参考答案
-```
-
----
-
-## 6. 运行与验证
-
-### 6.1 启动
-
-先确认 Redis 与 MySQL 都在跑：
-
-```bash
-redis-cli --no-auth-warning -a abc123 ping
-# PONG
-
-mysql -h127.0.0.1 -P3306 -uroot -p123456 -e "select count(*) from backend_learning.t_goods;"
-```
-
-再启动模块：
+### 7.1 启动
 
 ```bash
 mvn -pl 06-redis spring-boot:run
 ```
 
-端口 `8006`。启动时会自动执行 `schema.sql` 与 `data.sql`，把 `t_goods` 重置成 10 条商品。脚本里有 `DROP TABLE`，所以 DevTools 热重启同样会重置数据，改完代码发现商品数据和之前不一样就是这个原因。
+启动日志里找这四行：
 
-下面的命令都按 `8006` 写，改过端口就把 `BASE` 一起改。先定义它省点打字：
-
-```bash
-BASE=http://127.0.0.1:8006
+```
+org.redisson.Version : Redisson 4.8.0
+o.redisson.connection.ConnectionsHolder : 24 connections initialized for localhost/127.0.0.1:6379
+com.zaxxer.hikari.pool.HikariPool : redis-demo-pool - Added connection ...
+o.s.boot.tomcat.TomcatWebServer : Tomcat started on port 8006 (http) with context path '/'
 ```
 
-本机 `curl` 走系统代理，命令里的 `--noproxy '*'` 用来绕过它。
+第二行确认 Redisson 连上了 Redis，并且一次建了 24 条连接。没连上时它会在启动阶段抛 `RedisConnectionException`，不会等到第一次用锁才报错。
 
-6.2 到 6.5 把 34 个接口逐个走一遍，每条都给出命令和实际返回。`costMs`、`ttlSeconds` 这类数值每次执行都会变，看 `source` 与状态字段即可。
+第三行里的 `redis-demo-pool` 是配置里 `hikari.pool-name` 指定的名字，看到它就说明数据源就绪。
 
-### 6.2 数据类型接口
-
-13 个接口都挂在 `/redis` 下，是五种数据结构加一个计数器的直接操作。
-
-**String：`POST /redis/string` 写入，`GET /redis/string` 读取**
+先确认 Redis 里的数据是模块写的：
 
 ```bash
-curl -s -X POST "$BASE/redis/string?key=demo:name&value=mqxu&ttlSeconds=120"
-# {"key":"demo:name","value":"mqxu","ttlSeconds":120}
-
-curl -s "$BASE/redis/string?key=demo:name"
-# mqxu
+redis-cli -a abc123 -n 10 keys 'goods:*'
+# (empty array)
+redis-cli -a abc123 -n 10 keys 'cache:*'
+# (empty array)
 ```
 
-返回里的 `ttlSeconds` 是写入后立刻回查的剩余秒数，参数不写时默认 600 秒。key 不存在时读到的是空响应体。
+两个都是空说明还没人读过，符合预期。
 
-**查剩余过期时间：`GET /redis/ttl`**
+### 7.2 登录准备
+
+后四组接口不用登录，第一组（`/user/me`）需要。先拿一个 token：
 
 ```bash
-curl -s "$BASE/redis/ttl?key=demo:name"
-# {"key":"demo:name","ttlSeconds":118}
+# 发验证码，模拟模式会直接把验证码放在 data 里
+curl -X POST "http://127.0.0.1:8006/sms/send?phone=13800001234"
+# {"code":200,"data":"7209","message":"success"}
+
+# 用验证码换 token
+curl -X POST "http://127.0.0.1:8006/sms/login" \
+  -H "Content-Type: application/json" \
+  -d '{"phone":"13800001234","code":"7209"}'
 ```
 
-`getExpire` 的返回值有三种：正数是剩余秒数，`-1` 表示 key 存在但没设过期时间，`-2` 表示 key 不存在。
-
-**删 key：`DELETE /redis/key`**
-
-```bash
-curl -s -X DELETE "$BASE/redis/key?key=demo:name"
-# true
-
-curl -s -X DELETE "$BASE/redis/key?key=nobody"
-# false
-
-curl -s "$BASE/redis/ttl?key=demo:name"
-# {"key":"demo:name","ttlSeconds":-2}
-```
-
-`true` 表示删掉了一个 key，`false` 表示 key 本来就不存在。删完再查一次 TTL 变成 `-2`，可以确认真的没了。
-
-**Hash：`POST /redis/hash` 写入，`GET /redis/hash` 读取**
-
-```bash
-curl -s -X POST "$BASE/redis/hash?key=demo:user:1&name=tao&role=teacher&city=nanjing"
-# {"name":"tao","role":"teacher","city":"nanjing"}
-
-curl -s "$BASE/redis/hash?key=demo:user:1"
-# {"name":"tao","role":"teacher","city":"nanjing"}
-```
-
-字段名直接写在查询参数里，写几个存几个。返回值里不会出现 `key` 字段，原因见步骤 2。同一个 key 再写一次是合并，原有字段保留：
-
-```bash
-curl -s -X POST -G "$BASE/redis/hash" \
-  --data-urlencode 'key=demo:user:2' --data-urlencode 'name=陶老师'
-# {"name":"陶老师"}
-
-curl -s -X POST -G "$BASE/redis/hash" \
-  --data-urlencode 'key=demo:user:2' --data-urlencode 'city=南京'
-# {"name":"陶老师","city":"南京"}
-```
-
-中文值要先做 URL 编码，否则 Tomcat 会以 400 拒绝，用 `-G` 配合 `--data-urlencode` 最省事。
-
-**List：`POST /redis/list` 写入，`GET /redis/list` 读取**
-
-```bash
-curl -s -X POST "$BASE/redis/list?key=demo:news&values=a&values=b&values=c"
-# ["a","b","c"]
-
-curl -s -X POST "$BASE/redis/list?key=demo:news&values=d"
-# ["a","b","c","d"]
-
-curl -s "$BASE/redis/list?key=demo:news"
-# ["a","b","c","d"]
-```
-
-`values` 写几次就写入几个元素，代码里用的是 `rightPushAll`，从右端追加，所以第二次 POST 的 `d` 排在末尾。读取用 `range(key, 0, -1)` 取全部。
-
-**Set：`POST /redis/set` 写入，`GET /redis/set/intersect` 求交集**
-
-```bash
-curl -s -X POST "$BASE/redis/set?key=demo:u1:like&values=1&values=2&values=3"
-# ["1","2","3"]
-
-curl -s -X POST "$BASE/redis/set?key=demo:u2:like&values=2&values=3&values=4"
-# ["2","3","4"]
-
-curl -s "$BASE/redis/set/intersect?key1=demo:u1:like&key2=demo:u2:like"
-# ["2","3"]
-```
-
-同一个值重复写不会增加元素，返回顺序与写入顺序无关，这是 Set 无序不重复的特性。交集接口用来做“共同关注”这类查询。
-
-**ZSet：`POST /redis/zset` 写入，`GET /redis/zset/top` 取前 N**
-
-```bash
-curl -s -X POST "$BASE/redis/zset?key=demo:score&member=bob&score=95"
-# {"member":"bob","score":95.0,"size":1}
-
-curl -s -X POST "$BASE/redis/zset?key=demo:score&member=alice&score=88"
-# {"member":"alice","score":88.0,"size":2}
-
-curl -s "$BASE/redis/zset/top?key=demo:score&top=3"
-# [{"member":"bob","score":95.0},{"member":"alice","score":88.0}]
-```
-
-`size` 是写入后集合里的成员个数。`top` 取 3 但只有 2 个成员时就返回 2 条，不会补空。同一个 `member` 再写一次是覆盖分数，不是新增成员。分数相同时按成员名排序。
-
-**计数器：`POST /redis/counter/incr`**
-
-```bash
-curl -s -X POST "$BASE/redis/counter/incr?key=demo:pv&delta=5"
-# {"key":"demo:pv","current":5}
-
-curl -s -X POST "$BASE/redis/counter/incr?key=demo:pv"
-# {"key":"demo:pv","current":6}
-```
-
-`delta` 不写时默认加 1。key 不存在时按 0 起算，所以第一次就返回 5。自增在 Redis 里是原子的，步骤 10 的限流就是靠它。
-
-这一组对应 `RedisTypeOpsTest`，可以只跑它：
-
-```bash
-mvn -pl 06-redis test -Dtest=RedisTypeOpsTest
-```
-
-### 6.3 缓存接口
-
-10 个接口挂在 `/cache/goods` 下，返回体统一是 `{"data":...,"source":"...","costMs":...}`。判断缓存有没有生效看 `source` 就够了：
-
-| source | 含义 |
-| --- | --- |
-| `db` | 这次查了数据库 |
-| `cache` | 命中缓存 |
-| `cache-empty` | 命中的是空值标记，库里确实没有这条记录 |
-| `db-fallback` | 没抢到重建锁、等了一下还是没读到缓存，退回查库 |
-| `cache-invalid` | 缓存里的值不是 `Goods`，序列化配置有问题时会看到 |
-| `anno（是否命中看日志）` | 注解缓存，命中与否只能看日志 |
-| `anno-put` | 注解缓存的写入路径 |
-
-**直查库：`GET /cache/goods/db/{id}`**
-
-```bash
-curl -s "$BASE/cache/goods/db/1"
-# {"data":{"category":"数码","createTime":"2026-10-14T08:46:33","id":1,"name":"机械键盘 K87","price":399.00,"sales":860,"status":1,"stock":120,"updateTime":"2026-10-14T08:46:33"},"source":"db","costMs":2.922625}
-
-curl -s "$BASE/cache/goods/db/1"
-# {...,"source":"db","costMs":2.176459}
-```
-
-连查两次都是 `db`，这条路径不碰缓存，作用是给后面的接口留一个耗时对照。
-
-**手动缓存：`GET /cache/goods/manual/{id}`**
-
-先清一次缓存再连查两次：
-
-```bash
-curl -s -X DELETE "$BASE/cache/goods/manual/1/cache"
-# false
-
-curl -s "$BASE/cache/goods/manual/1"
-# {"data":{...},"source":"db","costMs":9.7415}
-
-curl -s "$BASE/cache/goods/manual/1"
-# {"data":{...},"source":"cache","costMs":26.199708}
-```
-
-第一次返回 `false` 是因为缓存里本来就没有这个 key。第二次 `source` 变成 `cache`，说明回填生效了。`costMs` 不是每次都变小，本地 MySQL 查一条也就几毫秒，缓存的价值要在真实的网络往返下才明显。
-
-**空值防穿透：查一个不存在的 id**
-
-```bash
-curl -s "$BASE/cache/goods/manual/999"
-# {"data":null,"source":"db","costMs":3.838625}
-
-curl -s "$BASE/cache/goods/manual/999"
-# {"data":null,"source":"cache-empty","costMs":3.234875}
-```
-
-第二次是 `cache-empty`，说明“库里没有这条记录”也被缓存下来了。空值标记的 TTL 比正常值短，`demo.cache.null-ttl` 是 2 分钟，正常的 `demo.cache.ttl` 是 10 分钟，两者都加了 0 到 30 秒的随机抖动，直接查 Redis 能看到：
-
-```bash
-redis-cli --no-auth-warning -a abc123 GET goods:detail:98888
-# "NULL"
-
-redis-cli --no-auth-warning -a abc123 TTL goods:detail:98888
-# (integer) 120
-
-redis-cli --no-auth-warning -a abc123 TTL goods:detail:2
-# (integer) 605
-```
-
-**互斥锁防击穿：`GET /cache/goods/manual-mutex/{id}`**
-
-```bash
-curl -s -X DELETE "$BASE/cache/goods/manual/1/cache"
-# true
-
-curl -s "$BASE/cache/goods/manual-mutex/1"
-# {"data":{...},"source":"db","costMs":3.953958}
-
-curl -s "$BASE/cache/goods/manual-mutex/1"
-# {"data":{...},"source":"cache","costMs":0.680125}
-```
-
-单发请求看不出它和 `manual` 的区别，区别在缓存刚失效、多个请求同时进来的时候。清掉缓存后并发发 10 个请求，数一下控制台日志里 `Parameters: 3(Long)` 出现了几次：
-
-```bash
-curl -s -X DELETE "$BASE/cache/goods/manual/3/cache"
-seq 1 10 | xargs -P 10 -I{} curl -s --noproxy '*' "$BASE/cache/goods/manual/3" > /tmp/a.txt
-grep -c 'Parameters: 3(Long)' 控制台日志
-```
-
-`manual` 无锁时 10 个请求有 5 个打到了库里，`manual-mutex` 只有 1 个，其余 9 个在等锁期间重读缓存拿到了值。互斥锁的作用就是把同一时刻压在数据库上的请求从 5 个收成 1 个。
-
-**注解缓存：`GET /cache/goods/anno/{id}` 与 `GET /cache/goods/anno/list`**
-
-```bash
-curl -s -X DELETE "$BASE/cache/goods/anno"
-# 已清空 goods 缓存区域
-
-curl -s "$BASE/cache/goods/anno/4"
-# {"data":{...},"source":"anno（是否命中看日志）","costMs":20.5275}
-
-curl -s "$BASE/cache/goods/anno/4"
-# {"data":{...},"source":"anno（是否命中看日志）","costMs":2.830875}
-```
-
-注解方式拿不到“这次有没有命中”的标记，只能看两处。一是耗时，第一次 20ms、第二次 2.8ms；二是控制台 SQL 日志，`application.yml` 里开了 `log-impl: StdOutImpl`，命中缓存的那次不会打印 `Preparing: SELECT ...`。连续两次请求一个不存在的 id，日志里只有一次它的查询：
-
-```bash
-curl -s "$BASE/cache/goods/anno/77777"
-curl -s "$BASE/cache/goods/anno/77777"
-grep -c 'Parameters: 77777(Long)' 控制台日志
-# 1
-```
-
-列表缓存是另一个 key：
-
-```bash
-curl -s "$BASE/cache/goods/anno/list"
-# {"data":[{"category":"数码",...,"id":1,...},{...},...],"source":"anno（是否命中看日志）","costMs":39.579792}
-```
-
-Redis 里能看到这两个 key 和值的形态：
-
-```bash
-redis-cli --no-auth-warning -a abc123 --scan --pattern 'cache:goods*'
-# "cache:goods::4"
-# "cache:goods::all"
-
-redis-cli --no-auth-warning -a abc123 --no-raw GET 'cache:goods::4'
-# "{\"@class\":\"top.mqxu.redis.entity.Goods\",\"category\":\"数码\",\"createTime\":\"2026-10-14T08:46:33\",\"id\":4,...}"
-
-redis-cli --no-auth-warning -a abc123 --no-raw GET 'cache:goods::all'
-# "[\"java.util.ArrayList\",[{\"@class\":\"top.mqxu.redis.entity.Goods\",...}]"
-```
-
-单条是 `Goods` 的 JSON，列表是整个 `ArrayList` 的 JSON，都带 `@class` 类型信息，所以读回来能还原成原来的类型。两个 key 的 TTL 都是 10 分钟，来自 `spring.cache.redis.time-to-live`。
-
-空值走的是另一条路。`spring.cache.redis.cache-null-values` 打开后 Spring 用内部的 `NullValue` 对象做标记，没有经过 JSON 序列化，所以 `redis-cli` 里看到的是二进制：
-
-```bash
-curl -s "$BASE/cache/goods/anno/66666"
-redis-cli --no-auth-warning -a abc123 GET 'cache:goods::66666'
-# 一串乱码，属正常
-```
-
-**改价：`PUT /cache/goods/{id}/price` 与 `PUT /cache/goods/{id}/price-anno`**
-
-```bash
-curl -s -X PUT "$BASE/cache/goods/5/price?price=199.00"
-# {"data":{...,"price":199.00,"updateTime":"2026-10-14T08:47:42"},"source":"db","costMs":4.027292}
-```
-
-这条路径先更新数据库、再删缓存，返回的是删完缓存重新读的结果，所以 `source` 又是 `db`。注解版换 `@CachePut`，不删旧值而是把新值写回缓存：
-
-```bash
-curl -s -X PUT "$BASE/cache/goods/6/price-anno?price=59.90"
-# {"data":{...,"price":59.90,...},"source":"anno-put","costMs":8.634416}
-```
-
-**三种清缓存：`DELETE /cache/goods/manual/{id}/cache`、`DELETE /cache/goods/anno/{id}`、`DELETE /cache/goods/anno`**
-
-```bash
-curl -s -X DELETE "$BASE/cache/goods/manual/1/cache"
-# true          # 删掉了一个 key
-
-curl -s -X DELETE "$BASE/cache/goods/manual/1/cache"
-# false         # 缓存本来就不存在
-
-curl -s -X DELETE "$BASE/cache/goods/anno/4"
-# 已清掉 goods 区域下 id=4 与 all 两处缓存
-
-curl -s -X DELETE "$BASE/cache/goods/anno"
-# 已清空 goods 缓存区域
-```
-
-`DELETE /cache/goods/anno/{id}` 会把列表缓存一起清掉，因为列表里也含这个商品。改价后只清单个 key 的话，列表接口返回的还是旧价，这一点容易漏。
-
-### 6.4 锁与库存接口
-
-6 个接口挂在 `/lock` 下，用来做并发扣库存的对照实验。
-
-**重置库存：`POST /lock/reset?id=&stock=`**
-
-```bash
-curl -s -X POST "$BASE/lock/reset?id=1&stock=10"
-# {"id":1,"stock":10}
-```
-
-每次实验前都重置一次，否则上一轮的库存会带进下一轮。
-
-**查库存：`GET /lock/stock/{id}`**
-
-```bash
-curl -s "$BASE/lock/stock/1"
-# {"category":"数码","createTime":"2026-10-14T08:46:33","id":1,"name":"机械键盘 K87","price":399.00,"sales":860,"status":1,"stock":10,"updateTime":"2026-10-14T08:47:50"}
-```
-
-这条绕过所有缓存直接查库，所以看到的库存一定是数据库里的真实值。
-
-**三种购买方式：`POST /lock/buy/no-lock`、`/lock/buy/redisson`、`/lock/buy/setnx`**
-
-参数都是 `id` 和 `quantity`（默认 1）。先各发一个请求，看清楚返回值：
-
-```bash
-curl -s -X POST "$BASE/lock/buy/no-lock?id=1&quantity=1"
-# {"strategy":"no-lock","success":true,"stockLeft":9}
-
-curl -s -X POST "$BASE/lock/buy/redisson?id=1&quantity=1"
-# {"strategy":"redisson","success":true,"stockLeft":8}
-
-curl -s -X POST "$BASE/lock/buy/setnx?id=1&quantity=1"
-# {"strategy":"setnx","success":true,"stockLeft":7}
-```
-
-库存不够时不做扣减：
-
-```bash
-curl -s -X POST "$BASE/lock/reset?id=1&stock=5"
-# {"id":1,"stock":5}
-
-curl -s -X POST "$BASE/lock/buy/redisson?id=1&quantity=10"
-# {"strategy":"redisson","success":false,"stockLeft":5}
-```
-
-`setnx` 版还有第三种返回，没抢到锁时不等，直接把原因返回：
+返回：
 
 ```json
-{"strategy":"setnx","success":false,"reason":"没抢到锁，已有请求在处理"}
+{
+  "code": 200,
+  "data": {
+    "token": "eyAcmUejIaYGQjK8YGN8.zdVqfCKsMqLtIkuqAMInAVLlUYYuBqhiwIW8BBo0Zjo0...",
+    "phone": "13800001234",
+    "message": "登录成功",
+    "expiresIn": 7200
+  }
+}
 ```
 
-这条要两个请求同时进来才会出现，单发看不到。
+这一步的实测截图：
 
-**查锁的剩余时间：`GET /lock/info?key=`**
+![验证码发送、登录、token 复用与无 token 访问](./public/shots/06-redis-auth.png)
+
+图里有五个请求，重点看两处：
+
+- 第三个请求又提交了一次同样的验证码，返回 `40006 验证码已使用`。这说明状态标记生效了。
+- 第五个请求去掉 `Authorization` 头，返回 `40100 登录状态已失效`。注意 HTTP 状态码仍是 200，错误码在响应体的 `code` 里。
+
+### 7.3 缓存三种写法
 
 ```bash
-curl -s "$BASE/lock/info?key=lock:goods:buy:1"
-# {"key":"lock:goods:buy:1","ttlSeconds":-2}
+curl "http://127.0.0.1:8006/cache/goods/db/1"
+curl "http://127.0.0.1:8006/cache/goods/manual/1"
+curl "http://127.0.0.1:8006/cache/goods/manual/1"
+curl "http://127.0.0.1:8006/cache/goods/anno/2"
+curl "http://127.0.0.1:8006/cache/goods/anno/2"
 ```
 
-锁已经释放，所以是 `-2`。手动放一个带过期的 key 进去能看到真实值：
+![直查库、手动缓存、注解缓存的对照](./public/shots/06-redis-cache.png)
 
-```bash
-redis-cli --no-auth-warning -a abc123 SET lock:demo 1 EX 30
-curl -s "$BASE/lock/info?key=lock:demo"
-# {"key":"lock:demo","ttlSeconds":30}
-redis-cli --no-auth-warning -a abc123 DEL lock:demo
-```
+看三组 `source`：
 
-**并发实验**
-
-单发请求时三种写法看起来都对，差别在并发下才显出来。把库存重置成 10，用 `xargs -P` 同时发 20 个请求，每个请求买 1 件：
-
-```bash
-curl -s -X POST "$BASE/lock/reset?id=1&stock=10"
-seq 1 20 | xargs -P 20 -I{} curl -s --noproxy '*' -X POST "$BASE/lock/buy/no-lock?id=1&quantity=1" > /tmp/a.txt
-grep -c '"success":true' /tmp/a.txt
-curl -s "$BASE/lock/stock/1" | grep -o '"stock":[0-9]*'
-```
-
-不加锁这一轮：20 个请求全部返回 `success:true`，库存只从 10 减到 8。账面上卖出 20 件，实际只扣掉 2 件，这就是丢失更新。
-
-```bash
-curl -s -X POST "$BASE/lock/reset?id=1&stock=10"
-seq 1 20 | xargs -P 20 -I{} curl -s --noproxy '*' -X POST "$BASE/lock/buy/redisson?id=1&quantity=1" > /tmp/b.txt
-grep -o '"success":true' /tmp/b.txt | wc -l
-grep -o '"success":false' /tmp/b.txt | wc -l
-curl -s "$BASE/lock/stock/1" | grep -o '"stock":[0-9]*'
-```
-
-Redisson 这一轮：10 个成功、10 个失败，库存正好减到 0。失败的是进临界区时库存已经空了的请求。
-
-```bash
-curl -s -X POST "$BASE/lock/reset?id=1&stock=10"
-seq 1 20 | xargs -P 20 -I{} curl -s --noproxy '*' -X POST "$BASE/lock/buy/setnx?id=1&quantity=1" > /tmp/c.txt
-grep -o '"success":true' /tmp/c.txt | wc -l
-grep -o '没抢到锁' /tmp/c.txt | wc -l
-curl -s "$BASE/lock/stock/1" | grep -o '"stock":[0-9]*'
-```
-
-手写 SETNX 这一轮：4 个成功、16 个返回没抢到锁，库存减到 6。
-
-三组放在一起看：不加锁会超卖；Redisson 不超卖，没抢到锁的请求会在等待时间里排队重试；手写 SETNX 不等锁，抢不到立刻放弃，大量购买请求被直接丢掉。
-
-成功数每次执行都会浮动，`no-lock` 那一组尤其明显，线程调度不同结果就不同。要看的是三者的模式：不加锁时成功数等于请求数、库存减不下去；加锁时成功数等于库存数、剩下的一律失败。
-
-### 6.5 排行榜与限流接口
-
-5 个接口，排行榜挂在 `/rank`，限流挂在 `/limit`。
-
-**预热：`POST /rank/warmup`**
-
-```bash
-curl -s -X POST "$BASE/rank/warmup"
-# {"warmed":10,"size":10}
-```
-
-把库里 10 条商品的销量灌进 ZSet。`warmed` 是读到的商品条数，`size` 是写完后 ZSet 的成员数，两个相等说明都写进去了。重新预热不会重复计数，因为 ZSet 里同一个成员是覆盖分数。
-
-**取前 N 名：`GET /rank/top?top=`**
-
-```bash
-curl -s "$BASE/rank/top?top=3"
-# [{"rank":1,"goodsId":"6","sales":4300.0,"name":"不锈钢保温杯"},{"rank":2,"goodsId":"5","sales":2100.0,"name":"智能手环 5 代"},{"rank":3,"goodsId":"9","sales":1760.0,"name":"手冲咖啡豆 250g"}]
-```
-
-`top` 默认 5，分数从高到低。`name` 是拿 ZSet 里存的 `goodsId` 回查数据库补上的，ZSet 本身只存 id 和分数。
-
-**加分：`POST /rank/increase?id=&delta=`**
-
-```bash
-curl -s -X POST "$BASE/rank/increase?id=7&delta=3000"
-# {"goodsId":7,"score":3275.0,"rank":2}
-```
-
-7 号原来 275 分，加 3000 后是 3275 分，返回时顺带给出新名次。用 `incrementScore` 而不是先读后写，并发加分不会互相覆盖。
-
-**查名次：`GET /rank/rank-of?id=`**
-
-```bash
-curl -s "$BASE/rank/rank-of?id=7"
-# {"goodsId":7,"rank":2,"sales":3275.0}
-
-curl -s "$BASE/rank/rank-of?id=999"
-# {"goodsId":999,"rank":-1,"sales":null}
-```
-
-名次从 1 开始算。没上过榜的 id 返回 `rank` 为 `-1`、`sales` 为 `null`。
-
-**限流：`GET /limit/access?user=`**
-
-```bash
-for i in 1 2 3 4 5 6; do curl -s "$BASE/limit/access?user=tao"; echo; done
-# {"user":"tao","count":1,"maxRequests":5,"windowSeconds":60,"allowed":true,"ttlSeconds":60}
-# {"user":"tao","count":2,"maxRequests":5,"windowSeconds":60,"allowed":true,"ttlSeconds":60}
-# ...
-# {"user":"tao","count":5,"maxRequests":5,"windowSeconds":60,"allowed":true,"ttlSeconds":60}
-# {"user":"tao","count":6,"maxRequests":5,"windowSeconds":60,"allowed":false,"ttlSeconds":60}
-```
-
-窗口 60 秒、上限 5 次来自 `demo.limit` 里的 `window-seconds` 和 `max-requests`。前 5 次 `allowed` 为 true，第 6 次变 false，`count` 仍然继续涨，因为计数器只负责数、不负责拦。业务代码里拿到 `allowed` 为 false 时返回 429 即可。
-
-计数器按用户隔离，换个 `user` 重新从 1 开始：
-
-```bash
-curl -s "$BASE/limit/access?user=someone-else"
-# {"user":"someone-else","count":1,"maxRequests":5,"windowSeconds":60,"allowed":true,"ttlSeconds":60}
-```
-
-几次请求间隔不到一秒，`ttlSeconds` 都停在 60。这个过期时间只在计数器刚创建时设置，后面的自增不再刷新它，所以窗口按自然时间滚动：等这一分钟过去，同一个用户又能拿到 5 次。
-
-### 6.6 全部接口速查
-
-34 个接口集中列在这里，每个接口的命令与预期返回见 6.2 到 6.5。
-
-| 分组 | 操作 | 请求 |
+| 请求 | source | 说明 |
 | --- | --- | --- |
-| 数据类型 | 写 String | `POST /redis/string?key=&value=&ttlSeconds=` |
-| | 读 String | `GET /redis/string?key=` |
-| | 查剩余过期时间 | `GET /redis/ttl?key=` |
-| | 删 key | `DELETE /redis/key?key=` |
-| | 写 Hash | `POST /redis/hash?key=&字段=值...` |
-| | 读 Hash | `GET /redis/hash?key=` |
-| | 写 List | `POST /redis/list?key=&values=a&values=b` |
-| | 读 List | `GET /redis/list?key=` |
-| | 写 Set | `POST /redis/set?key=&values=` |
-| | Set 交集 | `GET /redis/set/intersect?key1=&key2=` |
-| | 写 ZSet | `POST /redis/zset?key=&member=&score=` |
-| | ZSet 前 N | `GET /redis/zset/top?key=&top=` |
-| | 计数器 | `POST /redis/counter/incr?key=&delta=` |
-| 缓存 | 直查库 | `GET /cache/goods/db/{id}` |
-| | 手动缓存 | `GET /cache/goods/manual/{id}` |
-| | 手动缓存 + 互斥锁 | `GET /cache/goods/manual-mutex/{id}` |
-| | 注解缓存单个 | `GET /cache/goods/anno/{id}` |
-| | 注解缓存列表 | `GET /cache/goods/anno/list` |
-| | 改价（更新库后删缓存） | `PUT /cache/goods/{id}/price?price=` |
-| | 改价（`@CachePut` 写回） | `PUT /cache/goods/{id}/price-anno?price=` |
-| | 只删手动缓存 | `DELETE /cache/goods/manual/{id}/cache` |
-| | 清注解缓存的明细与列表 | `DELETE /cache/goods/anno/{id}` |
-| | 清空注解缓存区域 | `DELETE /cache/goods/anno` |
-| 锁 | 不加锁购买 | `POST /lock/buy/no-lock?id=&quantity=` |
-| | Redisson 锁购买 | `POST /lock/buy/redisson?id=&quantity=` |
-| | 手写 SETNX 购买 | `POST /lock/buy/setnx?id=&quantity=` |
-| | 重置库存 | `POST /lock/reset?id=&stock=` |
-| | 查库存 | `GET /lock/stock/{id}` |
-| | 查锁的剩余时间 | `GET /lock/info?key=` |
-| 排行 | 预热 | `POST /rank/warmup` |
-| | 加分 | `POST /rank/increase?id=&delta=` |
-| | 前 N 名 | `GET /rank/top?top=` |
-| | 查名次 | `GET /rank/rank-of?id=` |
-| 限流 | 访问一次 | `GET /limit/access?user=` |
+| `/db/1` | `db` | 每次都查库 |
+| `/manual/1` 第一次 | `db` | 未命中，回源 |
+| `/manual/1` 第二次 | `cache` | 命中，没碰库 |
 
----
+`costMs` 这组数字在这里会让人困惑：实测回源那次 7 毫秒，命中那次 8.5 毫秒，缓存反而更慢；换个 id 再测，两次又都在 30 毫秒上下。原因是 Redis 和 MySQL 都在本机，网络那一跳的成本几乎为零，而 JIT 预热、连接池冷启动这些因素对耗时的影响比"走不走库"更大。真实的收益要看 `source`，不要看这几毫秒。把 Redis 放到另一台机器上，差距才会明显。
 
-## 7. 常见问题与避坑
+图里还能看到改价之后的行为：
 
-**`redis-cli` 里看到的 key 和值是乱码。** 没有配置序列化器，`RedisTemplate` 默认用 JDK 序列化。按步骤 1 换成 JSON。
+```
+PUT /cache/goods/2/price-anno?price=1199
+GET /cache/goods/anno/2
+```
 
-**读缓存时抛 `ClassCastException`，取出来的是 `LinkedHashMap`。** JSON 里没带类型信息。`GenericJacksonJsonRedisSerializer` 的 builder 要显式调 `enableDefaultTyping(...)`。
+第二次查询返回的价格是 1199，`costMs` 从 50 毫秒降到 2.4 毫秒，说明这次没有再查库。`@CachePut` 已经把新值写进 `cache:goods::2`，随后的 `@Cacheable` 直接命中了它。价格能从缓存里读出来，靠的是两个方法的 key 完全一致：`@CachePut` 写 `#id`，`@Cacheable` 也读 `#id`。
 
-**读缓存时抛 `InvalidTypeIdException`，提示 subtype class not allowed。** 类型校验器的白名单太窄。往 `Map<String, Object>` 这类声明类型为 `Object` 的结构里放 `Long`、`String`，会被写成 `["java.lang.Long", ...]` 的形式，白名单里要有 `java.lang.`。
+跑完这些请求，Redis 里就有了真实数据：
 
-**`@Cacheable` 加了但没生效。** 三种可能：类不是 Spring Bean；方法被同一个类内部调用，绕过了代理；缺 `spring-boot-starter-cache` 依赖。第三种在 Boot 4 上最常见，因为缓存自动配置已经从 `spring-boot-starter-data-redis` 里拆走了。
+```bash
+redis-cli -a abc123 -n 10 keys 'cache:goods::*'
+# 1) "cache:goods::1"
+# 2) "cache:goods::2"
 
-**自定义了 `RedisCacheConfiguration` 之后，配置文件的 TTL 和前缀都不生效了。** 这是预期行为。容器里出现这个 Bean，Boot 就整体采用它，不再读 `spring.cache.redis.*`，需要在代码里手动搬过来。
+redis-cli -a abc123 -n 10 get 'cache:goods::1'
+# "{\"@class\":\"top.mqxu.redis.entity.Goods\",\"id\":1,\"name\":\"机械键盘 K87\",...}"
+```
 
-**改成主键查询后，`@Cacheable` 的 key 出现双冒号。** `RedisCacheConfiguration` 默认的 key 前缀是 `缓存名::`，再叠加 `spring.cache.redis.key-prefix`，最终形如 `cache:goods::3`。不是 bug。
+### 7.4 缓存防护
 
-**缓存 null 值时报序列化异常。** 序列化器要调 `enableSpringCacheNullValueSupport()`，否则不认识 Spring 写入的 `NullValue`。
+```bash
+curl "http://127.0.0.1:8006/cache/goods/manual/99999"
+curl "http://127.0.0.1:8006/cache/goods/manual/99999"
+curl "http://127.0.0.1:8006/cache/goods/manual-mutex/3"
+```
 
-**`@CacheEvict(allEntries = true)` 之后立刻查 key，发现还在。** Spring Data Redis 4 默认异步执行缓存的写入与删除，命令发出去就返回了，隔几十毫秒才真正生效。按步骤 6 配一个 `RedisCacheManagerBuilderCustomizer` 调 `immediateWrites()` 即可改成同步。
+![空值缓存与互斥重建](./public/shots/06-redis-protect.png)
 
-**`spring.data.redis.lettuce.pool.*` 配了没反应。** 类路径缺少 `commons-pool2`，池参数会被静默忽略。
+两次查不存在的 99999，`source` 从 `db` 变成 `cache-empty`，`costMs` 从 2.35 降到 0.55。第二次没有查库，命中的是那个 `"NULL"` 标记。
 
-**参数里带中文，Tomcat 返回 400。** 请求行里的非 ASCII 字符必须先 URL 编码。用 `curl -G --data-urlencode`，或在 Postman 里让它自动编码。
+`manual-mutex/3` 返回 `source: db`，因为 3 号商品还没被缓存过。要观察互斥效果，得用并发工具同时打这个接口，单个 curl 看不出区别。
 
-**DevTools 热重启后数据没了。** `schema.sql` 里有 `DROP TABLE`，每次上下文刷新都会重建表并重灌数据。要保留数据，把建表语句改成 `CREATE TABLE IF NOT EXISTS`，插入改成 `INSERT IGNORE`。
+### 7.5 分布式锁
 
-**`@RequestParam Map<String, String>` 收进来的参数里多了个 `key`。** 该 Map 包含请求的全部参数，包括 `key` 本身，写 hash 前要剔除。
+这一组要看的是库存数字，得按顺序来：
 
-**`@Transactional` 加在扣库存方法上，锁却没拦住并发。** 事务的提交发生在方法返回之后，锁在方法返回时就释放了，两者之间有一段窗口。Spring Data Redis 4 提供了 `initializeCacheLocking` 与 `CacheLockingConfigurer` 等机制来处理这类问题，本节场景在锁内直接写库，不受影响。
+```bash
+# 重置库存为 10
+curl -X POST "http://127.0.0.1:8006/lock/reset?id=1&stock=10"
 
----
+# 20 个并发请求，全部用无锁版本
+seq 20 | xargs -P 20 -I{} curl -s -X POST "http://127.0.0.1:8006/lock/buy/no-lock?id=1&quantity=1"
 
-## 8. 练习与参考答案
+# 看库存
+curl "http://127.0.0.1:8006/lock/stock/1"
+```
 
-练习代码都在 `06-redis/src/test/java/top/mqxu/redis/` 下，运行方式见 8.3。
+![无锁与加锁的并发对照](./public/shots/06-redis-lock.png)
 
-### 8.1 课堂随堂练习
+无锁的结果：
 
-**练习 1：用 Hash 只更新对象的某一个字段。**
+```
+20 个请求全部返回 success: true
+库存剩下 9
+```
 
-题意：商品有三个可改属性 —— 名称、分类、价格。用 Hash 把商品存进 Redis，要求只更新价格时不重写整个对象。
+20 件卖出去了，账面只扣了 1 件。`stockLeft` 在这些响应里几乎都是 9，因为每个线程读到的都是同一个初始值。
 
-参考答案：
+加锁之后再跑一遍：
 
-```java
-@Test
-@DisplayName("练习 1：用 Hash 只改一个字段，其余字段保持不变")
-void practice1UpdateSingleHashField() {
-    String key = "practice:goods:hash:1";
-    stringRedisTemplate.opsForHash().putAll(key, Map.of(
-            "name", "机械键盘 K87", "category", "数码", "price", "399.00"));
+```
+10 个请求成功，10 个返回 success: false
+库存剩下 0
+```
 
-    stringRedisTemplate.opsForHash().put(key, "price", "359.00");
+10 件库存卖完就停，没有超卖。后 10 个请求返回 `false` 是因为进入临界区后读到库存为 0，业务判断拦住了。
 
-    Map<Object, Object> fields = stringRedisTemplate.opsForHash().entries(key);
-    assertThat(fields).containsEntry("price", "359.00")
-            .containsEntry("name", "机械键盘 K87")
-            .containsEntry("category", "数码");
-    stringRedisTemplate.delete(key);
+### 7.6 限流
+
+```bash
+curl "http://127.0.0.1:8006/limit/access?user=tao"
+```
+
+连续打 8 次（或者用 `xargs -P` 并发打），前 5 次 `allowed: true`，第 6 次开始 `allowed: false`：
+
+```json
+{
+  "user": "tao",
+  "count": 6,
+  "maxRequests": 5,
+  "windowSeconds": 60,
+  "allowed": false,
+  "ttlSeconds": 60
 }
 ```
 
-要点：`put` 只覆盖指定字段，`putAll` 会覆盖同名字段、保留其余字段；Hash 读写的单位是字段，不是整个值，这也是它相比 String 存 JSON 的优势。
+![固定窗口限流](./public/shots/06-redis-limit.png)
 
-**练习 2：用 Set 求两个用户共同关注的商品。**
+`ttlSeconds` 一直是 60 附近，说明计数器的过期时间被正确设置了。如果这个值是 `-1`，说明过期没设上，计数器会永久累积。
 
-参考答案：
+### 7.7 数据类型
 
-```java
-@Test
-@DisplayName("练习 2：Set 求交集，得到共同关注的商品")
-void practice2IntersectLikes() {
-    stringRedisTemplate.opsForSet().add("practice:like:u1", "1", "2", "3");
-    stringRedisTemplate.opsForSet().add("practice:like:u2", "2", "3", "4");
-
-    Set<String> common = stringRedisTemplate.opsForSet()
-            .intersect("practice:like:u1", "practice:like:u2");
-
-    assertThat(common).containsExactlyInAnyOrder("2", "3");
-    stringRedisTemplate.delete(List.of("practice:like:u1", "practice:like:u2"));
-}
+```bash
+curl -X POST "http://127.0.0.1:8006/redis/string?key=demo:name&value=hello"
+curl "http://127.0.0.1:8006/redis/string?key=demo:name"
+curl -X POST "http://127.0.0.1:8006/redis/hash?key=demo:user&name=张三&age=20"
+curl -X POST "http://127.0.0.1:8006/redis/list?key=demo:queue&values=a,b,c"
+curl -X POST "http://127.0.0.1:8006/redis/set?key=demo:tags&values=java,redis,java"
+curl -X POST "http://127.0.0.1:8006/rank/warmup"
+curl -X POST "http://127.0.0.1:8006/rank/increase?id=3&delta=800"
+curl "http://127.0.0.1:8006/rank/top?top=5"
 ```
 
-进一步可以试 `union`（并集）和 `difference`（差集），对应共同关注、推荐、排除已关注三种业务。
+![五种数据类型与排行榜](./public/shots/06-redis-datatype.png)
 
-**练习 3：为一段热点数据加上带抖动的过期时间。**
+Set 那一条故意传了两个 `java`，返回的集合里只有一个，这是去重。排行榜那一条先用 `/rank/warmup` 把 10 条商品的销量灌进 ZSet，再给 3 号书加了 800 分，它的分数从 1520 变成 2320，名次从第 3 升到第 2——第 1 名的保温杯是 4300 分，还没被超过。
 
-题意：要求过期时间在基础 TTL 之上随机浮动，避免同一批 key 同时失效。
+### 7.8 跑测试
 
-参考答案：
-
-```java
-@Test
-@DisplayName("练习 3：TTL 抖动后，多个 key 的剩余时间不会完全一致")
-void practice3TtlJitter() {
-    List<String> keys = new ArrayList<>();
-    for (int i = 1; i <= 10; i++) {
-        String key = "practice:jitter:" + i;
-        redisTemplate.opsForValue().set(key, "v", Duration.ofMinutes(10).plusSeconds(ThreadLocalRandom.current().nextInt(31)));
-        keys.add(key);
-    }
-
-    Set<Long> ttls = keys.stream()
-            .map(redisTemplate::getExpire)
-            .collect(Collectors.toSet());
-
-    // 10 个 key 的 TTL 至少出现两种取值
-    assertThat(ttls).hasSizeGreaterThan(1);
-    redisTemplate.delete(keys);
-}
-```
-
-要点：抖动幅度要远小于基础 TTL，否则等于没设过期；`ThreadLocalRandom` 比 `Random` 在并发下开销更小。
-
-**练习 4：用 `SETNX` 实现一个“同一用户 5 秒内只能提交一次”的接口。**
-
-参考思路：key 用 `practice:submit:<userId>`，`setIfAbsent` 成功则放行并设 5 秒过期，失败则返回“操作过于频繁”。这与 `/limit/access` 的固定窗口不同，属于最简单的去重式限流。
-
-```java
-@Test
-@DisplayName("练习 4：SETNX 做提交去重，第二次被挡住")
-void practice4SubmitOnce() {
-    String key = "practice:submit:1001";
-
-    Boolean first = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", Duration.ofSeconds(5));
-    Boolean second = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", Duration.ofSeconds(5));
-
-    assertThat(first).isTrue();
-    assertThat(second).isFalse();
-    assertThat(stringRedisTemplate.getExpire(key)).isPositive();
-    stringRedisTemplate.delete(key);
-}
-```
-
-**练习 5：给排行榜加上“取某人前后各一名”的能力。**
-
-提示：先用 `reverseRank` 拿到名次（从 0 开始），再用 `reverseRangeWithScores(key, rank - 1, rank + 1)` 取区间，注意边界要夹到 `0`。
-
-### 8.2 课后练习
-
-**练习 6：用 Hash 实现购物车。**
-
-要求：一个用户一个 key，商品 id 做字段，数量做值；支持加购、改数量、删除单项、查看全部、清空。用 `HINCRBY` 对应加购，用 `HINCRBY` 传负数对应减购，减到 0 时删字段。
-
-```java
-@Test
-@DisplayName("练习 6：购物车用 Hash 存，HINCRBY 让加购与减购都是原子操作")
-void homework6ShoppingCart() {
-    String key = "homework:cart:1001";
-    stringRedisTemplate.delete(key);
-
-    stringRedisTemplate.opsForHash().increment(key, "1", 2);    // 商品 1 加 2 件
-    stringRedisTemplate.opsForHash().increment(key, "1", 1);    // 再加 1 件
-    stringRedisTemplate.opsForHash().increment(key, "2", 1);    // 商品 2 加 1 件
-    stringRedisTemplate.opsForHash().increment(key, "1", -3);   // 商品 1 减 3 件
-
-    Map<Object, Object> cart = stringRedisTemplate.opsForHash().entries(key);
-    assertThat(cart).containsEntry("1", "0").containsEntry("2", "1");
-
-    // 数量为 0 的条目由业务代码删掉
-    stringRedisTemplate.opsForHash().delete(key, "1");
-    assertThat(stringRedisTemplate.opsForHash().entries(key)).hasSize(1);
-    stringRedisTemplate.delete(key);
-}
-```
-
-思考题：为什么用 `HINCRBY` 而不是先 `HGET` 再 `HSET`？因为后者在并发加购时会丢失更新，与 6.4 节里不加锁扣库存是同一类问题。
-
-**练习 7：给商品详情加一层“逻辑过期”防击穿。**
-
-要求：缓存里存的值外面包一层，带上逻辑过期时间；读到已逻辑过期的数据时，仍然立刻返回旧值，同时只放一个线程去异步重建缓存。
-
-参考思路：
-
-```java
-@Test
-@DisplayName("练习 7：逻辑过期——过期后先返回旧值，只放一个线程去重建")
-void homework7LogicalExpire() throws InterruptedException {
-    String key = "homework:logical:1";
-    Map<String, Object> wrapper = new LinkedHashMap<>();
-    wrapper.put("data", "旧值");
-    wrapper.put("expireAt", System.currentTimeMillis() - 1000);   // 已逻辑过期
-    redisTemplate.opsForValue().set(key, wrapper, Duration.ofMinutes(30));  // 物理上不过期
-
-    @SuppressWarnings("unchecked")
-    Map<String, Object> cached = (Map<String, Object>) redisTemplate.opsForValue().get(key);
-    long expireAt = ((Number) cached.get("expireAt")).longValue();
-
-    String returned = (String) cached.get("data");
-    AtomicInteger rebuildCount = new AtomicInteger();
-
-    if (expireAt < System.currentTimeMillis()) {
-        // 抢到锁的线程才重建，其余线程直接拿到旧值
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(key + ":rebuild", "1", Duration.ofSeconds(5));
-        if (Boolean.TRUE.equals(locked)) {
-            rebuildCount.incrementAndGet();
-            // 真实场景这里开一个异步线程去查库并回写缓存
-        }
-    }
-
-    assertThat(returned).isEqualTo("旧值");
-    assertThat(rebuildCount.get()).isEqualTo(1);
-}
-```
-
-读取 `expireAt` 不能直接强转成 `Long`。往 `Map<String, Object>` 里存的时间戳，反序列化后是 `Number` 的具体子类，用 `((Number) x).longValue()` 最稳。
-
-与 8.1 的互斥锁方案对比：互斥锁会让等待的请求阻塞一小会儿，逻辑过期让所有请求都立刻返回，代价是短时间里读到旧数据。两者取舍取决于业务能否容忍短暂旧值。
-
-**练习 8：把限流改成按接口维度统计，并输出剩余可用次数。**
-
-要求：key 里带上接口名，返回值多一个 `remaining` 字段。
-
-参考实现：
-
-```java
-@Test
-@DisplayName("练习 8：按接口维度限流，并返回剩余可用次数")
-void homework8ApiLimitRemaining() {
-    String api = "/orders";
-    String user = "u1001";
-    int windowSeconds = 60;
-    int maxRequests = 3;
-    long windowIndex = System.currentTimeMillis() / 1000 / windowSeconds;
-    String key = "homework:limit:" + api + ":" + user + ":" + windowIndex;
-
-    List<Map<String, Object>> results = new ArrayList<>();
-    for (int i = 0; i < 4; i++) {
-        Long count = stringRedisTemplate.opsForValue().increment(key);
-        if (count != null && count == 1L) {
-            stringRedisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
-        }
-        Map<String, Object> item = new LinkedHashMap<>();
-        item.put("count", count);
-        item.put("remaining", Math.max(0L, maxRequests - count));
-        item.put("allowed", count != null && count <= maxRequests);
-        results.add(item);
-    }
-
-    assertThat(results.get(2)).containsEntry("remaining", 0L).containsEntry("allowed", true);
-    assertThat(results.get(3)).containsEntry("remaining", 0L).containsEntry("allowed", false);
-}
-```
-
-`Math.max(0L, ...)` 里的 `0L` 不能写成 `0`。`maxRequests - count` 是 `long`，传 `int` 进去会被提升成 `long`，结果是 `Long`；断言时写 `0` 是 `Integer`，两者不相等。这类装箱类型的比较在测试里很容易出错。
-
-**练习 9：让“先删缓存再更新库”的不一致稳定复现。**
-
-用两个终端并发跑“读”和“改”很难每次都撞上那个窗口，所以把顺序手工摆出来：先往缓存放旧值，删掉缓存，模拟另一个请求在这个窗口里读到库里的旧值并写回缓存，最后更新数据库但不再删缓存。此时缓存里是旧值，库里是新值。
-
-```java
-@Test
-@DisplayName("练习 9：先删缓存再更新库，中间进来的一次读会把旧值写回缓存")
-void homework9DeleteThenUpdateLeavesStaleCache() {
-    String key = "homework:stale:1";
-    Goods before = goodsService.getFromDb(1L);
-    BigDecimal oldPrice = before.getPrice();
-
-    redisTemplate.opsForValue().set(key, before, Duration.ofMinutes(10));   // 缓存里先放好旧值
-    redisTemplate.delete(key);                                             // 先删缓存
-
-    // 另一个请求在删缓存之后、更新库之前读到旧值并写回缓存
-    Goods readInWindow = goodsService.getFromDb(1L);
-    redisTemplate.opsForValue().set(key, readInWindow, Duration.ofMinutes(10));
-
-    // 再更新库，此时缓存里留下的是旧值
-    Goods update = new Goods();
-    update.setId(1L);
-    update.setPrice(oldPrice.add(new BigDecimal("10.00")));
-    goodsMapper.updateById(update);
-
-    Object cached = redisTemplate.opsForValue().get(key);
-    assertThat(((Goods) cached).getPrice()).isEqualByComparingTo(oldPrice);
-    assertThat(goodsService.getFromDb(1L).getPrice()).isEqualByComparingTo(oldPrice.add(new BigDecimal("10.00")));
-}
-```
-
-结论：先删缓存会留下一个空窗期，期间任何一次读都可能把旧值重新填回缓存，而且没有后续动作再去纠正它。换成先更新库再删缓存，同样的读请求最多读到旧值但不写回，或者写回的是新值，出现长期不一致的概率小得多。这就是 `GoodsCacheService.updatePrice` 选择后者的原因。
-
-### 8.3 测试过程
-
-五个测试类共 41 个用例，连本机真实的 MySQL 与 Redis。
+41 个测试用例，五个类：
 
 ```bash
 mvn -pl 06-redis test
 ```
 
-预期输出：
+| 测试类 | 用例数 | 覆盖什么 |
+| --- | --- | --- |
+| `GoodsCacheTest` | 13 | 手动缓存命中、空值标记、互斥重建、注解缓存五种操作、改价后的缓存失效 |
+| `LockAndLimitTest` | 10 | 20 线程并发扣库存的对照、SETNX 抢锁失败、限流边界、排行榜名次 |
+| `RedisTypeOpsTest` | 9 | 五种类型的接口，含 TTL、交集、ZSet 取前 N |
+| `PracticeTest` | 5 | 随堂练习 1–5 的参考实现 |
+| `HomeworkTest` | 4 | 课后练习 6–9 的参考实现 |
+
+结果：
 
 ```
-Tests run: 13, Failures: 0, Errors: 0, Skipped: 0 -- in top.mqxu.redis.GoodsCacheTest
-Tests run:  9, Failures: 0, Errors: 0, Skipped: 0 -- in top.mqxu.redis.RedisTypeOpsTest
-Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- in top.mqxu.redis.LockAndLimitTest
-Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in top.mqxu.redis.PracticeTest
-Tests run:  4, Failures: 0, Errors: 0, Skipped: 0 -- in top.mqxu.redis.HomeworkTest
 Tests run: 41, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
 ```
 
-各测试类的分工：
+三个类的写法值得看一下。
 
-| 测试类 | 用例数 | 覆盖内容 | 关键断言 |
-| --- | --- | --- | --- |
-| `RedisTypeOpsTest` | 9 | 五种数据类型接口 | Hash 里不能出现 `key` 字段；Set 自动去重；ZSet 按分数倒序 |
-| `GoodsCacheTest` | 13 | 三种缓存做法 | 第二次请求 `source` 变 `cache`；空值有更短的 TTL；缓存里的值能还原成 `Goods` |
-| `LockAndLimitTest` | 10 | 并发与限流 | 20 线程不加锁会丢更新；加锁后恰好卖出 10 件；第 6 次限流被拒 |
-| `PracticeTest` | 5 | 8.1 节的五道随堂练习 | Hash 单字段更新；Set 交集；TTL 抖动；SETNX 去重；排行榜取邻位 |
-| `HomeworkTest` | 4 | 8.2 节的课后练习 | 购物车加减购；逻辑过期只放一个线程重建；限流剩余次数；先删缓存导致脏数据 |
-
-值得单独说两条用例。
-
-**并发用例怎么保证能复现问题。** 单线程顺序执行，不加锁也不会出错，所以必须真的并发。用 `CountDownLatch` 让 20 个线程在同一时刻进入方法：
-
-```java
-private int runConcurrently(Supplier<Boolean> action) throws InterruptedException {
-    ExecutorService pool = Executors.newFixedThreadPool(THREADS);
-    CountDownLatch start = new CountDownLatch(1);
-    List<Future<Boolean>> futures = new ArrayList<>();
-    try {
-        for (int i = 0; i < THREADS; i++) {
-            futures.add(pool.submit(() -> {
-                start.await();
-                return action.get();
-            }));
-        }
-        start.countDown();
-        // 收集结果
-    } finally {
-        pool.shutdownNow();
-    }
-}
-```
-
-断言写成“20 次都返回成功，但库存减少量小于 20”而不是写死库存的最终值。因为最终值取决于线程调度，写死会偶发失败，而“卖出 20 件、库存只减了不到 20”在任何调度下都成立，正是要验证的那件事。
-
-**用例之间怎么隔离。** 缓存测试会改动数据库和 Redis，所以每条用例开头都重跑一次建表与初始化脚本，再清掉本模块用到的 key：
+**`GoodsCacheTest` 每个用例前重建数据。** 缓存测试最容易互相污染：上一个用例把库存改成 0，下一个用例的断言就挂了。所以 `@BeforeEach` 里重跑建表脚本和清 key：
 
 ```java
 @BeforeEach
@@ -1752,38 +1351,205 @@ void reset() throws SQLException {
 }
 ```
 
-只跑某一个用例：
+**`LockAndLimitTest` 用 CountDownLatch 制造真正的并发。** 用 `ExecutorService` 提交 20 个任务，然后让它们在同一起跑线上同时开始：
 
-```bash
-mvn -pl 06-redis test -Dtest=LockAndLimitTest#deductWithRedissonLockShouldNotOversell
+```java
+private static final int THREADS = 20;
 ```
 
-跑测试会重置 `t_goods`，跑完库里是初始化数据，与启动后 `data.sql` 的结果一致，不需要额外恢复。
+不这么做的话，任务是一个接一个执行的，读到的库存早就被前一个改过了，测不出并发问题。
+
+**`RedisTypeOpsTest` 用独立的 key 前缀。** 所有 key 都带 `test:` 前缀，用例结束就删，不会碰到演示数据。这是写 Redis 测试的通用做法：别依赖库里现成的数据，自己造、自己清。
 
 ---
 
-## 9. 小结与知识地图
+## 8. 练习
 
-本节从一次数据库查询出发，依次解决了四个问题：
+九道题，随堂五道只用单条命令，课后四道要组合多个知识点。每道题的参考实现在测试类里，跑一次就能看到结果。
 
-| 问题 | 手段 | 落点 |
-| --- | --- | --- |
-| 热点数据反复查库慢 | Redis 缓存 + JSON 序列化 | `RedisConfig`、`GoodsCacheService` |
-| 缓存与数据库不一致 | 更新库后删缓存，TTL 兜底 | `GoodsCacheService.updatePrice` |
-| 缓存失效时的三类异常 | 空值标记、互斥锁、TTL 抖动 | `cacheIt`、`getByIdWithMutex`、`ttlWithJitter` |
-| 多机并发的数据竞争 | Redisson 分布式锁 | `StockService.deductWithLock` |
+### 8.1 随堂练习（约 20 分钟）
 
-沿着这条线，本节覆盖的知识点：
+**练习 1：用 Hash 只改一个字段**
 
-- Redis 五种数据结构的适用场景与常用命令
-- `RedisTemplate` 的序列化配置，以及类型信息与反序列化安全的取舍
-- Cache-Aside 的读写流程，三种更新策略的差异
-- 穿透、击穿、雪崩的成因与各自的代码实现
-- Spring 缓存抽象 `@Cacheable` / `@CachePut` / `@CacheEvict` / `@Caching`
-- 自定义 `RedisCacheConfiguration` 后配置不生效的原因
-- Boot 4 缓存自动配置被拆分到 `spring-boot-cache` 这一变化
-- Spring Data Redis 4 默认异步写缓存及其关闭方式
-- 分布式锁的三个必要条件，`SETNX` + Lua 与 Redisson 的差距
-- ZSet 排行榜与计数器限流
+商品有 name、category、price 三个属性，现在只改价格。用 String 存 JSON 的话，要读出整个对象、改一个字段、再写回去；用 Hash 只需一条 `HSET`。
 
-下一节 `07-mq` 处理的是另一类问题：不要求立刻拿到结果的耗时操作，通过消息队列异步化。
+```java
+stringRedisTemplate.opsForHash().putAll(key, Map.of(
+        "name", "机械键盘 K87", "category", "数码", "price", "399.00"));
+stringRedisTemplate.opsForHash().put(key, "price", "359.00");
+```
+
+验证点：改完之后 `name` 和 `category` 原样保留。参考实现 `PracticeTest#practice1UpdateSingleHashField`。
+
+**练习 2：Set 求交集**
+
+两个用户各自收藏了商品，求共同关注。`SINTER` 一次算完，不用把两个集合取到应用层再比对。
+
+```java
+stringRedisTemplate.opsForSet().add("practice:like:u1", "1", "2", "3");
+stringRedisTemplate.opsForSet().add("practice:like:u2", "2", "3", "4");
+Set<String> common = stringRedisTemplate.opsForSet()
+        .intersect("practice:like:u1", "practice:like:u2");
+// [2, 3]
+```
+
+参考实现 `PracticeTest#practice2IntersectLikes`。
+
+**练习 3：观察 TTL 抖动**
+
+写 10 个 key，基础 TTL 都是 10 分钟，每个加 0 到 30 秒的随机值，然后读回剩余时间。预期结果：至少出现两种不同的值。
+
+```java
+long ttlSeconds = Duration.ofMinutes(10).toSeconds()
+        + ThreadLocalRandom.current().nextLong(31);
+redisTemplate.opsForValue().set(key, "v", Duration.ofSeconds(ttlSeconds));
+```
+
+如果 10 个 key 的剩余时间完全一致，说明抖动没加上，雪崩的风险还在。参考实现 `PracticeTest#practice3TtlJitter`。
+
+**练习 4：SETNX 做提交去重**
+
+用户点"提交订单"时手抖点了两下，5 秒内只应该成功一次。
+
+```java
+Boolean first = stringRedisTemplate.opsForValue()
+        .setIfAbsent("practice:submit:1001", "1", Duration.ofSeconds(5));
+Boolean second = stringRedisTemplate.opsForValue()
+        .setIfAbsent("practice:submit:1001", "1", Duration.ofSeconds(5));
+// first = true, second = false
+```
+
+参考实现 `PracticeTest#practice4SubmitOnce`。
+
+**练习 5：取排行榜上某人前后各一名**
+
+已知某人在榜上排第 3，要取第 2、3、4 名。关键是 `reverseRank` 返回的是从 0 开始的下标，和展示用的名次差 1。
+
+```java
+Long rank = stringRedisTemplate.opsForZSet().reverseRank(key, "c");   // 2，即第 3 名
+Set<String> neighbours = stringRedisTemplate.opsForZSet()
+        .reverseRange(key, Math.max(0, rank - 1), rank + 1);
+```
+
+注意 `Math.max(0, rank - 1)`：第 1 名时 `rank - 1` 是 -1，Redis 会把负下标当成"从末尾倒数"，取出来的就不是相邻名次了。参考实现 `PracticeTest#practice5RankNeighbours`。
+
+### 8.2 课后练习
+
+**练习 6：购物车用 Hash 存**
+
+key 是 `cart:{userId}`，field 是商品 id，value 是数量。加购、减购都用 `HINCRBY`，它本身是原子的，不需要先读再写。
+
+```java
+stringRedisTemplate.opsForHash().increment(key, "1", 2);    // 加 2 件
+stringRedisTemplate.opsForHash().increment(key, "1", -3);   // 减 3 件，数量变成 0
+```
+
+数量减到 0 时，`HINCRBY` 只在 field 上留一个 `"0"`，不会自动删掉这一项，需要业务代码补一次 `HDEL`。如果直接把 0 留在购物车里，前端会显示一个数量为 0 的商品。参考实现 `HomeworkTest#homework6ShoppingCart`。
+
+**练习 7：逻辑过期**
+
+普通的 TTL 过期后 key 直接消失，下一个请求必须回源，这就是击穿的来源。逻辑过期换个思路：key 永不过期，把过期时间写在 value 里。
+
+```java
+Map<String, Object> wrapper = new LinkedHashMap<>();
+wrapper.put("data", "旧值");
+wrapper.put("expireAt", System.currentTimeMillis() - 1000);
+redisTemplate.opsForValue().set(key, wrapper, Duration.ofMinutes(30));
+```
+
+读到 `expireAt` 已经过去时，先返回 `data` 里的旧值，再用 `SETNX` 抢一个重建标记，只放一个线程去查库回写。
+
+它解决了击穿——所有请求都立刻有响应，没有一个在等；代价是这段时间里返回的是旧值，系统对外的一致性变弱了。适合商品详情、首页推荐这类"旧一点没关系"的数据，不适合库存、余额。参考实现 `HomeworkTest#homework7LogicalExpire`。
+
+**练习 8：按接口维度限流，并返回剩余次数**
+
+`/limit/access` 是按用户限流，这里改成按"接口 + 用户"限流，并且把剩余可用次数返回给前端，方便做倒计时提示。
+
+```java
+String key = "homework:limit:" + api + ":" + user + ":" + windowIndex;
+Long count = stringRedisTemplate.opsForValue().increment(key);
+item.put("remaining", Math.max(0L, maxRequests - count));
+item.put("allowed", count != null && count <= maxRequests);
+```
+
+`remaining` 要用 `Math.max(0, ...)` 兜底，否则超限后会出现负数。参考实现 `HomeworkTest#homework8ApiLimitRemaining`。
+
+**练习 9：复现"先删缓存再改库"的漏洞**
+
+1.2 节说过这种顺序有问题，这里把它跑出来：
+
+```java
+// 1. 缓存里先放好旧值
+redisTemplate.opsForValue().set(key, before, Duration.ofMinutes(10));
+
+// 2. 先删缓存
+redisTemplate.delete(key);
+
+// 3. 删完到改完之间，另一个请求读到旧值并写回缓存
+Goods readInWindow = goodsService.getFromDb(1L);
+redisTemplate.opsForValue().set(key, readInWindow, Duration.ofMinutes(10));
+
+// 4. 再更新库
+goodsMapper.updateById(update);
+```
+
+跑完断言会发现：库里的价格已经加了 10，缓存里还是旧价格，而且会一直旧到 TTL 过期。这正是 Cache Aside 选择"先改库、再删缓存"的原因——把不一致的窗口从"整个改库耗时"缩短到"删缓存这一瞬间"。
+
+参考实现 `HomeworkTest#homework9DeleteThenUpdateLeavesStaleCache`。
+
+---
+
+## 9. 常见问题
+
+**`Cannot serialize value of type ... without a serializer`**
+
+没定义 `RedisCacheManager`，或者定义了但没给它配 value 序列化器。用 6.2 节那份配置。给实体加 `implements Serializable` 也能消掉这个报错，但存进去是二进制。
+
+**`@Cacheable` 不生效，方法每次都执行**
+
+三个可能：没加 `@EnableCaching`；没引 `spring-boot-starter-cache`；在同一个类里自己调自己。前两个看配置文件，第三个看调用位置。
+
+**清了缓存，`redis-cli` 里还能看到 key**
+
+Spring Data Redis 4 的写操作默认延迟执行。用 `immediateWrites()` 打开立即写，见 6.2 节。
+
+**`NOAUTH Authentication required`**
+
+`application.yml` 里 `password` 没配或配错。Redis 6 之后默认开启了认证，`redis-cli` 不带 `-a` 也会报这个。
+
+**`Table 'backend_learning.t_goods' doesn't exist`**
+
+`spring.sql.init.mode` 不是 `always`。MySQL 不是内嵌库，Boot 默认不对它执行初始化脚本。
+
+**Redisson 启动报 `Unable to connect to Redis server`**
+
+`redisson-spring-boot-starter` 的版本和 Boot 不匹配，或者 Redis 地址配错。Boot 4 要用 4.x 的 Redisson，见 3.1 节。
+
+**限流的 `ttlSeconds` 一直是 -1**
+
+只在 `count == 1` 时设过期，并发下漏了。改成每次都检查 TTL，见 6.9 节。
+
+**并发扣库存，成功次数比库存多**
+
+"读—判断—写"不是原子的。加锁，或者用 `UPDATE t_goods SET stock = stock - ? WHERE id = ? AND stock >= ?` 让数据库自己保证。
+
+---
+
+## 10. 小结
+
+| 知识点 | 一句话 |
+| --- | --- |
+| 缓存的定位 | 转移读请求，不是让接口变快；库永远是唯一来源 |
+| Cache Aside | 读先缓存、写先更库再删缓存 |
+| 序列化 | key 用 String，value 用带类型信息的 JSON |
+| 穿透 | 缓存空值（短 TTL），或用布隆过滤器 |
+| 击穿 | 互斥锁重建，或逻辑过期 |
+| 雪崩 | TTL 加随机抖动，或多级缓存 |
+| 分布式锁 | Redisson 的 `tryLock(wait, lease, unit)`，释放前校验持有者 |
+| 限流 | `INCR` + 窗口编号 + TTL 兜底 |
+| 验证码 | 间隔用 `SET NX EX`，一次性用状态字段，错误次数用计数器 |
+| ZSet | 分数即排序，适合排行榜与延迟队列 |
+
+下一篇 [07-schedule](07-schedule.md) 让任务按时间自动执行，把"每天凌晨跑一次"这类需求从人工操作变成系统行为。
+
+> 本节遵循的规范：所有缓存必须设过期时间；空值缓存的 TTL 短于正常值；分布式锁必须在 `finally` 释放并校验持有者；验证码先发送后落库；Redis 密码与业务库分 db 隔离。

@@ -46,7 +46,7 @@ public class SmsServiceImpl implements SmsService {
     private final JwtUtils jwtUtils;
 
     @Override
-    public void sendSms(String phone) {
+    public String sendSms(String phone) {
         // 1、检查 phone 格式是否正确
         if (!CommonUtils.checkPhone(phone)) {
             throw new BusinessException(ErrorCode.PHONE_ERROR);
@@ -82,6 +82,9 @@ public class SmsServiceImpl implements SmsService {
         redisCache.hMSet(RedisKeys.getSmsKey(phone), value, smsProperties.getCodeExpireSeconds());
 
         log.info("验证码已下发，手机号 {}", phone);
+
+        // 模拟通道下把验证码回传给调用方，方便本地联调；真实通道永远返回 null
+        return smsProperties.isMockEnabled() ? String.valueOf(code) : null;
     }
 
     @Override

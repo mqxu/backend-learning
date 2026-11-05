@@ -26,11 +26,11 @@
 | TTL 抖动 | 基础 TTL 加 0 到 30 秒随机值，防雪崩 |
 | 更新策略 | 先更新库再删缓存，不一致概率最小 |
 | 缓存抽象 | `@Cacheable`（查）/ `@CachePut`（覆盖）/ `@CacheEvict`（删）/ `@Caching`（组合） |
-| 缓存 key | `cache:goods::<id>` 与 `cache:goods::all`，前缀由 `spring.cache.redis.key-prefix` 决定 |
+| 缓存 key | `cache:goods::<id>` 与 `cache:goods::all`，前缀由自定义 `CacheManager` 的 `computePrefixWith` 决定 |
 | 分布式锁 | Redisson `tryLock(等待时间, 持锁时间, 单位)`，解锁前比对持有者 |
 | Lua 原子解锁 | `get` 比对与 `del` 放同一个脚本，避免误删别人的锁 |
 | ZSet 排行榜 | `incrementScore` 原子加分，`reverseRangeWithScores` 取前 N |
-| 固定窗口限流 | key 里带窗口编号，只在计数器创建时设过期 |
+| 固定窗口限流 | key 里带窗口编号，每次请求检查 TTL，缺失就补设 |
 
 ## 目录结构
 
@@ -92,7 +92,7 @@ mvn -pl 06-redis spring-boot:run
 
 启动后库里有 10 条商品，分类覆盖数码、家居、图书、运动、食品，销量各不相同。`schema.sql` 里有 `DROP TABLE`，每次启动和 DevTools 热重启都会重置数据。
 
-主要接口（34 个，每个接口的测试命令与预期返回见 [docs/06-redis.md](../docs/06-redis.md) 第 6 节，这里只作速查）：
+主要接口（34 个，逐个的请求命令与真实返回见 [docs/06-redis.md](../docs/06-redis.md) 第 7 节，这里只作速查）：
 
 | 分组 | 操作 | 请求 |
 | --- | --- | --- |

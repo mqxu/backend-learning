@@ -18,10 +18,13 @@ import top.mqxu.redis.service.SmsService;
 public class SmsController {
     private final SmsService smsService;
 
+    /**
+     * 发送验证码。模拟通道下把验证码放在 data 里返回，方便本地联调
+     */
     @PostMapping("/send")
     public Result<String> send(@RequestParam String phone) {
-        smsService.sendSms(phone);
-        return Result.ok("短信发送成功");
+        String mockCode = smsService.sendSms(phone);
+        return Result.ok(mockCode == null ? "短信发送成功" : mockCode);
     }
 
     @PostMapping("/login")

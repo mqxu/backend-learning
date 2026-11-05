@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" width="1000" height="440" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="arrowDown" markerWidth="9" markerHeight="8" refX="4.5" refY="7" orient="auto">
+      <path d="M0,0 L9,0 L4.5,8 Z" fill="#9aa4b2"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="440" fill="#f7f8fa"/>
+
+  <!-- 中缝 -->
+  <line x1="500" y1="28" x2="500" y2="404" stroke="#e2e6ec" stroke-width="1" stroke-dasharray="4 5"/>
+
+  <!-- ============ 左：读 ============ -->
+  <text x="48" y="42" font-size="14" font-weight="600" fill="#0b63c5">读：先看缓存，没有再查库</text>
+  <text x="48" y="60" font-size="11" fill="#8b95a5">GET /cache/goods/manual/1</text>
+
+  <rect x="48" y="72" width="404" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="48" y="72" width="4" height="60" rx="2" fill="#0b63c5"/>
+  <text x="68" y="98" font-size="13" fill="#1f2329">① 请求进到 GoodsCacheService.getById</text>
+  <text x="68" y="118" font-size="11" fill="#8b95a5">拼出 key：goods:detail: + id</text>
+
+  <line x1="250" y1="134" x2="250" y2="156" stroke="#9aa4b2" stroke-width="1.4" marker-end="url(#arrowDown)"/>
+
+  <rect x="48" y="162" width="404" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="48" y="162" width="4" height="60" rx="2" fill="#0b63c5"/>
+  <text x="68" y="188" font-size="13" fill="#1f2329">② GET goods:detail:1</text>
+  <text x="68" y="208" font-size="11" fill="#8b95a5">命中就直接返回，source = cache，库一次没碰</text>
+
+  <line x1="250" y1="224" x2="250" y2="246" stroke="#9aa4b2" stroke-width="1.4" marker-end="url(#arrowDown)"/>
+
+  <rect x="48" y="252" width="404" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="48" y="252" width="4" height="60" rx="2" fill="#0b63c5"/>
+  <text x="68" y="278" font-size="13" fill="#1f2329">③ 没命中，SELECT * FROM t_goods</text>
+  <text x="68" y="298" font-size="11" fill="#8b95a5">这次真的打了库，source = db</text>
+
+  <line x1="250" y1="314" x2="250" y2="336" stroke="#9aa4b2" stroke-width="1.4" marker-end="url(#arrowDown)"/>
+
+  <rect x="48" y="342" width="404" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="48" y="342" width="4" height="60" rx="2" fill="#0b63c5"/>
+  <text x="68" y="368" font-size="13" fill="#1f2329">④ SET goods:detail:1 … EX 600 + 随机抖动</text>
+  <text x="68" y="388" font-size="11" fill="#8b95a5">写回缓存，下次同一个 id 走到 ② 就结束了</text>
+
+  <!-- ============ 右：写 ============ -->
+  <text x="528" y="42" font-size="14" font-weight="600" fill="#0f766e">写：先改库，再删缓存</text>
+  <text x="528" y="60" font-size="11" fill="#8b95a5">PUT /cache/goods/1/price?price=299</text>
+
+  <rect x="528" y="72" width="424" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="528" y="72" width="4" height="60" rx="2" fill="#0f766e"/>
+  <text x="548" y="98" font-size="13" fill="#1f2329">① 收到改价请求</text>
+  <text x="548" y="118" font-size="11" fill="#8b95a5">只改价格，不动库存，改完要让旧缓存失效</text>
+
+  <line x1="740" y1="134" x2="740" y2="156" stroke="#9aa4b2" stroke-width="1.4" marker-end="url(#arrowDown)"/>
+
+  <rect x="528" y="162" width="424" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="528" y="162" width="4" height="60" rx="2" fill="#0f766e"/>
+  <text x="548" y="188" font-size="13" fill="#1f2329">② UPDATE t_goods SET price = 299</text>
+  <text x="548" y="208" font-size="11" fill="#8b95a5">先落库，数据库是唯一的事实来源</text>
+
+  <line x1="740" y1="224" x2="740" y2="246" stroke="#9aa4b2" stroke-width="1.4" marker-end="url(#arrowDown)"/>
+
+  <rect x="528" y="252" width="424" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="528" y="252" width="4" height="60" rx="2" fill="#0f766e"/>
+  <text x="548" y="278" font-size="13" fill="#1f2329">③ DEL goods:detail:1</text>
+  <text x="548" y="298" font-size="11" fill="#8b95a5">删而不是改：改要自己算新值，并发下容易写进旧值</text>
+
+  <line x1="740" y1="314" x2="740" y2="336" stroke="#9aa4b2" stroke-width="1.4" marker-end="url(#arrowDown)"/>
+
+  <rect x="528" y="342" width="424" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <rect x="528" y="342" width="4" height="60" rx="2" fill="#0f766e"/>
+  <text x="548" y="368" font-size="13" fill="#1f2329">④ 下一次读取回到左栏 ③</text>
+  <text x="548" y="388" font-size="11" fill="#8b95a5">回源 + 回填，缓存里自然变成新值</text>
+
+  <text x="48" y="426" font-size="11" fill="#6b7280">缓存不保证强一致，它保证的是绝大多数读请求不必打库；代价是短暂的不一致窗口，需要靠过期时间兜底。</text>
+</svg>

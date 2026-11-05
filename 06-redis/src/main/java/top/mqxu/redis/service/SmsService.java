@@ -13,8 +13,9 @@ public interface SmsService {
      * 发送验证码短信。发送失败、校验不通过都通过 BusinessException 往外抛
      *
      * @param phone 手机号
+     * @return 模拟通道下返回验证码，真实通道返回 null
      */
-    void sendSms(String phone);
+    String sendSms(String phone);
 
     /**
      * 验证码登录

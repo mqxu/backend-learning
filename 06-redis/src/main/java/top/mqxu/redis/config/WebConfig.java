@@ -31,7 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/**")
-                // 登录相关接口本身就要匿名访问，redis 是模块自带的演示接口，一并放行
-                .excludePathPatterns("/sms/**", "/redis/**", "/error");
+                // 只有 /user/** 代表"登录后才有的接口"，其余都是可以直接观察的演示接口。
+                // 若把演示接口也拦住，看缓存命中效果前还得先登录，实验做起来很别扭。
+                .excludePathPatterns("/sms/**", "/redis/**", "/cache/**",
+                        "/lock/**", "/limit/**", "/rank/**", "/error");
     }
 }
