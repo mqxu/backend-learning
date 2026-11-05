@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 480" width="820" height="480" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="cfgArrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#0b63c5"/>
+    </marker>
+  </defs>
+
+  <rect width="820" height="480" fill="#f7f8fa"/>
+
+  <text x="30" y="34" font-size="14" fill="#1f2329" font-weight="500">同一个配置键写在五个地方，取哪一个？</text>
+  <text x="30" y="56" font-size="12" fill="#8b95a5">从 1 往 5 找，命中就停，后面的不再看</text>
+
+  <!-- 层级 -->
+  <rect x="30" y="76" width="520" height="62" rx="7" fill="#eaf2fd" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="46" y="100" font-size="13" fill="#0b63c5" font-weight="600">1　命令行参数</text>
+  <text x="46" y="122" font-size="12" fill="#3b7dc4" font-family="ui-monospace, Menlo, monospace">--server.port=9000</text>
+  <text x="330" y="122" font-size="11.5" fill="#3b7dc4">临时改一个值，最常用</text>
+
+  <rect x="30" y="146" width="520" height="62" rx="7" fill="#f2f7fd" stroke="#a8c6ea"/>
+  <text x="46" y="170" font-size="13" fill="#1f2329" font-weight="600">2　Java 系统属性</text>
+  <text x="46" y="192" font-size="12" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">-Dserver.port=9000</text>
+  <text x="330" y="192" font-size="11.5" fill="#8b95a5">写在启动脚本里</text>
+
+  <rect x="30" y="216" width="520" height="62" rx="7" fill="#f7fafd" stroke="#c9d8ea"/>
+  <text x="46" y="240" font-size="13" fill="#1f2329" font-weight="600">3　操作系统环境变量</text>
+  <text x="46" y="262" font-size="12" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">export SERVER_PORT=9000</text>
+  <text x="330" y="262" font-size="11.5" fill="#8b95a5">容器里注入密钥的首选</text>
+
+  <rect x="30" y="286" width="520" height="62" rx="7" fill="#fbfcfd" stroke="#dde3ea"/>
+  <text x="46" y="310" font-size="13" fill="#1f2329" font-weight="600">4　application-{profile}.yml</text>
+  <text x="46" y="332" font-size="12" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">application-dev.yml / -prod.yml</text>
+  <text x="330" y="332" font-size="11.5" fill="#9aa3af">环境之间的差异放这里</text>
+
+  <rect x="30" y="356" width="520" height="62" rx="7" fill="#ffffff" stroke="#e5e9ef"/>
+  <text x="46" y="380" font-size="13" fill="#1f2329" font-weight="600">5　application.yml</text>
+  <text x="46" y="402" font-size="12" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">所有环境共享的默认值</text>
+  <text x="330" y="402" font-size="11.5" fill="#9aa3af">兜底</text>
+
+  <!-- 左侧箭头 -->
+  <path d="M566,107 L566,387" stroke="#0b63c5" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M566,107 L566,120" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#cfgArrow)"/>
+  <text x="580" y="252" font-size="11.5" fill="#3b7dc4" transform="rotate(90 580 252)">优先级从高到低</text>
+
+  <!-- 右侧结论 -->
+  <text x="628" y="96" font-size="12" fill="#1f2329" font-weight="600">实际效果</text>
+  <text x="628" y="120" font-size="11.5" fill="#5b6472">低优先级的值</text>
+  <text x="628" y="137" font-size="11.5" fill="#5b6472">不会被删除，</text>
+  <text x="628" y="154" font-size="11.5" fill="#5b6472">只是被挡住。</text>
+  <text x="628" y="184" font-size="11.5" fill="#5b6472">接口里遍历</text>
+  <text x="628" y="201" font-size="11.5" fill="#5b6472">PropertySource</text>
+  <text x="628" y="218" font-size="11.5" fill="#5b6472">能同时看到</text>
+  <text x="628" y="235" font-size="11.5" fill="#5b6472">两份值。</text>
+
+  <!-- 底部提示 -->
+  <rect x="30" y="436" width="760" height="30" rx="6" fill="#f0f8f3" stroke="#c5e6d1"/>
+  <text x="44" y="456" font-size="12" fill="#1a7f37">生产上数据库密码走环境变量，本地写在 yml 里，两者同时存在时环境变量胜出，代码一行都不用改。</text>
+</svg>
