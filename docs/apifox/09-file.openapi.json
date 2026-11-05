@@ -1,0 +1,288 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "09 · 文件上传下载",
+    "version": "1.0.0",
+    "description": "backend-learning · 09-file。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8009"
+    }
+  ],
+  "tags": [
+    {
+      "name": "文件"
+    }
+  ],
+  "paths": {
+    "/file/upload": {
+      "post": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "路径穿越尝试",
+        "description": "dir 参数里塞 ../ 企图跳出上传目录，服务端规范化路径后拒绝。",
+        "operationId": "path-traversal",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/upload/image": {
+      "post": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "伪装图片被拒",
+        "description": "扩展名是 .png，内容却是纯文本。只看扩展名会漏，读前几个字节比对魔数才能发现。",
+        "operationId": "fake-png",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "文件内容与类型不符"
+          }
+        }
+      }
+    },
+    "/file/upload/batch": {
+      "post": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "批量上传",
+        "description": "一次请求传多个文件，每个文件独立校验、独立返回结果。",
+        "operationId": "upload-batch",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "objectKey": {
+                            "type": "string"
+                          },
+                          "originalName": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "size": {
+                            "type": "integer"
+                          },
+                          "contentType": {
+                            "type": "string"
+                          },
+                          "storage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/storage": {
+      "get": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "查看存储配置",
+        "description": "当前用的是本地磁盘存储，接口返回存储类型、根目录、单文件上限与允许的扩展名。",
+        "operationId": "info",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "storage": {
+                          "type": "string"
+                        },
+                        "maxFileSize": {
+                          "type": "string"
+                        },
+                        "allowedExtensions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "baseDir": {
+                          "type": "string"
+                        },
+                        "urlPrefix": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/download/docs/2026/11/05/543eb58ba8a04702867a5f44ef850292.txt": {
+      "get": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "下载已删除的文件",
+        "description": "文件不存在时抛业务异常，返回统一错误结构而不是空响应。",
+        "operationId": "download-after-delete",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "文件不存在"
+          }
+        }
+      }
+    },
+    "/file/preview/docs/2026/11/05/543eb58ba8a04702867a5f44ef850292.txt": {
+      "get": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "在线预览",
+        "description": "preview 把 Content-Disposition 设成 inline，浏览器直接显示而不是下载。",
+        "operationId": "preview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/url/avatar/2026/11/05/deeccdc21f8144289c6342ab2b7d4ca2.png": {
+      "get": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "获取文件访问地址",
+        "description": "本地存储返回拼接的 URL；换成 OSS 后这里返回带签名的临时地址。",
+        "operationId": "url",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/docs/2026/11/05/543eb58ba8a04702867a5f44ef850292.txt": {
+      "delete": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "删除文件",
+        "description": "删除后同一个 key 再下载会返回 404。",
+        "operationId": "delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

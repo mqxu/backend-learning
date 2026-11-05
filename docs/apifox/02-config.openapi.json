@@ -1,0 +1,293 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "02 · 配置管理",
+    "version": "1.0.0",
+    "description": "backend-learning · 02-config。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8002"
+    }
+  ],
+  "tags": [
+    {
+      "name": "配置"
+    }
+  ],
+  "paths": {
+    "/config/basic": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "读取端口与应用名",
+        "description": "用 @Value 注入 server.port 与 spring.application.name，验证配置文件被正确加载。",
+        "operationId": "basic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "拼接后的说明文本",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/my": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "读取自定义配置项",
+        "description": "mqxu.name / mqxu.job 是自定义前缀，@Value 按完整键名取值。",
+        "operationId": "my",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/value": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "四种 @Value 写法演示",
+        "description": "一次看四种取值写法：${} 引用其他键、冒号给默认值、random 生成随机值、#{} 执行 SpEL 表达式。",
+        "operationId": "value",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/app": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "读取 app.* 配置对象",
+        "description": "@ConfigurationProperties(prefix=\"app\") 把同前缀的一组配置绑定到对象，max-count 按下划线转驼峰映射到 maxCount。",
+        "operationId": "app",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "AppProperties 对象",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "author": {
+                      "type": "string"
+                    },
+                    "maxCount": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/student/info": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "读取 student.* 复杂结构",
+        "description": "student.* 里有嵌套对象 address、List&lt;String&gt; hobbies、Map&lt;String,Integer&gt; scores、对象数组 courses，全部一次绑定成功。",
+        "operationId": "student",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "StudentProperties 对象",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        },
+                        "province": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "age": {
+                      "type": "integer"
+                    },
+                    "courses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "credit": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "hobbies": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "scores": {
+                      "type": "object",
+                      "properties": {
+                        "chinese": {
+                          "type": "integer"
+                        },
+                        "math": {
+                          "type": "integer"
+                        },
+                        "english": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/profiles": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "查看激活的 profile 与生效实现",
+        "description": "当前激活 dev，env.* 来自 application-dev.yml；EnvService 注入的是 DevEnvService 而非 ProdEnvService。",
+        "operationId": "profiles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activeProfiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "defaultProfiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "env.name": {
+                      "type": "string"
+                    },
+                    "env.description": {
+                      "type": "string"
+                    },
+                    "envService": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/priority": {
+      "get": {
+        "tags": [
+          "配置"
+        ],
+        "summary": "查看同一配置键的来源与最终取值",
+        "description": "同一个键 demo.priority 在 yml 和命令行各写了一份，Environment 返回命令行那份。遍历 PropertySource 能看到每个来源各自的值。",
+        "operationId": "priority",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "最终取值": {
+                      "type": "string"
+                    },
+                    "命中来源数": {
+                      "type": "integer"
+                    },
+                    "各来源的值": {
+                      "type": "object",
+                      "properties": {
+                        "commandLineArgs": {
+                          "type": "string"
+                        },
+                        "Config resource 'class path resource [application.yml]' via location 'optional:classpath:/'": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "覆盖顺序": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

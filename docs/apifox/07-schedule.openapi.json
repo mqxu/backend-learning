@@ -1,0 +1,321 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "07 · 定时任务",
+    "version": "1.0.0",
+    "description": "backend-learning · 07-schedule。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8007"
+    }
+  ],
+  "tags": [
+    {
+      "name": "定时任务"
+    }
+  ],
+  "paths": {
+    "/schedule/hello": {
+      "get": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "等待期",
+        "description": "fixedRate 每 3 秒、fixedDelay 每 5 秒、cron 每 10 秒。先等 11 秒，再查执行记录。",
+        "operationId": "wait-periodic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/tasks": {
+      "get": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "任务执行统计",
+        "description": "按任务名汇总执行次数、最近执行时间、平均耗时，用来确认任务真的在跑。",
+        "operationId": "tasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "统计": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "任务名": {
+                            "type": "string"
+                          },
+                          "执行次数": {
+                            "type": "integer"
+                          },
+                          "最近执行": {
+                            "type": "string"
+                          },
+                          "平均耗时ms": {
+                            "type": "integer"
+                          },
+                          "执行线程": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "说明": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/tasks/records": {
+      "get": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "查看动态任务执行记录",
+        "description": "在记录里能按任务名找到 dynamicReport，说明注册成功并生效。",
+        "operationId": "dynamic-records",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "taskName": {
+                        "type": "string"
+                      },
+                      "time": {
+                        "type": "string"
+                      },
+                      "thread": {
+                        "type": "string"
+                      },
+                      "costMs": {
+                        "type": "integer"
+                      },
+                      "success": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/tasks/dynamic": {
+      "post": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "非法 cron 表达式",
+        "description": "表达式写错时 CronTrigger 构造即失败，接口把异常信息返回，不会注册出一个坏任务。",
+        "operationId": "bad-cron",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "查看动态任务状态",
+        "description": "等 11 秒，让动态任务跑两轮以上。",
+        "operationId": "wait-dynamic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "运行中": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "各任务执行次数": {
+                      "type": "object",
+                      "properties": {
+                        "dynamicReport": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/tasks/dynamic/dynamicReport": {
+      "delete": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "重复取消",
+        "description": "运行中的任务列表里已经没有 dynamicReport；再取消一次会返回任务不存在。",
+        "operationId": "after-cancel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/weather": {
+      "get": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "查询今日天气",
+        "description": "mock 模式下返回内置天气数据；真实模式会调用和风天气接口，key 从环境变量注入。",
+        "operationId": "weather",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fxDate": {
+                          "type": "string"
+                        },
+                        "tempMax": {
+                          "type": "string"
+                        },
+                        "tempMin": {
+                          "type": "string"
+                        },
+                        "textDay": {
+                          "type": "string"
+                        },
+                        "windDirDay": {
+                          "type": "string"
+                        },
+                        "windScaleDay": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/weather/send": {
+      "post": {
+        "tags": [
+          "定时任务"
+        ],
+        "summary": "手动发送天气邮件",
+        "description": "定时任务与手动触发共用同一段业务代码。邮件 mock 模式下只打日志，不连 SMTP。",
+        "operationId": "weather-send",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

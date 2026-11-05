@@ -1,0 +1,510 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "08 · 认证与授权",
+    "version": "1.0.0",
+    "description": "backend-learning · 08-security。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8008"
+    }
+  ],
+  "tags": [
+    {
+      "name": "安全"
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "审计员登录",
+        "description": "erin 只有 AUDITOR，用来对照 hasAnyRole。",
+        "operationId": "login-erin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "tokenType": {
+                          "type": "string"
+                        },
+                        "expiresIn": {
+                          "type": "integer"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "authorities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "当前登录用户信息",
+        "description": "JWT 解析出的身份被放进 SecurityContext，控制器用 Authentication 直接取。",
+        "operationId": "me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "username": {
+                          "type": "string"
+                        },
+                        "authorities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/info": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "公开接口",
+        "description": "permitAll 的路径不需要 token，用来放登录页、健康检查这类接口。",
+        "operationId": "public",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hello": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "未认证访问",
+        "description": "没有 Authorization 头，由 JsonAuthenticationEntryPoint 返回 401，响应体是统一结构。",
+        "operationId": "no-token",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "未登录"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "管理员访问",
+        "description": "bob 有 ADMIN 角色，正常返回。",
+        "operationId": "admin-ok",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stage3/audit/logs": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "双角色访问审计日志",
+        "description": "bob 两个角色都具备，可以访问审计日志。",
+        "operationId": "allroles-ok",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stage3/ops/alerts": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "任一角色即可访问",
+        "description": "erin 只有 AUDITOR，但 /stage3/ops/** 是 hasAnyRole(ADMIN, AUDITOR)，具备其一即可。",
+        "operationId": "anyrole-ok",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/articles/1001": {
+      "delete": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "缺少权限点被拒",
+        "description": "bob 是管理员，但没有 ARTICLE_DELETE 权限点，同样被拒。角色大不等于权限全。",
+        "operationId": "authority-denied",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "缺少权限点"
+          }
+        }
+      }
+    },
+    "/api/auth/sms/code": {
+      "post": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "发送短信验证码",
+        "description": "演示模式把验证码写回响应，生产环境要关掉 expose-code。",
+        "operationId": "sms-code",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sms/login": {
+      "post": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "验证码登录",
+        "description": "短信登录不是另写一个接口，而是给 Security 增加一种凭证类型，校验与权限装配仍由框架完成。",
+        "operationId": "sms-login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "tokenType": {
+                          "type": "string"
+                        },
+                        "expiresIn": {
+                          "type": "integer"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "authorities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stage2/articles/1": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "匿名查看文章",
+        "description": "GET /stage2/articles/** 放行给所有人，演示按 HTTP 方法做细粒度放行。",
+        "operationId": "stage2-get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "匿名删除文章",
+        "description": "同一个路径的 DELETE 没有放行，匿名请求被 401 挡下。",
+        "operationId": "stage2-delete",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "未登录"
+          }
+        }
+      }
+    },
+    "/stage1/hello": {
+      "get": {
+        "tags": [
+          "安全"
+        ],
+        "summary": "stage1 需要登录",
+        "description": "stage1 只要求登录，认证方式是 HTTP Basic，不认 JWT——五条链各管一段路径，认证方式也各不相同。",
+        "operationId": "stage1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

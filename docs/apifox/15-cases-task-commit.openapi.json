@@ -1,0 +1,578 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "15-2 · 任务提交与批改",
+    "version": "1.0.0",
+    "description": "backend-learning · 15-cases/task-commit。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8017"
+    }
+  ],
+  "tags": [
+    {
+      "name": "综合案例"
+    }
+  ],
+  "paths": {
+    "/public/ping": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "探活接口",
+        "description": "SecurityFilterChain 里 permitAll 的路径，不带头也能访问。",
+        "operationId": "ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "服务状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/mine": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "我的提交列表",
+        "description": "提交人从令牌里取，URL 上没有用户名，改参数也拿不到别人的数据。",
+        "operationId": "mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "ownerId": {
+                            "type": "integer"
+                          },
+                          "owner": {
+                            "type": "string"
+                          },
+                          "ownerNickname": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "statusText": {
+                            "type": "string"
+                          },
+                          "score": {
+                            "nullable": true
+                          },
+                          "comment": {
+                            "nullable": true
+                          },
+                          "submittedAt": {
+                            "type": "string"
+                          },
+                          "reviewedAt": {
+                            "nullable": true
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "管理员登录",
+        "description": "管理员具备 ADMIN 角色与 user:write 权限点。",
+        "operationId": "login-admin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "tokenType": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "nickname": {
+                          "type": "string"
+                        },
+                        "roles": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "当前用户",
+        "description": "返回用户名、昵称、角色与权限点。页面刷新后靠它恢复登录态。",
+        "operationId": "me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "username": {
+                          "type": "string"
+                        },
+                        "nickname": {
+                          "type": "string"
+                        },
+                        "roles": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "authorities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "提交任务",
+        "description": "需要 task:submit 权限点。初始状态是 SUBMITTED，等待教师批改。",
+        "operationId": "submit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "ownerId": {
+                          "type": "integer"
+                        },
+                        "owner": {
+                          "type": "string"
+                        },
+                        "ownerNickname": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "statusText": {
+                          "type": "string"
+                        },
+                        "score": {
+                          "nullable": true
+                        },
+                        "comment": {
+                          "nullable": true
+                        },
+                        "submittedAt": {
+                          "type": "string"
+                        },
+                        "reviewedAt": {
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "全部提交（教师）",
+        "description": "只有 task:review 能拿到全量列表，URL 与方法级鉴权一起兜住。",
+        "operationId": "all-tasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "ownerId": {
+                            "type": "integer"
+                          },
+                          "owner": {
+                            "type": "string"
+                          },
+                          "ownerNickname": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "statusText": {
+                            "type": "string"
+                          },
+                          "score": {
+                            "nullable": true
+                          },
+                          "comment": {
+                            "nullable": true
+                          },
+                          "submittedAt": {
+                            "type": "string"
+                          },
+                          "reviewedAt": {
+                            "nullable": true
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/29": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "越权访问（应 403）",
+        "description": "student02 去看 student01 刚交的任务，返回 403。接口存在不等于数据可读。",
+        "operationId": "detail-others",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/29/review": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "重复批改（应 409）",
+        "description": "已批改的提交不能改分。这个模块把业务错误放在 HTTP 200 里，靠 code=30012 表达，与 09-file 那种“业务码映射真实状态”的做法不同，教程里会对比这两种约定。",
+        "operationId": "review-twice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "score": {
+                    "type": "integer"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "账号列表",
+        "description": "响应里只有昵称、角色与启用状态，密码字段在 VO 层就被剔掉了。",
+        "operationId": "admin-users",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string"
+                          },
+                          "nickname": {
+                            "type": "string"
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "authorities": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

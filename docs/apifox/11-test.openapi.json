@@ -1,0 +1,159 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "11 · 测试",
+    "version": "1.0.0",
+    "description": "backend-learning · 11-test。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8011"
+    }
+  ],
+  "tags": [
+    {
+      "name": "订单"
+    }
+  ],
+  "paths": {
+    "/orders/calculate": {
+      "post": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "请求体格式错误",
+        "description": "少一个右括号，HttpMessageNotReadableException 被接住，返回 400 而不是 500。",
+        "operationId": "broken-json",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "JSON 解析失败"
+          }
+        }
+      }
+    },
+    "/orders/quick-calculate": {
+      "get": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "快捷试算",
+        "description": "查询参数版本，方便 curl 手测；150 命中满 100 减 10，应付 140。",
+        "operationId": "quick",
+        "parameters": [
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "memberLevel",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "NORMAL"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "originAmount": {
+                          "type": "integer"
+                        },
+                        "discount": {
+                          "type": "integer"
+                        },
+                        "finalAmount": {
+                          "type": "integer"
+                        },
+                        "appliedRules": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/hello": {
+      "get": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "模块信息",
+        "description": "返回跑测试与看覆盖率的命令，方便对照源码验证。",
+        "operationId": "hello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "hint": {
+                          "type": "string"
+                        },
+                        "coverage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

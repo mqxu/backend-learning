@@ -1,0 +1,1036 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "15-1 · 知乎问答社区",
+    "version": "1.0.0",
+    "description": "backend-learning · 15-cases/zhihu。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080"
+    }
+  ],
+  "tags": [
+    {
+      "name": "综合案例"
+    }
+  ],
+  "paths": {
+    "/api/v1/topics": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "话题列表",
+        "description": "匿名可看。登录后 followed 会变成 true/false 的真实状态，未登录恒为 false。",
+        "operationId": "topics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "六个话题与关注状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "followersCount": {
+                            "type": "integer"
+                          },
+                          "questionCount": {
+                            "type": "integer"
+                          },
+                          "followed": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "问题列表（带筛选）",
+        "description": "两个条件用 and 包住，不会出现“话题过滤被关键词覆盖”的情况。",
+        "operationId": "questions-filter",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pageNum": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "authorId": {
+                                "type": "integer"
+                              },
+                              "authorName": {
+                                "type": "string"
+                              },
+                              "topicId": {
+                                "type": "integer"
+                              },
+                              "topicName": {
+                                "type": "string"
+                              },
+                              "answerCount": {
+                                "type": "integer"
+                              },
+                              "viewCount": {
+                                "type": "integer"
+                              },
+                              "voteCount": {
+                                "type": "integer"
+                              },
+                              "status": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "followed": {
+                                "type": "boolean"
+                              },
+                              "myVote": {
+                                "nullable": true
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "未登录发问题（应 401）",
+        "description": "没有 token 时业务层抛 401，响应仍是统一的 {code, message, data} 结构。",
+        "operationId": "unauthorized",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "topicId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/3": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "问题详情",
+        "description": "每打开一次浏览数加一，用 SQL 自增而不是读改写。",
+        "operationId": "question-detail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "含作者名、话题名、关注状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "authorId": {
+                          "type": "integer"
+                        },
+                        "authorName": {
+                          "type": "string"
+                        },
+                        "topicId": {
+                          "type": "integer"
+                        },
+                        "topicName": {
+                          "type": "string"
+                        },
+                        "answerCount": {
+                          "type": "integer"
+                        },
+                        "viewCount": {
+                          "type": "integer"
+                        },
+                        "voteCount": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "followed": {
+                          "type": "boolean"
+                        },
+                        "myVote": {
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "登录",
+        "description": "BCrypt 校验密码，签发 HS256 的 JWT。后续写操作都要带 Authorization: Bearer。",
+        "operationId": "login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "token 与用户信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer"
+                            },
+                            "nickname": {
+                              "type": "string"
+                            },
+                            "avatar": {
+                              "type": "string"
+                            },
+                            "bio": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "当前登录用户",
+        "description": "token 有效时返回本人信息；返回体里没有 username 和 password。",
+        "operationId": "me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "nickname": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        },
+                        "bio": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/9": {
+      "put": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "修改问题",
+        "description": "只有作者能改，其他人拿到 403。修改会同步 updatedAt。",
+        "operationId": "update-question",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "topicId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "authorId": {
+                          "type": "integer"
+                        },
+                        "authorName": {
+                          "type": "string"
+                        },
+                        "topicId": {
+                          "type": "integer"
+                        },
+                        "topicName": {
+                          "type": "string"
+                        },
+                        "answerCount": {
+                          "type": "integer"
+                        },
+                        "viewCount": {
+                          "type": "integer"
+                        },
+                        "voteCount": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "followed": {
+                          "type": "boolean"
+                        },
+                        "myVote": {
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/3/answers": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "回答列表",
+        "description": "被采纳的排最前，其次按赞同数倒序。列表里带上了当前用户的投票状态。",
+        "operationId": "answers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "采纳优先 + 赞同排序",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pageNum": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "questionId": {
+                                "type": "integer"
+                              },
+                              "questionTitle": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "authorId": {
+                                "type": "integer"
+                              },
+                              "authorName": {
+                                "type": "string"
+                              },
+                              "voteUp": {
+                                "type": "integer"
+                              },
+                              "voteDown": {
+                                "type": "integer"
+                              },
+                              "commentCount": {
+                                "type": "integer"
+                              },
+                              "accepted": {
+                                "type": "boolean"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "myVote": {
+                                "nullable": true
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/9/answers": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "写回答",
+        "description": "插入回答与问题的 answer_count 加一在同一个事务里完成。",
+        "operationId": "create-answer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "questionId": {
+                          "type": "integer"
+                        },
+                        "questionTitle": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "authorId": {
+                          "type": "integer"
+                        },
+                        "authorName": {
+                          "type": "string"
+                        },
+                        "voteUp": {
+                          "type": "integer"
+                        },
+                        "voteDown": {
+                          "type": "integer"
+                        },
+                        "commentCount": {
+                          "type": "integer"
+                        },
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "nullable": true
+                        },
+                        "myVote": {
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/answers/15/vote": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "取消投票",
+        "description": "同一个按钮点第二次等于取消，第三次又重新投上。myVote 返回的是操作后的状态。",
+        "operationId": "vote-cancel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "voteUp": {
+                          "type": "integer"
+                        },
+                        "voteDown": {
+                          "type": "integer"
+                        },
+                        "myVote": {
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/answers/15/comments": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "发表评论",
+        "description": "不带 parentId 就是一级评论；回答的 comment_count 同步加一。",
+        "operationId": "create-comment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "answerId": {
+                          "type": "integer"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "authorId": {
+                          "type": "integer"
+                        },
+                        "authorName": {
+                          "type": "string"
+                        },
+                        "parentId": {
+                          "type": "integer"
+                        },
+                        "replyToUserId": {
+                          "nullable": true
+                        },
+                        "replyToName": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "评论列表",
+        "description": "一级评论在前，楼中楼按时间跟后。replyToName 只有在回复别人时才有值。",
+        "operationId": "comments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pageNum": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "answerId": {
+                                "type": "integer"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "authorId": {
+                                "type": "integer"
+                              },
+                              "authorName": {
+                                "type": "string"
+                              },
+                              "parentId": {
+                                "type": "integer"
+                              },
+                              "replyToUserId": {
+                                "nullable": true
+                              },
+                              "replyToName": {
+                                "nullable": true
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/feed": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "动态流",
+        "description": "汇总三类来源：关注的人写的回答、关注的问题下的回答、关注话题下的回答。",
+        "operationId": "feed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "按时间倒序的回答列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pageNum": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "questionId": {
+                                "type": "integer"
+                              },
+                              "questionTitle": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "authorId": {
+                                "type": "integer"
+                              },
+                              "authorName": {
+                                "type": "string"
+                              },
+                              "voteUp": {
+                                "type": "integer"
+                              },
+                              "voteDown": {
+                                "type": "integer"
+                              },
+                              "commentCount": {
+                                "type": "integer"
+                              },
+                              "accepted": {
+                                "type": "boolean"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "myVote": {
+                                "nullable": true
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/follows": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "关注对象",
+        "description": "关注接口是幂等的，重复调用不会报错，也不会产生重复记录（唯一键兜底）。",
+        "operationId": "follow-question",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

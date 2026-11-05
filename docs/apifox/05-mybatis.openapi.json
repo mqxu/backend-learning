@@ -1,0 +1,1415 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "05 · 数据访问",
+    "version": "1.0.0",
+    "description": "backend-learning · 05-mybatis。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8005"
+    }
+  ],
+  "tags": [
+    {
+      "name": "数据访问"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "用户列表（条件可空）",
+        "description": "不传参数即查全部。t_user 里有 6 条数据，其中 id=5 是逻辑删除的，查询结果里不会出现。",
+        "operationId": "list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "age": {
+                        "type": "integer"
+                      },
+                      "avatar": {
+                        "nullable": true
+                      },
+                      "balance": {
+                        "type": "integer"
+                      },
+                      "birthday": {
+                        "type": "string"
+                      },
+                      "createTime": {
+                        "type": "string"
+                      },
+                      "deleted": {
+                        "type": "integer"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "gender": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "intro": {
+                        "type": "string"
+                      },
+                      "lastLoginTime": {
+                        "type": "string"
+                      },
+                      "memberLevel": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "points": {
+                        "type": "integer"
+                      },
+                      "score": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "updateTime": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "vip": {
+                        "type": "boolean"
+                      },
+                      "workTime": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "新增用户",
+        "description": "只传业务字段，create_time / update_time / version 由 MyMetaObjectHandler 自动填充。",
+        "operationId": "create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "integer"
+                  },
+                  "age": {
+                    "type": "integer"
+                  },
+                  "memberLevel": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "含自动填充字段的用户对象",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "age": {
+                      "type": "integer"
+                    },
+                    "avatar": {
+                      "nullable": true
+                    },
+                    "balance": {
+                      "type": "integer"
+                    },
+                    "birthday": {
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "integer"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "gender": {
+                      "type": "integer"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "intro": {
+                      "nullable": true
+                    },
+                    "lastLoginTime": {
+                      "nullable": true
+                    },
+                    "memberLevel": {
+                      "type": "string"
+                    },
+                    "nickname": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "nullable": true
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "updateTime": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "vip": {
+                      "type": "boolean"
+                    },
+                    "workTime": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/2": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "按 ID 查询用户",
+        "description": "MyBatis-Plus 的 selectById，SQL 由框架生成，不需要写 XML。",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "age": {
+                      "type": "integer"
+                    },
+                    "avatar": {
+                      "type": "string"
+                    },
+                    "balance": {
+                      "type": "number"
+                    },
+                    "birthday": {
+                      "type": "string"
+                    },
+                    "createTime": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "integer"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "gender": {
+                      "type": "integer"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "intro": {
+                      "type": "string"
+                    },
+                    "lastLoginTime": {
+                      "type": "string"
+                    },
+                    "memberLevel": {
+                      "type": "string"
+                    },
+                    "nickname": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "updateTime": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "vip": {
+                      "type": "boolean"
+                    },
+                    "workTime": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/7": {
+      "put": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "更新用户",
+        "description": "路径上的 id 覆盖请求体里的 id；update_time 被自动刷新。",
+        "operationId": "update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "type": "string"
+                  },
+                  "age": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "age": {
+                      "type": "integer"
+                    },
+                    "avatar": {
+                      "nullable": true
+                    },
+                    "balance": {
+                      "type": "integer"
+                    },
+                    "birthday": {
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "integer"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "gender": {
+                      "type": "integer"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "intro": {
+                      "nullable": true
+                    },
+                    "lastLoginTime": {
+                      "nullable": true
+                    },
+                    "memberLevel": {
+                      "type": "string"
+                    },
+                    "nickname": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "nullable": true
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "updateTime": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "vip": {
+                      "type": "boolean"
+                    },
+                    "workTime": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "删除用户（逻辑删除）",
+        "description": "delete 不删数据，只把 deleted 置 1；之后再查这条记录返回 null。",
+        "operationId": "delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "逻辑删除后按 ID 查询",
+        "description": "同一个 ID 再查，返回空响应体，说明逻辑删除后的记录被自动过滤了。",
+        "operationId": "after-delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/users/2/recharge": {
+      "post": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "余额充值",
+        "description": "用 UpdateWrapper 做自增，避免先查后改带来的并发覆盖。",
+        "operationId": "recharge",
+        "parameters": [
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "age": {
+                      "type": "integer"
+                    },
+                    "avatar": {
+                      "type": "string"
+                    },
+                    "balance": {
+                      "type": "number"
+                    },
+                    "birthday": {
+                      "type": "string"
+                    },
+                    "createTime": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "integer"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "gender": {
+                      "type": "integer"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "intro": {
+                      "type": "string"
+                    },
+                    "lastLoginTime": {
+                      "type": "string"
+                    },
+                    "memberLevel": {
+                      "type": "string"
+                    },
+                    "nickname": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "updateTime": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "vip": {
+                      "type": "boolean"
+                    },
+                    "workTime": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/page": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "按性别分页查询",
+        "description": "分页插件自动改写 SQL 追加 LIMIT，并单独执行一次 count。",
+        "operationId": "page",
+        "parameters": [
+          {
+            "name": "current",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "current": {
+                      "type": "integer"
+                    },
+                    "pages": {
+                      "type": "integer"
+                    },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "age": {
+                            "type": "integer"
+                          },
+                          "avatar": {
+                            "nullable": true
+                          },
+                          "balance": {
+                            "type": "number"
+                          },
+                          "birthday": {
+                            "type": "string"
+                          },
+                          "createTime": {
+                            "type": "string"
+                          },
+                          "deleted": {
+                            "type": "integer"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "gender": {
+                            "type": "integer"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "intro": {
+                            "type": "string"
+                          },
+                          "lastLoginTime": {
+                            "type": "string"
+                          },
+                          "memberLevel": {
+                            "type": "string"
+                          },
+                          "nickname": {
+                            "type": "string"
+                          },
+                          "phone": {
+                            "nullable": true
+                          },
+                          "points": {
+                            "type": "integer"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "integer"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "updateTime": {
+                            "type": "string"
+                          },
+                          "username": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer"
+                          },
+                          "vip": {
+                            "type": "boolean"
+                          },
+                          "workTime": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "size": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/keyword": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "按关键词模糊查询",
+        "description": "LambdaQueryWrapper 的 and 嵌套，等价于 username LIKE %张% OR nickname LIKE %张%。",
+        "operationId": "keyword",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "age": {
+                        "type": "integer"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "balance": {
+                        "type": "number"
+                      },
+                      "birthday": {
+                        "type": "string"
+                      },
+                      "createTime": {
+                        "type": "string"
+                      },
+                      "deleted": {
+                        "type": "integer"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "gender": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "intro": {
+                        "type": "string"
+                      },
+                      "lastLoginTime": {
+                        "type": "string"
+                      },
+                      "memberLevel": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "points": {
+                        "type": "integer"
+                      },
+                      "score": {
+                        "type": "number"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "updateTime": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "vip": {
+                        "type": "boolean"
+                      },
+                      "workTime": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/age-range": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "按年龄区间查询",
+        "description": "ge / le 组合出 BETWEEN 的等价条件，两个边界都可省略。",
+        "operationId": "age-range",
+        "parameters": [
+          {
+            "name": "minAge",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "maxAge",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "age": {
+                        "type": "integer"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "balance": {
+                        "type": "number"
+                      },
+                      "birthday": {
+                        "type": "string"
+                      },
+                      "createTime": {
+                        "type": "string"
+                      },
+                      "deleted": {
+                        "type": "integer"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "gender": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "intro": {
+                        "type": "string"
+                      },
+                      "lastLoginTime": {
+                        "type": "string"
+                      },
+                      "memberLevel": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "points": {
+                        "type": "integer"
+                      },
+                      "score": {
+                        "type": "number"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "updateTime": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "vip": {
+                        "type": "boolean"
+                      },
+                      "workTime": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/usernames": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "查询全部用户名",
+        "description": "select 指定列 + listObjs，返回 List<String> 而不是整个实体，减少数据传输。",
+        "operationId": "usernames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/statistics": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "用户汇总统计",
+        "description": "count / sum / max 加分组，用 QueryWrapper 的 select 拼接聚合表达式。",
+        "operationId": "statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalBalance": {
+                      "type": "number"
+                    },
+                    "maxAge": {
+                      "type": "integer"
+                    },
+                    "totalCount": {
+                      "type": "integer"
+                    },
+                    "genderCount": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "gender": {
+                            "type": "integer"
+                          },
+                          "cnt": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/page": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "学生分页",
+        "description": "另一个实体的分页，验证分页插件对多表场景同样生效。",
+        "operationId": "student-page",
+        "parameters": [
+          {
+            "name": "current",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "current": {
+                      "type": "integer"
+                    },
+                    "pages": {
+                      "type": "integer"
+                    },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "age": {
+                            "type": "integer"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "createTime": {
+                            "type": "string"
+                          },
+                          "deleted": {
+                            "type": "integer"
+                          },
+                          "gender": {
+                            "type": "integer"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "updateTime": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "size": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/1/scores": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "查询某学生的成绩单",
+        "description": "学生 + 成绩 + 课程三张表联查，用 XML 手写 SQL 并映射到 VO。",
+        "operationId": "scores",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "scoreId": {
+                        "type": "integer"
+                      },
+                      "studentName": {
+                        "type": "string"
+                      },
+                      "courseName": {
+                        "type": "string"
+                      },
+                      "score": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/statistics": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "按班级统计学生",
+        "description": "按班级分组统计人数与平均分，结果直接映射成 Map。",
+        "operationId": "student-statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "student_id": {
+                        "type": "integer"
+                      },
+                      "total_score": {
+                        "type": "number"
+                      },
+                      "course_count": {
+                        "type": "integer"
+                      },
+                      "avg_score": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/batch": {
+      "post": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "批量新增课程",
+        "description": "saveBatch 内部按批次提交，比拼多次 insert 少很多网络往返。",
+        "operationId": "course-batch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "teacher": {
+                      "type": "string"
+                    },
+                    "credit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功条数",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "回滚后核对库存",
+        "description": "再查商品列表，库存只减少了成功那一单的数量，失败那单没有扣减。",
+        "operationId": "product-after",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "createTime": {
+                        "type": "string"
+                      },
+                      "deleted": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "price": {
+                        "type": "integer"
+                      },
+                      "stock": {
+                        "type": "integer"
+                      },
+                      "updateTime": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "post": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "库存不足下单",
+        "description": "要买 999 件，库存不够直接抛异常，事务回滚后库存不变。",
+        "operationId": "order-over-stock",
+        "parameters": [],
+        "responses": {
+          "500": {
+            "description": "库存不足，事务回滚"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "数据访问"
+        ],
+        "summary": "查询用户订单",
+        "description": "验证上一步的订单真的落库了。",
+        "operationId": "orders",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "integer"
+                      },
+                      "createTime": {
+                        "type": "string"
+                      },
+                      "deleted": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "orderNo": {
+                        "type": "string"
+                      },
+                      "productId": {
+                        "type": "integer"
+                      },
+                      "quantity": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "updateTime": {
+                        "type": "string"
+                      },
+                      "userId": {
+                        "type": "integer"
+                      },
+                      "version": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

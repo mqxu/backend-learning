@@ -1,0 +1,229 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "01 · 快速入门",
+    "version": "1.0.0",
+    "description": "backend-learning · 01-quickstart。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8001"
+    }
+  ],
+  "tags": [
+    {
+      "name": "用户"
+    }
+  ],
+  "paths": {
+    "/user/hello": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "纯文本问候",
+        "description": "最简 GET 接口。返回 String 时不做 JSON 包装，响应体就是原文。",
+        "operationId": "hello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "字符串 hello world",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/info": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "返回一个用户对象",
+        "description": "返回 User 对象，Jackson 自动序列化为 JSON；LocalDate 默认输出 ISO 格式。",
+        "operationId": "info",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "用户详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "birthday": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/list": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "新增后回查列表",
+        "description": "再次查询列表，确认上一步写入的数据仍在（内存列表在进程存活期间有效）。",
+        "operationId": "list-after-create",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "birthday": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/1002": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "按 ID 查询用户",
+        "description": "/{id} 中的 id 由 @PathVariable 注入，命中时返回 200 和用户对象。",
+        "operationId": "by-id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "birthday": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      }
+    },
+    "/user/9999": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "按 ID 查询用户（不存在）",
+        "description": "找不到记录时返回 404，用 ResponseEntity 控制状态码而不是抛异常。",
+        "operationId": "by-id-404",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      }
+    },
+    "/user": {
+      "post": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "新增用户",
+        "description": "@RequestBody 把请求体反序列化成 User，服务端补 ID 后返回完整对象。",
+        "operationId": "create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "birthday": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "含服务端生成 ID 的用户对象",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "birthday": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

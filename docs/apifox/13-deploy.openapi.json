@@ -1,0 +1,326 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "13 · 部署与 CI/CD",
+    "version": "1.0.0",
+    "description": "backend-learning · 13-deploy。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8013"
+    }
+  ],
+  "tags": [
+    {
+      "name": "部署"
+    }
+  ],
+  "paths": {
+    "/deploy/hello": {
+      "get": {
+        "tags": [
+          "部署"
+        ],
+        "summary": "模块入口",
+        "description": "确认应用正常启动。这个模块的重点不在业务，而在怎么把它打包成镜像。",
+        "operationId": "hello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/info": {
+      "get": {
+        "tags": [
+          "部署"
+        ],
+        "summary": "构建与运行信息",
+        "description": "build 来自 META-INF/build-info.properties（mvn package 时生成），runtime 是进程实时读取的。排查\"这个实例跑的哪个版本\"就看这里。",
+        "operationId": "info",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "build": {
+                      "type": "object",
+                      "properties": {
+                        "artifact": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "runtime": {
+                      "type": "object",
+                      "properties": {
+                        "application": {
+                          "type": "string"
+                        },
+                        "profiles": {
+                          "type": "string"
+                        },
+                        "port": {
+                          "type": "string"
+                        },
+                        "javaVersion": {
+                          "type": "string"
+                        },
+                        "os": {
+                          "type": "string"
+                        },
+                        "hostname": {
+                          "type": "string"
+                        },
+                        "pid": {
+                          "type": "integer"
+                        },
+                        "startedAt": {
+                          "type": "string"
+                        },
+                        "uptime": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/pipeline": {
+      "get": {
+        "tags": [
+          "部署"
+        ],
+        "summary": "部署命令清单",
+        "description": "把构建、打镜像、运行、编排、探活五步命令集中返回，方便对照仓库里的 Dockerfile 与 compose 文件。",
+        "operationId": "pipeline",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "构建": {
+                      "type": "string"
+                    },
+                    "镜像": {
+                      "type": "string"
+                    },
+                    "运行": {
+                      "type": "string"
+                    },
+                    "编排": {
+                      "type": "string"
+                    },
+                    "探活": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/health": {
+      "get": {
+        "tags": [
+          "部署"
+        ],
+        "summary": "健康检查",
+        "description": "Dockerfile 里的 HEALTHCHECK 与 compose 的 healthcheck 都打这个地址，返回 UP 才算启动成功。",
+        "operationId": "health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "components": {
+                      "type": "object",
+                      "properties": {
+                        "diskSpace": {
+                          "type": "object",
+                          "properties": {
+                            "details": {
+                              "type": "object",
+                              "properties": {
+                                "total": {
+                                  "type": "integer"
+                                },
+                                "free": {
+                                  "type": "integer"
+                                },
+                                "threshold": {
+                                  "type": "integer"
+                                },
+                                "path": {
+                                  "type": "string"
+                                },
+                                "exists": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "livenessState": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "ping": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "readinessState": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "ssl": {
+                          "type": "object",
+                          "properties": {
+                            "details": {
+                              "type": "object",
+                              "properties": {
+                                "expiringChains": {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                "invalidChains": {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                "validChains": {
+                                  "type": "array",
+                                  "items": {}
+                                }
+                              }
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/health/liveness": {
+      "get": {
+        "tags": [
+          "部署"
+        ],
+        "summary": "存活探针",
+        "description": "liveness 只回答\"进程还活着吗\"，不该包含下游依赖；依赖挂了重启也解决不了问题。",
+        "operationId": "liveness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/health/readiness": {
+      "get": {
+        "tags": [
+          "部署"
+        ],
+        "summary": "就绪探针",
+        "description": "readiness 决定要不要给这个实例分配流量。应用还没初始化完时返回 OUT_OF_SERVICE，负载均衡会跳过它。",
+        "operationId": "readiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

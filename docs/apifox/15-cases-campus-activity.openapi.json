@@ -1,0 +1,1268 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "15-3 · 校园活动小程序后端",
+    "version": "1.0.0",
+    "description": "backend-learning · 15-cases/campus-activity。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8016"
+    }
+  ],
+  "tags": [
+    {
+      "name": "综合案例"
+    }
+  ],
+  "paths": {
+    "/api/ping": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "探活接口",
+        "description": "不查库、不校验身份，只确认进程还活着。容器编排的存活探针就调它。",
+        "operationId": "ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string"
+                        },
+                        "service": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/categories": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "活动分类",
+        "description": "列表页的筛选条数据。分类带排序与颜色，前端不用写死。",
+        "operationId": "categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "icon": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "sort": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/activities": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "活动列表",
+        "description": "分页查询，返回报名状态与剩余名额。时间字段按天格式化，前端直接显示。",
+        "operationId": "activities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "分页 + 报名状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "capacity": {
+                                "type": "integer"
+                              },
+                              "categoryId": {
+                                "type": "integer"
+                              },
+                              "categoryName": {
+                                "type": "string"
+                              },
+                              "endTime": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "locationName": {
+                                "type": "string"
+                              },
+                              "orgId": {
+                                "type": "integer"
+                              },
+                              "orgName": {
+                                "type": "string"
+                              },
+                              "signedCount": {
+                                "type": "integer"
+                              },
+                              "signupEndTime": {
+                                "type": "string"
+                              },
+                              "signupOpen": {
+                                "type": "boolean"
+                              },
+                              "signupStartTime": {
+                                "type": "string"
+                              },
+                              "startTime": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "integer"
+                              },
+                              "statusLabel": {
+                                "type": "string"
+                              },
+                              "summary": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/activities/3001": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "活动详情",
+        "description": "带出组织者、分类、报名窗口与当前报名人数。",
+        "operationId": "activity-detail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "actionText": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "auditRequired": {
+                          "type": "integer"
+                        },
+                        "cancelDeadline": {
+                          "type": "string"
+                        },
+                        "capacity": {
+                          "type": "integer"
+                        },
+                        "categoryId": {
+                          "type": "integer"
+                        },
+                        "categoryName": {
+                          "type": "string"
+                        },
+                        "checkinType": {
+                          "type": "integer"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "endTime": {
+                          "type": "string"
+                        },
+                        "favoriteCount": {
+                          "type": "integer"
+                        },
+                        "favorited": {
+                          "type": "boolean"
+                        },
+                        "formFields": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "latitude": {
+                          "type": "number"
+                        },
+                        "locationName": {
+                          "type": "string"
+                        },
+                        "longitude": {
+                          "type": "number"
+                        },
+                        "orgId": {
+                          "type": "integer"
+                        },
+                        "orgName": {
+                          "type": "string"
+                        },
+                        "signedCount": {
+                          "type": "integer"
+                        },
+                        "signupEndTime": {
+                          "type": "string"
+                        },
+                        "signupOpen": {
+                          "type": "boolean"
+                        },
+                        "signupStartTime": {
+                          "type": "string"
+                        },
+                        "startTime": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "statusLabel": {
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "viewCount": {
+                          "type": "integer"
+                        },
+                        "waitlistEnabled": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/auth/login": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "小程序登录",
+        "description": "dev-mode 打开时传 devOpenId 跳过微信 code2session，本地与课堂都能直接跑。",
+        "operationId": "app-login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "devOpenId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "token 与绑定状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "needBind": {
+                          "type": "boolean"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "bound": {
+                              "type": "boolean"
+                            },
+                            "id": {
+                              "type": "integer"
+                            },
+                            "nickname": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/auth/bind": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "绑定学籍",
+        "description": "学号必须落在白名单里，姓名以白名单为准，前端传的姓名不作数。绑定后才能报名。",
+        "operationId": "bind",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "studentNo": {
+                    "type": "string"
+                  },
+                  "realName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bound": {
+                          "type": "boolean"
+                        },
+                        "college": {
+                          "type": "string"
+                        },
+                        "grade": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "major": {
+                          "type": "string"
+                        },
+                        "nickname": {
+                          "type": "string"
+                        },
+                        "realName": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "studentNo": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/user/profile": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "未登录访问（应 401）",
+        "description": "拦截器解析不到用户，RequireLogin 直接拒绝，返回业务码而不是 500。",
+        "operationId": "no-token",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/activities/3002/signup": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "报名活动",
+        "description": "报名前依次检查：是否绑定学籍、活动是否存在、报名窗口是否开启、是否重复报名、名额是否已满。3002 的报名窗口当前是开着的。",
+        "operationId": "signup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "formData": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "报名单号与状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "activityId": {
+                          "type": "integer"
+                        },
+                        "activityTitle": {
+                          "type": "string"
+                        },
+                        "canCancel": {
+                          "type": "boolean"
+                        },
+                        "canCheckin": {
+                          "type": "boolean"
+                        },
+                        "cancelDeadline": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "endTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "locationName": {
+                          "type": "string"
+                        },
+                        "signupNo": {
+                          "type": "string"
+                        },
+                        "startTime": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "statusLabel": {
+                          "type": "string"
+                        },
+                        "waitlistSeq": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/activities/3001/signup": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "重复报名（业务码 30002）",
+        "description": "种子数据里张小明已经报过 3001，再报一次返回业务码 30002。判断放在事务里，配合唯一索引兜并发。",
+        "operationId": "signup-again",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "formData": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "activityId": {
+                          "type": "integer"
+                        },
+                        "activityTitle": {
+                          "type": "string"
+                        },
+                        "canCancel": {
+                          "type": "boolean"
+                        },
+                        "canCheckin": {
+                          "type": "boolean"
+                        },
+                        "cancelDeadline": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "endTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "locationName": {
+                          "type": "string"
+                        },
+                        "signupNo": {
+                          "type": "string"
+                        },
+                        "startTime": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "statusLabel": {
+                          "type": "string"
+                        },
+                        "waitlistSeq": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/signups": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "我的报名",
+        "description": "只返回当前用户的报名，按提交时间倒序，带活动名称与状态文案。",
+        "operationId": "my-signups",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "activityId": {
+                                "type": "integer"
+                              },
+                              "activityTitle": {
+                                "type": "string"
+                              },
+                              "canCancel": {
+                                "type": "boolean"
+                              },
+                              "canCheckin": {
+                                "type": "boolean"
+                              },
+                              "cancelDeadline": {
+                                "type": "string"
+                              },
+                              "createTime": {
+                                "type": "string"
+                              },
+                              "endTime": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "locationName": {
+                                "type": "string"
+                              },
+                              "signupNo": {
+                                "type": "string"
+                              },
+                              "startTime": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "integer"
+                              },
+                              "statusLabel": {
+                                "type": "string"
+                              },
+                              "waitlistSeq": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/messages": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "消息列表",
+        "description": "报名、审核、取消都会写一条站内信；未读数单独有一个接口给小红点用。",
+        "operationId": "messages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bizId": {
+                                "type": "integer"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "createTime": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "readFlag": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "userId": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/auth/login": {
+      "post": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "管理端登录",
+        "description": "账号密码登录，与小程序端的微信登录是两套入口，签发的令牌角色不同。",
+        "operationId": "admin-login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "needBind": {
+                          "type": "boolean"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "bound": {
+                              "type": "boolean"
+                            },
+                            "id": {
+                              "type": "integer"
+                            },
+                            "nickname": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "工作台统计",
+        "description": "活动数、报名数、待审核数几个汇总数字，一次查询拼出来，避免首页发五六个请求。",
+        "operationId": "dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "topActivities": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "signupCount": {
+                                "type": "integer"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "capacity": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "activityTotal": {
+                          "type": "integer"
+                        },
+                        "userTotal": {
+                          "type": "integer"
+                        },
+                        "checkinTotal": {
+                          "type": "integer"
+                        },
+                        "studentTotal": {
+                          "type": "integer"
+                        },
+                        "publishedCount": {
+                          "type": "integer"
+                        },
+                        "signupTotal": {
+                          "type": "integer"
+                        },
+                        "pendingAuditCount": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/activities/audit-list": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "待审核活动列表",
+        "description": "组织者提交的活动先进入审核队列，团委通过后才对学生可见。",
+        "operationId": "audit-list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "capacity": {
+                                "type": "integer"
+                              },
+                              "categoryId": {
+                                "type": "integer"
+                              },
+                              "categoryName": {
+                                "type": "string"
+                              },
+                              "endTime": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "locationName": {
+                                "type": "string"
+                              },
+                              "orgId": {
+                                "type": "integer"
+                              },
+                              "orgName": {
+                                "type": "string"
+                              },
+                              "signedCount": {
+                                "type": "integer"
+                              },
+                              "signupEndTime": {
+                                "type": "string"
+                              },
+                              "signupOpen": {
+                                "type": "boolean"
+                              },
+                              "signupStartTime": {
+                                "type": "string"
+                              },
+                              "startTime": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "integer"
+                              },
+                              "statusLabel": {
+                                "type": "string"
+                              },
+                              "summary": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "用户列表",
+        "description": "按角色筛选用户，含组织者与其所属组织。",
+        "operationId": "admin-users",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bound": {
+                                "type": "boolean"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "nickname": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/logs": {
+      "get": {
+        "tags": [
+          "综合案例"
+        ],
+        "summary": "操作日志",
+        "description": "审核、下架、改角色都记一条日志，排查“谁动了这条数据”时有据可查。",
+        "operationId": "admin-logs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {}
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

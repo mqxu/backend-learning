@@ -1,0 +1,648 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "12 · 应用监控",
+    "version": "1.0.0",
+    "description": "backend-learning · 12-actuator。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8012"
+    }
+  ],
+  "tags": [
+    {
+      "name": "监控"
+    }
+  ],
+  "paths": {
+    "/business/hello": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "模块入口",
+        "description": "返回三个监控端点地址，方便直接跳过去看。",
+        "operationId": "hello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "health": {
+                          "type": "string"
+                        },
+                        "metrics": {
+                          "type": "string"
+                        },
+                        "prometheus": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business/orders": {
+      "post": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "创建订单（第三次）",
+        "description": "第三次，计数器到 3。",
+        "operationId": "order-3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "orderId": {
+                          "type": "integer"
+                        },
+                        "amount": {
+                          "type": "integer"
+                        },
+                        "costMs": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business/slow": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "模拟慢请求",
+        "description": "睡 300ms，让 Timer 有足够大的样本，P95/P99 才有意义。",
+        "operationId": "slow",
+        "parameters": [
+          {
+            "name": "ms",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sleepMs": {
+                          "type": "integer"
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business/fail": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "模拟失败（另一原因）",
+        "description": "换个 reason，验证标签能区分不同原因。",
+        "operationId": "fail-2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reason": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/health": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "健康检查",
+        "description": "show-details=always 时能看到每个组件的状态，包含自定义的 inventory 检查。",
+        "operationId": "health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "components": {
+                      "type": "object",
+                      "properties": {
+                        "diskSpace": {
+                          "type": "object",
+                          "properties": {
+                            "details": {
+                              "type": "object",
+                              "properties": {
+                                "total": {
+                                  "type": "integer"
+                                },
+                                "free": {
+                                  "type": "integer"
+                                },
+                                "threshold": {
+                                  "type": "integer"
+                                },
+                                "path": {
+                                  "type": "string"
+                                },
+                                "exists": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "inventory": {
+                          "type": "object",
+                          "properties": {
+                            "details": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string"
+                                },
+                                "latencyMs": {
+                                  "type": "integer"
+                                },
+                                "checkedAt": {
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "livenessState": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "ping": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "readinessState": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "ssl": {
+                          "type": "object",
+                          "properties": {
+                            "details": {
+                              "type": "object",
+                              "properties": {
+                                "expiringChains": {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                "invalidChains": {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                "validChains": {
+                                  "type": "array",
+                                  "items": {}
+                                }
+                              }
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/info": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "应用信息",
+        "description": "info 端点包含配置文件里的 info.app.* 与自定义 InfoContributor 写入的模块信息。",
+        "operationId": "info",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "module": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "profiles": {
+                          "type": "string"
+                        },
+                        "port": {
+                          "type": "string"
+                        },
+                        "startedAt": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "owner": {
+                      "type": "object",
+                      "properties": {
+                        "team": {
+                          "type": "string"
+                        },
+                        "contact": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/metrics": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "全部指标名",
+        "description": "列出所有可用的指标名，业务指标与 JVM、HTTP 指标都在这里。",
+        "operationId": "metrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "names": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/metrics/business.orders.created": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "查询下单计数",
+        "description": "按名字取某个指标的值与标签。这里的 COUNT 就是刚才三次下单的累计值。",
+        "operationId": "metric-counter",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "availableTags": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tag": {
+                            "type": "string"
+                          },
+                          "values": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "measurements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "statistic": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/metrics/business.order.handle": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "查询处理耗时",
+        "description": "Timer 指标带 count、total、max 以及各分位数，慢请求的效果在这里体现。",
+        "operationId": "metric-timer",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "result:success"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "availableTags": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tag": {
+                            "type": "string"
+                          },
+                          "values": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "baseUnit": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "measurements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "statistic": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/metrics/business.orders.failed": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "查询失败计数",
+        "description": "带标签的指标要按标签过滤才能分别取到，这两个 reason 各 1 次。",
+        "operationId": "metric-failed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "availableTags": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tag": {
+                            "type": "string"
+                          },
+                          "values": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "measurements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "statistic": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator/prometheus": {
+      "get": {
+        "tags": [
+          "监控"
+        ],
+        "summary": "Prometheus 指标输出",
+        "description": "这个端点是给 Prometheus 抓的，文本格式，每行一条样本。内容很长，这里只显示开头。",
+        "operationId": "prometheus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    }
+  }
+}

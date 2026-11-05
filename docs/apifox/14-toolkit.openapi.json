@@ -1,0 +1,1067 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "14 · 工具库实战",
+    "version": "1.0.0",
+    "description": "backend-learning · 14-toolkit。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8014"
+    }
+  ],
+  "tags": [
+    {
+      "name": "工具"
+    }
+  ],
+  "paths": {
+    "/toolkit/captcha": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "生成算术验证码",
+        "description": "算术型把题目渲染成图片，答案由服务端保存，能挡住简单的图片识别脚本。",
+        "operationId": "captcha-arithmetic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "captchaId": {
+                          "type": "string"
+                        },
+                        "image": {
+                          "type": "string"
+                        },
+                        "expireSeconds": {
+                          "type": "integer"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/captcha/verify": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "校验验证码（错误示例）",
+        "description": "故意传错验证码，返回 400 与剩余可试次数。校验失败会计次，连续错多次就作废这个 captchaId。",
+        "operationId": "captcha-verify-wrong",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "captchaId": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/text/extract": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "提取文本中的手机号/邮箱/URL",
+        "description": "从一段杂乱文本里抽出手机号、邮箱、URL、身份证等，用于客服工单、聊天记录整理这类场景。",
+        "operationId": "text-extract",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "phones": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "emails": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ips": {
+                          "type": "array",
+                          "items": {}
+                        },
+                        "urls": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "idCards": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "maskedText": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/text/sensitive": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "敏感词检测",
+        "description": "词表里有赌博、诈骗、代开发票，一次扫描全部命中，同时返回打码版与高亮版。",
+        "operationId": "text-sensitive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "hits": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "filtered": {
+                          "type": "string"
+                        },
+                        "highlighted": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/short-link": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "生成短链",
+        "description": "长链接换短码。短码用发号器 + 进制转换生成，不用查库判断重复。",
+        "operationId": "shortlink-create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "ttlSeconds": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "shortUrl": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "expireAt": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/short-link/c38AHH": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "短链统计",
+        "description": "短链会记录访问次数与最近访问时间，运营活动靠这个看点击量。",
+        "operationId": "shortlink-stats",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "clicks": {
+                          "type": "integer"
+                        },
+                        "createdAt": {
+                          "type": "integer"
+                        },
+                        "expireAt": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/s/c38AHH": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "短链跳转",
+        "description": "访问 /s/{code} 返回 302 与 Location 头，浏览器自动跳到原地址。",
+        "operationId": "shortlink-redirect",
+        "parameters": [],
+        "responses": {
+          "302": {
+            "description": "实际返回"
+          },
+          "404": {
+            "description": "短码不存在"
+          }
+        }
+      }
+    },
+    "/toolkit/customer": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "新增客户",
+        "description": "手机号、身份证在库里加密存储，返回给前端的是脱敏后的视图。",
+        "operationId": "customer-create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "idCard": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "idCard": {
+                          "type": "string"
+                        },
+                        "age": {
+                          "type": "integer"
+                        },
+                        "gender": {
+                          "type": "string"
+                        },
+                        "level": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/customer/793e071666494726ad628493271c5c38": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "管理员查看客户",
+        "description": "role=admin 能看到完整手机号，但仍需二次校验才能看身份证。",
+        "operationId": "customer-admin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "idCard": {
+                          "type": "string"
+                        },
+                        "age": {
+                          "type": "integer"
+                        },
+                        "gender": {
+                          "type": "string"
+                        },
+                        "level": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/customer/793e071666494726ad628493271c5c38/verify-password": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "校验客户密码",
+        "description": "查看敏感字段前要求再输一次密码，这是\"二次认证\"在数据访问上的应用。",
+        "operationId": "customer-verify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/chunk/init": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "14.17 另开一个两片的上传",
+        "description": "同样的文件按两片来传，但先不传分片，用来验证未传完时不能合并。",
+        "operationId": "chunk-init-2",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "totalChunks": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "uploadId": {
+                          "type": "string"
+                        },
+                        "chunkSize": {
+                          "type": "integer"
+                        },
+                        "totalChunks": {
+                          "type": "integer"
+                        },
+                        "uploaded": {
+                          "type": "array",
+                          "items": {}
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/chunk/upload": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "上传分片",
+        "description": "分片按 index 落盘，服务端记录已收到的分片，支持断点续传。",
+        "operationId": "chunk-upload",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "uploadId": {
+                          "type": "string"
+                        },
+                        "totalChunks": {
+                          "type": "integer"
+                        },
+                        "uploaded": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        },
+                        "missing": {
+                          "type": "array",
+                          "items": {}
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/chunk/status": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "查询分片状态",
+        "description": "返回已收到的分片编号，前端据此决定从第几片续传。",
+        "operationId": "chunk-status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "uploadId": {
+                          "type": "string"
+                        },
+                        "totalChunks": {
+                          "type": "integer"
+                        },
+                        "uploaded": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        },
+                        "missing": {
+                          "type": "array",
+                          "items": {}
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/chunk/merge": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "14.18 缺片时合并被拒",
+        "description": "一片都没传就调合并，返回 400 与业务码 41042，说明还缺几片，不会生成半个文件。",
+        "operationId": "chunk-merge-incomplete",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/excel/export": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "导出订单 Excel",
+        "description": "响应是二进制流，Content-Disposition 带文件名。本图只记录状态与响应头。",
+        "operationId": "excel-export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/excel/template": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "下载导入模板",
+        "description": "模板带表头与示例行，用户填完再上传，减少格式错误。",
+        "operationId": "excel-template",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/inspect": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "批量巡检 URL",
+        "description": "批量检查一组 URL 的可达性与响应耗时，返回汇总。运维巡检脚本的核心逻辑。",
+        "operationId": "inspect",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "urls": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "success": {
+                          "type": "integer"
+                        },
+                        "failed": {
+                          "type": "integer"
+                        },
+                        "avgCostMs": {
+                          "type": "integer"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "integer"
+                              },
+                              "costMs": {
+                                "type": "integer"
+                              },
+                              "ok": {
+                                "type": "boolean"
+                              },
+                              "error": {
+                                "nullable": true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toolkit/system": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "系统信息",
+        "description": "CPU、内存、磁盘、JVM 运行信息，面板页的原始数据。",
+        "operationId": "system",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cpu": {
+                          "type": "object",
+                          "properties": {
+                            "model": {
+                              "type": "string"
+                            },
+                            "cores": {
+                              "type": "integer"
+                            },
+                            "usage": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "memory": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer"
+                            },
+                            "used": {
+                              "type": "integer"
+                            },
+                            "usage": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "disks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "mount": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer"
+                              },
+                              "used": {
+                                "type": "integer"
+                              },
+                              "usage": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        },
+                        "jvm": {
+                          "type": "object",
+                          "properties": {
+                            "heapUsed": {
+                              "type": "integer"
+                            },
+                            "heapMax": {
+                              "type": "integer"
+                            },
+                            "threads": {
+                              "type": "integer"
+                            },
+                            "javaVersion": {
+                              "type": "string"
+                            },
+                            "uptimeSeconds": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "os": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "string"
+                            },
+                            "arch": {
+                              "type": "string"
+                            },
+                            "uptimeSeconds": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,392 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "10 · 接口文档",
+    "version": "1.0.0",
+    "description": "backend-learning · 10-doc。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8010"
+    }
+  ],
+  "tags": [
+    {
+      "name": "图书"
+    }
+  ],
+  "paths": {
+    "/books": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "按关键字与分类过滤",
+        "description": "keyword 匹配书名或作者，category 是枚举，文档里会渲染成下拉框。",
+        "operationId": "filter",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "author": {
+                                "type": "string"
+                              },
+                              "category": {
+                                "type": "string"
+                              },
+                              "createTime": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "isbn": {
+                                "type": "string"
+                              },
+                              "price": {
+                                "type": "integer"
+                              },
+                              "publishDate": {
+                                "type": "string"
+                              },
+                              "stock": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "pageNum": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "参数校验失败",
+        "description": "ISBN 不是 13 位数字，校验注解拦下。约束条件在文档的字段说明里也能看到。",
+        "operationId": "validate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "type": "string"
+                  },
+                  "isbn": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "参数不合法"
+          }
+        }
+      }
+    },
+    "/books/1": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "按 ID 查询图书",
+        "description": "路径参数在文档里显示为 path 类型，带 example，调试时不用手填。",
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "author": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "isbn": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "integer"
+                        },
+                        "publishDate": {
+                          "type": "string"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/books/categories": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "查询全部分类",
+        "description": "把枚举值做成接口返回，前端下拉框就不用把枚举硬编码一份。",
+        "operationId": "categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/books/6": {
+      "delete": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "删除图书",
+        "description": "删除上一步新增的那本。",
+        "operationId": "delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "查询已删除的图书",
+        "description": "返回 404 与业务码 20404，响应结构与其他模块保持一致。",
+        "operationId": "after-delete",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "图书不存在"
+          }
+        }
+      }
+    },
+    "/v3/api-docs": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "获取完整 OpenAPI 文档",
+        "description": "这是整份文档的原始 JSON，Apifox、Postman、代码生成器都从这里导入。真实体量有几千行，这里只显示开头。",
+        "operationId": "api-docs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/v3/api-docs/book": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "获取图书分组文档",
+        "description": "配置了 group-configs 后，每个分组可以单独导出，团队按业务线同步文档时很有用。",
+        "operationId": "api-docs-group",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/swagger-ui/index.html": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "Swagger UI 页面",
+        "description": "浏览器打开 /swagger-ui.html 就是可交互的接口调试页，这里是它的 HTML 首屏（截断显示）。",
+        "operationId": "swagger-ui",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/ops/health": {
+      "get": {
+        "tags": [
+          "图书"
+        ],
+        "summary": "健康检查",
+        "description": "/ops/** 被单独分到运维分组，演示按业务线拆分文档。",
+        "operationId": "ops-health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": "string"
+                        },
+                        "module": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1013 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "06 · 缓存与分布式锁",
+    "version": "1.0.0",
+    "description": "backend-learning · 06-redis。由 tools/run-cases.mjs 依据实际运行的接口生成。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8006"
+    }
+  ],
+  "tags": [
+    {
+      "name": "缓存"
+    }
+  ],
+  "paths": {
+    "/sms/send": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "发送短信验证码",
+        "description": "模拟通道下把验证码放在 data 里返回，方便本地联调；真实通道返回 null。后续所有接口都带上这里拿到的 token。",
+        "operationId": "sms-send",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sms/login": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "重复使用验证码",
+        "description": "同一个验证码再登录一次，被标记为已使用而拒绝。",
+        "operationId": "sms-login-reuse",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/me": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "未携带 token 访问",
+        "description": "显式去掉 Authorization 头，拦截器抛业务异常。注意 HTTP 仍是 200，错误体现在 code 上。",
+        "operationId": "me-no-token",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "nullable": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/db/1": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "直接查数据库",
+        "description": "不加缓存的基线：每次都走数据库，从返回的 source 字段能看出它没有命中缓存。",
+        "operationId": "db",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "integer"
+                        },
+                        "sales": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "updateTime": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/manual/1": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "手动缓存命中",
+        "description": "同样的请求再发一次，source 变成 cache，耗时下降到毫秒以下。",
+        "operationId": "manual-hit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "integer"
+                        },
+                        "sales": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "updateTime": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/anno/2": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "更新后读取",
+        "description": "价格已是新值，说明删缓存后重新回源拿到了最新数据。",
+        "operationId": "after-update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "integer"
+                        },
+                        "sales": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "updateTime": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/2/price-anno": {
+      "put": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "更新价格并清除缓存",
+        "description": "更新数据库后删除对应缓存，下次查询重新回填。先删缓存再更库会有一致性窗口，顺序不能反。",
+        "operationId": "update-price",
+        "parameters": [
+          {
+            "name": "price",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "integer"
+                        },
+                        "sales": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "updateTime": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/manual/99999": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "空值缓存命中",
+        "description": "再查同一个不存在的 ID，source 变成 cache-null，数据库压力被挡住。",
+        "operationId": "penetrate-again",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "nullable": true
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/manual-mutex/3": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "互斥锁回源",
+        "description": "缓存失效瞬间只让一个线程回源，其余线程短暂等待后读缓存，避免同时压垮数据库。",
+        "operationId": "mutex",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "type": "string"
+                        },
+                        "createTime": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "integer"
+                        },
+                        "sales": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "updateTime": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cache/goods/anno/list": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "缓存商品列表",
+        "description": "整个列表一起缓存，注意列表里任一元素变更都要清理这个缓存，否则会看到旧数据。",
+        "operationId": "anno-list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "category": {
+                            "type": "string"
+                          },
+                          "createTime": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": "integer"
+                          },
+                          "sales": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "type": "integer"
+                          },
+                          "stock": {
+                            "type": "integer"
+                          },
+                          "updateTime": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "costMs": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lock/reset": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "重置库存（第二次）",
+        "description": "重置回 10，准备用分布式锁重做一遍。",
+        "operationId": "reset-stock-2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "stock": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lock/buy/no-lock": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "无锁并发下单（会超卖）",
+        "description": "20 个并发请求同时买 1 件，库存只有 10。先查后改的写法在并发下卖出了超过库存的订单。",
+        "operationId": "buy-no-lock",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/lock/stock/1": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "加锁后查询库存",
+        "description": "库存停在 0，没有变成负数，超卖被挡住了。",
+        "operationId": "stock-after-lock",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string"
+                    },
+                    "createTime": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "price": {
+                      "type": "integer"
+                    },
+                    "sales": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "stock": {
+                      "type": "integer"
+                    },
+                    "updateTime": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lock/buy/redisson": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "Redisson 分布式锁下单",
+        "description": "同样的 20 个并发，这次每个请求先进分布式锁，只有 10 个请求能抢到库存。",
+        "operationId": "buy-redisson",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/limit/access": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "固定窗口限流",
+        "description": "60 秒窗口内最多 5 次。并发 8 次请求，超出的部分 allowed=false。",
+        "operationId": "limit",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "guest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回"
+          }
+        }
+      }
+    },
+    "/redis/string": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "写入字符串",
+        "description": "带过期时间写入，返回 TTL。缓存一定要设过期时间，否则异常情况下会永久占内存。",
+        "operationId": "str-set",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ttlSeconds",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 600
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    },
+                    "ttlSeconds": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "读取字符串",
+        "description": "读回上一步写入的值。",
+        "operationId": "str-get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/redis/hash": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "写入 Hash",
+        "description": "一个 key 挂多个字段，只改某个属性时不用整对象覆盖。",
+        "operationId": "hash",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "string"
+                    },
+                    "city": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/redis/list": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "写入 List",
+        "description": "有序可重复，可以当消息队列或最新动态列表。",
+        "operationId": "list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/redis/set": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "写入 Set",
+        "description": "写入时重复元素自动去重，返回的集合里只有一个 Java。",
+        "operationId": "set",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rank/warmup": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "6.28 预热排行榜",
+        "description": "把数据库里的销量灌进 ZSet。上线时执行一次，之后靠下单累加。",
+        "operationId": "rank-warmup",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "warmed": {
+                      "type": "integer"
+                    },
+                    "size": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rank/increase": {
+      "post": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "商品热度加分",
+        "description": "给 3 号商品加 800 分。ZSet 按分数自动排序，加分后它的名次立刻变化，不需要重排全表。",
+        "operationId": "zset",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "goodsId": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "type": "integer"
+                    },
+                    "rank": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rank/top": {
+      "get": {
+        "tags": [
+          "缓存"
+        ],
+        "summary": "查询排行榜",
+        "description": "取前五名，分数从高到低。分数来自 ZSet，商品名回到库里补。",
+        "operationId": "zset-top",
+        "parameters": [
+          {
+            "name": "top",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "实际返回",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "rank": {
+                        "type": "integer"
+                      },
+                      "goodsId": {
+                        "type": "string"
+                      },
+                      "sales": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
