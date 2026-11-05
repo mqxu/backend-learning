@@ -1,0 +1,11 @@
+# 生产 profile：docker run -e SPRING_PROFILES_ACTIVE=prod 时生效
+logging:
+  level:
+    root: warn
+    top.mqxu: info
+  file:
+    name: logs/app.log
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 7

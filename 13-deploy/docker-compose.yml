@@ -1,0 +1,57 @@
+# 编排示例：应用 + 可选的依赖服务
+#   docker compose -f 13-deploy/docker-compose.yml up -d --build
+#
+# 构建上下文（context）指到仓库根，因为 Dockerfile 需要读父 POM。
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: 13-deploy/Dockerfile
+    image: backend-learning/13-deploy:1.0.0
+    container_name: deploy-app
+    ports:
+      - "8013:8013"
+    environment:
+      # 生产 profile：日志写文件、只开必要端点
+      SPRING_PROFILES_ACTIVE: prod
+      # 密钥类配置从环境变量注入，不写进镜像
+      JAVA_OPTS: "-XX:MaxRAMPercentage=75 -Xms256m"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8013/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    # 资源限制：容器不设上限会吃光宿主机
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+    logging:
+      # 限制日志文件大小，否则跑几天就把磁盘写满
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 需要数据库时取消注释。应用里把 datasource 指向 db 即可
+  # db:
+  #   image: mysql:8.4
+  #   container_name: deploy-mysql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me}
+  #     MYSQL_DATABASE: backend_learning
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+  #     interval: 10s
+  #     retries: 5
+
+# volumes:
+#   mysql-data:

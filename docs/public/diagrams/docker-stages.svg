@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <rect width="1000" height="440" fill="#ffffff"/>
+
+  <text x="30" y="38" font-size="17" font-weight="600" fill="#1f2329">多阶段构建：编译那一半，不进最终镜像</text>
+  <text x="30" y="60" font-size="12" fill="#6b7280">左边是构建阶段（有 JDK、Maven、源码、依赖缓存），右边是运行阶段。中间只有一个文件被带走。</text>
+
+  <!-- 左栏 -->
+  <text x="30" y="92" font-size="12" font-weight="600" fill="#6b7280">构建阶段 · AS build</text>
+
+  <rect x="30" y="102" width="330" height="34" rx="6" fill="#eef2f7" stroke="#c7d2de"/>
+  <text x="42" y="123" font-size="11" fill="#1f2329">FROM maven:3.9-eclipse-temurin-21</text>
+  <text x="372" y="123" font-size="10.5" fill="#0b63c5">复用</text>
+
+  <rect x="30" y="144" width="330" height="34" rx="6" fill="#eef2f7" stroke="#c7d2de"/>
+  <text x="42" y="165" font-size="11" fill="#1f2329">COPY pom.xml ×2</text>
+  <text x="372" y="165" font-size="10.5" fill="#0b63c5">复用</text>
+
+  <rect x="30" y="186" width="330" height="34" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="42" y="207" font-size="11" fill="#0b63c5">RUN mvn dependency:go-offline</text>
+  <text x="372" y="207" font-size="10.5" fill="#0b63c5">复用</text>
+
+  <rect x="30" y="228" width="330" height="34" rx="6" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="42" y="249" font-size="11" fill="#a4701c">COPY 13-deploy/src</text>
+  <text x="372" y="249" font-size="10.5" fill="#a4701c">重跑</text>
+
+  <rect x="30" y="270" width="330" height="34" rx="6" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="42" y="291" font-size="11" fill="#a4701c">RUN mvn package</text>
+  <text x="372" y="291" font-size="10.5" fill="#a4701c">重跑</text>
+
+  <text x="30" y="330" font-size="10.5" fill="#6b7280">蓝色是改业务代码后仍能命中的层，黄色是必须重做的层。</text>
+  <text x="30" y="350" font-size="10.5" fill="#6b7280">前 3 层合起来几百 MB，其中依赖下载最耗时。</text>
+
+  <!-- 中间 -->
+  <line x1="420" y1="196" x2="576" y2="196" stroke="#9aa4b2" stroke-width="1.4"/>
+  <polygon points="580,196 570,191 570,201" fill="#9aa4b2"/>
+  <text x="498" y="182" font-size="10.5" fill="#1f2329" text-anchor="middle">COPY --from=build</text>
+  <text x="498" y="216" font-size="10.5" fill="#6b7280" text-anchor="middle">只带 app.jar</text>
+
+  <!-- 右栏 -->
+  <text x="600" y="92" font-size="12" font-weight="600" fill="#6b7280">运行阶段 · 最终镜像</text>
+
+  <rect x="600" y="102" width="370" height="46" rx="6" fill="#ffffff" stroke="#9aa4b2"/>
+  <text x="614" y="122" font-size="11" font-weight="600" fill="#1f2329">eclipse-temurin:21-jre-alpine</text>
+  <text x="614" y="140" font-size="10.5" fill="#6b7280">只有 JRE，没有编译器、没有 Maven</text>
+
+  <rect x="600" y="156" width="370" height="46" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="614" y="176" font-size="11" font-weight="600" fill="#0b63c5">app.jar</text>
+  <text x="614" y="194" font-size="10.5" fill="#3d7cc9">全部业务代码 + 运行期依赖，一个文件</text>
+
+  <rect x="600" y="210" width="370" height="46" rx="6" fill="#f7f8fa" stroke="#c7d2de" stroke-dasharray="4 3"/>
+  <text x="614" y="230" font-size="11" font-weight="600" fill="#6b7280">非 root 用户 app</text>
+  <text x="614" y="248" font-size="10.5" fill="#6b7280">容器被突破时，拿到的也只是普通权限</text>
+
+  <text x="600" y="288" font-size="10.5" fill="#6b7280">构建阶段的所有东西都留在了中间容器里，</text>
+  <text x="600" y="308" font-size="10.5" fill="#6b7280">镜像推送到仓库时不会带上去。</text>
+  <text x="600" y="332" font-size="10.5" fill="#a4701c">换成朴素写法（FROM maven + COPY 源码 + RUN package），</text>
+  <text x="600" y="352" font-size="10.5" fill="#a4701c">最终镜像会把 Maven、源码、~/.m2 缓存全带上。</text>
+
+  <line x1="30" y1="374" x2="970" y2="374" stroke="#e6e9ee"/>
+
+  <text x="30" y="398" font-size="12" fill="#1f2329">缓存命中的前提是层的顺序：变得最少的东西放上面，变得最频繁的放下面。</text>
+  <text x="30" y="420" font-size="12" fill="#6b7280">写成 COPY 整个仓库再 RUN package，代码改一个字，依赖也得重新下——这是最常见的错误顺序。</text>
+</svg>

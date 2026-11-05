@@ -1,0 +1,19 @@
+server:
+  port: 8013
+
+spring:
+  application:
+    name: 13-部署与 CI/CD
+
+# 容器编排靠这个端点判断实例是否可用，只开 health 与 info 就够了
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        # 开启 liveness / readiness 探针，K8s 里分别绑不同路径
+        enabled: true
