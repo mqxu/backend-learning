@@ -1,6 +1,0 @@
-server:
-  port: 8007
-
-spring:
-  application:
-    name: 07-消息队列

@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # 第一段：编译全部模块，跑不依赖中间件的测试
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      - name: 安装 JDK 21 并缓存 Maven 仓库
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # 先编译一遍。编译失败就没必要往下跑测试了
+      - name: 编译全部模块
+        run: mvn -B -DskipTests package
+
+      # 05、06、08 依赖 MySQL 与 Redis，GitHub 托管的 runner 上没有，
+      # 这几个模块的测试在这里跑不了。它们的集成环境另外配。
+      - name: 跑不依赖中间件的模块测试
+        run: >
+          mvn -B -pl
+          01-quickstart,02-config,03-logging,04-web,07-schedule,09-file,10-doc,11-test,12-actuator,13-deploy
+          test
+
+      # 把打包好的 jar 传出去，deploy 阶段直接拿，不用重新编译
+      - name: 上传可运行 jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-jar
+          path: 13-deploy/target/app.jar
+          retention-days: 7
+
+  # 第二段：构建镜像。用 commit SHA 做 tag，每个提交的镜像都能追溯
+  image:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      # 构建上下文是仓库根，Dockerfile 要读父 POM
+      - name: 构建镜像
+        run: |
+          docker build \
+            -f 13-deploy/Dockerfile \
+            -t backend-learning/13-deploy:${{ github.sha }} \
+            -t backend-learning/13-deploy:latest \
+            .
+
+      # 镜像跑起来探一次活，探针不通就让流水线红
+      - name: 冒烟测试
+        run: |
+          docker run -d --name smoke -p 8013:8013 backend-learning/13-deploy:${{ github.sha }}
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8013/actuator/health/readiness; then
+              echo "服务已就绪"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "启动超时，容器日志如下"
+          docker logs smoke
+          exit 1
+        # 无论成败都要清掉容器，否则后续步骤会撞名字
+        continue-on-error: false
+
+      - name: 清理容器
+        if: always()
+        run: docker rm -f smoke || true

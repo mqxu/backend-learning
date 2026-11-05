@@ -1,0 +1,19 @@
+# 构建上下文里不需要的东西，全部排除，避免镜像构建时白传几百 MB
+.git
+.idea
+.workbuddy
+docs
+node_modules
+**/target
+**/*.iml
+**/*.log
+**/.DS_Store
+tools/out
+uploads
+
+# 15-cases 是另外几个示例项目，源码不进构建上下文。
+# 但 POM 要留下：父 POM 的 <modules> 列了它，缺了 Maven 直接报
+# "Child module ... does not exist"，构建在第一步就停。
+15-cases
+!15-cases/pom.xml
+!15-cases/*/pom.xml

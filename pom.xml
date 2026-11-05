@@ -23,16 +23,15 @@
         <module>04-web</module>
         <module>05-mybatis</module>
         <module>06-redis</module>
-        <module>07-mq</module>
-        <module>08-schedule</module>
-        <module>09-security</module>
-        <module>10-file</module>
-        <module>11-doc</module>
-        <module>12-test</module>
-        <module>13-actuator</module>
-        <module>14-deploy</module>
-        <module>15-toolkit</module>
-        <module>zhihu</module>
+        <module>07-schedule</module>
+        <module>08-security</module>
+        <module>09-file</module>
+        <module>10-doc</module>
+        <module>11-test</module>
+        <module>12-actuator</module>
+        <module>13-deploy</module>
+        <module>14-toolkit</module>
+        <module>15-cases</module>
     </modules>
 
 

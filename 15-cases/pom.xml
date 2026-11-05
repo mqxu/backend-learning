@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>top.mqxu</groupId>
+        <artifactId>backend-learning</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>15-cases</artifactId>
+    <packaging>pom</packaging>
+
+    <!--
+      zhihu 与 task-commit 是单体 Spring Boot 应用，继承本工程的依赖管理。
+      campus-activity 是前后端分离的完整项目，后端有自己的父 POM（spring-boot-starter-parent），
+      不在这个聚合器里构建，用法见 15-cases/campus-activity/README.md。
+    -->
+    <modules>
+        <module>zhihu</module>
+        <module>task-commit</module>
+    </modules>
+
+</project>
