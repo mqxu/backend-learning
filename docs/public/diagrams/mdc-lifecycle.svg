@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 460" width="980" height="460" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <rect width="980" height="460" fill="#f7f8fa"/>
+
+  <!-- 上半部分：一行日志的解剖 -->
+  <text x="30" y="34" font-size="14" fill="#1f2329" font-weight="500">一行日志由五段组成，缺哪段都会让排查变难</text>
+
+  <rect x="30" y="52" width="920" height="54" rx="6" fill="#1c2128"/>
+  <text x="46" y="85" font-size="13" font-family="ui-monospace, Menlo, monospace">
+    <tspan fill="#8b949e">09:42:33.102</tspan>
+    <tspan fill="#7ee787"> INFO </tspan>
+    <tspan fill="#79c0ff"> t.m.l.c.LoggingController</tspan>
+    <tspan fill="#f4bf4f"> [29a5e6b0]</tspan>
+    <tspan fill="#c9d1d9"> - 用户 张三 登录成功</tspan>
+  </text>
+
+  <!-- 标注线 -->
+  <line x1="120" y1="106" x2="120" y2="128" stroke="#a8b2c0"/>
+  <line x1="222" y1="106" x2="222" y2="128" stroke="#a8b2c0"/>
+  <line x1="420" y1="106" x2="420" y2="128" stroke="#a8b2c0"/>
+  <line x1="520" y1="106" x2="520" y2="128" stroke="#a8b2c0"/>
+  <line x1="700" y1="106" x2="700" y2="128" stroke="#a8b2c0"/>
+
+  <text x="72" y="146" font-size="11.5" fill="#5b6472" text-anchor="middle">时间</text>
+  <text x="72" y="163" font-size="10.5" fill="#9aa3af" text-anchor="middle">什么时候</text>
+
+  <text x="210" y="146" font-size="11.5" fill="#5b6472" text-anchor="middle">级别</text>
+  <text x="210" y="163" font-size="10.5" fill="#9aa3af" text-anchor="middle">要不要看</text>
+
+  <text x="420" y="146" font-size="11.5" fill="#5b6472" text-anchor="middle">谁打的</text>
+  <text x="420" y="163" font-size="10.5" fill="#9aa3af" text-anchor="middle">定位到类</text>
+
+  <text x="545" y="146" font-size="11.5" fill="#5b6472" text-anchor="middle">traceId</text>
+  <text x="545" y="163" font-size="10.5" fill="#9aa3af" text-anchor="middle">串起一次请求</text>
+
+  <text x="760" y="146" font-size="11.5" fill="#5b6472" text-anchor="middle">内容</text>
+  <text x="760" y="163" font-size="10.5" fill="#9aa3af" text-anchor="middle">发生了什么</text>
+
+  <!-- 下半部分：MDC 生命周期 -->
+  <text x="30" y="212" font-size="14" fill="#1f2329" font-weight="500">traceId 放在 MDC 里，跟着线程走</text>
+
+  <!-- 线程 T1 -->
+  <rect x="30" y="230" width="150" height="52" rx="6" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="105" y="252" font-size="12" fill="#1f2329" text-anchor="middle">Tomcat 线程 T1</text>
+  <text x="105" y="270" font-size="10.5" fill="#9aa3af" text-anchor="middle">线程池里复用的那条</text>
+
+  <path d="M184,256 L224,256" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#a1)"/>
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#a8b2c0"/>
+    </marker>
+  </defs>
+
+  <!-- 请求 A -->
+  <rect x="228" y="222" width="330" height="68" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="242" y="244" font-size="12" fill="#0b63c5" font-weight="600">请求 A：preHandle 放入 traceId</text>
+  <text x="242" y="264" font-size="11.5" fill="#3b7dc4" font-family="ui-monospace, Menlo, monospace">MDC.put("traceId", "29a5e6b0")</text>
+  <text x="242" y="282" font-size="11" fill="#5b8bc4">期间所有日志自动带 [29a5e6b0]</text>
+
+  <path d="M562,256 L602,256" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#a1)"/>
+
+  <rect x="606" y="222" width="330" height="68" rx="6" fill="#f0f8f3" stroke="#2da44e"/>
+  <text x="620" y="244" font-size="12" fill="#1a7f37" font-weight="600">请求结束：afterCompletion 清理</text>
+  <text x="620" y="264" font-size="11.5" fill="#4a8f5e" font-family="ui-monospace, Menlo, monospace">MDC.clear()</text>
+  <text x="620" y="282" font-size="11" fill="#6fae83">不清就会带到下一个请求</text>
+
+  <!-- 请求 B -->
+  <path d="M771,294 L771,318 L105,318 L105,300" stroke="#a8b2c0" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+  <text x="430" y="336" font-size="11" fill="#9aa3af">同一个线程被复用，接着处理下一个请求</text>
+
+  <rect x="228" y="352" width="330" height="68" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="242" y="374" font-size="12" fill="#0b63c5" font-weight="600">请求 B：换一个新的 traceId</text>
+  <text x="242" y="394" font-size="11.5" fill="#3b7dc4" font-family="ui-monospace, Menlo, monospace">MDC.put("traceId", "7f3c1d92")</text>
+  <text x="242" y="412" font-size="11" fill="#5b8bc4">日志带 [7f3c1d92]，与请求 A 不再混在一起</text>
+
+  <!-- 结论 -->
+  <rect x="606" y="352" width="330" height="68" rx="6" fill="#fff8e6" stroke="#e0b64a"/>
+  <text x="620" y="374" font-size="12" fill="#8a6a10" font-weight="600">若漏掉 MDC.clear()</text>
+  <text x="620" y="394" font-size="11.5" fill="#8a6a10">请求 B 会带着 A 的编号写日志</text>
+  <text x="620" y="412" font-size="11" fill="#a8893a">两个请求的记录混成一团，无法追踪</text>
+</svg>

@@ -6,7 +6,6 @@
     <!-- 控制台日志格式从 application.yml 的 logging.pattern.console 读取，支持颜色与长度定制 -->
     <springProperty scope="context" name="CONSOLE_LOG_PATTERN" source="logging.pattern.console" defaultValue="%d{yyyy-MM-dd HH:mm:ss:SSS} %clr([%thread]){magenta} %clr(%-5level) %clr(%logger{36}){cyan} [%X{traceId}] - %msg%n"/>
 
-    <!--&lt;!&ndash; 控制台 &ndash;&gt;-->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>

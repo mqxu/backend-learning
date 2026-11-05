@@ -10,6 +10,15 @@ spring:
     ansi:
       enabled: always   # 强制控制台输出 ANSI 颜色（即使重定向到文件/管道）
 
-#logging:
-#  pattern:
-#    console: '%d{yyyy-MM-dd HH:mm:ss:SSS} %clr([%thread]){magenta} %clr(%-5level) %clr(%logger{12}){cyan} [%X{traceId}] - %msg%n'
+logging:
+  # 级别从低到高：TRACE < DEBUG < INFO < WARN < ERROR < OFF
+  # 这里把业务包调到 DEBUG，root 保持 INFO，用来演示"阈值过滤"
+  level:
+    root: info
+    top.mqxu.logging: debug
+  pattern:
+    # %d 时间  %-5level 级别  %logger 类名  %X{traceId} MDC 里的链路号  %msg 内容
+    # 这个值会被 logback-spring.xml 里的 springProperty 读走
+    console: '%d{HH:mm:ss.SSS} %clr(%-5level) %clr(%logger{24}){cyan} [%X{traceId}] - %msg%n'
+  file:
+    name: logs/app.log
