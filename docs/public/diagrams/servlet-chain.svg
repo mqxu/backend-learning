@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 400" width="1020" height="400" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="fa" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#a8b2c0"/>
+    </marker>
+    <marker id="fb" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#0b63c5"/>
+    </marker>
+  </defs>
+
+  <rect width="1020" height="400" fill="#f7f8fa"/>
+
+  <!-- 上：Listener -->
+  <rect x="30" y="26" width="960" height="54" rx="7" fill="#fdf7e8" stroke="#e0b64a" stroke-dasharray="5 4"/>
+  <text x="46" y="48" font-size="12.5" fill="#8a6a10" font-weight="600">Listener（监听器）</text>
+  <text x="46" y="68" font-size="11.5" fill="#a8893a">不参与单个请求。只在应用启动/关闭、会话创建销毁这些容器事件发生时触发</text>
+  <text x="820" y="68" font-size="11" fill="#b8a05a">ServletContextListener · HttpSessionListener</text>
+
+  <!-- 主链路 -->
+  <text x="30" y="112" font-size="12" fill="#6b7280" letter-spacing="0.5">一次请求的实际路径（从左到右）</text>
+
+  <rect x="30" y="126" width="120" height="56" rx="7" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="90" y="150" font-size="12.5" fill="#1f2329" text-anchor="middle">请求</text>
+  <text x="90" y="168" font-size="10.5" fill="#9aa3af" text-anchor="middle">GET /users/1</text>
+
+  <path d="M154,154 L190,154" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#fa)"/>
+
+  <rect x="194" y="120" width="200" height="68" rx="7" fill="#eaf2fd" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="294" y="142" font-size="12.5" fill="#0b63c5" text-anchor="middle" font-weight="600">Filter 链</text>
+  <text x="294" y="161" font-size="10.5" fill="#3b7dc4" text-anchor="middle">Servlet 规范，能拦所有请求</text>
+  <text x="294" y="178" font-size="10.5" fill="#3b7dc4" text-anchor="middle">静态资源也过，能改动 request</text>
+
+  <path d="M398,154 L434,154" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#fa)"/>
+
+  <rect x="438" y="120" width="170" height="68" rx="7" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="523" y="142" font-size="12.5" fill="#1f2329" text-anchor="middle">DispatcherServlet</text>
+  <text x="523" y="161" font-size="10.5" fill="#9aa3af" text-anchor="middle">Spring MVC 的入口</text>
+  <text x="523" y="178" font-size="10.5" fill="#9aa3af" text-anchor="middle">按路径找 handler</text>
+
+  <path d="M612,154 L648,154" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#fa)"/>
+
+  <rect x="652" y="120" width="170" height="68" rx="7" fill="#eef7f1" stroke="#2da44e" stroke-width="1.5"/>
+  <text x="737" y="142" font-size="12.5" fill="#1a7f37" text-anchor="middle" font-weight="600">Interceptor</text>
+  <text x="737" y="161" font-size="10.5" fill="#4a8f5e" text-anchor="middle">preHandle → 放行 / 拦截</text>
+  <text x="737" y="178" font-size="10.5" fill="#4a8f5e" text-anchor="middle">只作用于 Controller</text>
+
+  <path d="M826,154 L862,154" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#fa)"/>
+
+  <rect x="866" y="120" width="124" height="68" rx="7" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="928" y="146" font-size="12.5" fill="#1f2329" text-anchor="middle">Controller</text>
+  <text x="928" y="166" font-size="10.5" fill="#9aa3af" text-anchor="middle">你写的业务</text>
+  <text x="928" y="181" font-size="10.5" fill="#9aa3af" text-anchor="middle">返回 Result</text>
+
+  <!-- 返回路径 -->
+  <path d="M928,192 L928,232 L90,232 L90,196" stroke="#0b63c5" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#fb)"/>
+  <text x="500" y="252" font-size="11" fill="#3b7dc4" text-anchor="middle">响应沿原路返回：afterCompletion 在响应写出之后执行，异常与否都会调用</text>
+
+  <!-- 三个回调 -->
+  <rect x="194" y="276" width="796" height="96" rx="7" fill="#ffffff" stroke="#e5e9ef"/>
+  <text x="212" y="298" font-size="12" fill="#1f2329" font-weight="600">Interceptor 的三个回调</text>
+
+  <text x="212" y="322" font-size="11.5" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">preHandle</text>
+  <text x="300" y="322" font-size="11" fill="#8b95a5">进入控制器前，返回 false 就中断</text>
+
+  <text x="212" y="342" font-size="11.5" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">postHandle</text>
+  <text x="300" y="342" font-size="11" fill="#8b95a5">控制器正常返回后，抛异常则不执行</text>
+
+  <text x="212" y="362" font-size="11.5" fill="#5b6472" font-family="ui-monospace, Menlo, monospace">afterCompletion</text>
+  <text x="300" y="362" font-size="11" fill="#8b95a5">响应写出后，无论成功失败都执行，清理逻辑放这里</text>
+</svg>

@@ -18,15 +18,11 @@ public class LogController {
 
     /**
      * 查询参数：GET /api/log/hello?name=张三&age=18
+     * 这个接口主要用来观察 LogFilter 打印的请求参数。
      */
     @GetMapping("/hello")
     public String getHello(@RequestParam(required = false, defaultValue = "world") String name, @RequestParam(required = false, defaultValue = "20") Integer age) {
         log.info("调用 LogController 接口，参数是：{},{}", name, age);
-        try {
-            Thread.sleep(4000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         return "hello " + name + ", age=" + age;
     }
 }

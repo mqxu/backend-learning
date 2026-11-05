@@ -3,7 +3,6 @@ package top.mqxu.web.filter;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -11,12 +10,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * 请求日志过滤器。
+ * 注意：这里不加 @Component。加了之后 Spring Boot 会自动注册它，
+ * FilterConfig 里的 FilterRegistrationBean 再注册一次，同一个请求就会过两遍。
+ * 需要自定义顺序和路径时，统一交给 FilterRegistrationBean 注册。
+ *
  * @author mqxu
- * @date 2026/10/28
- * @description LogFilter
- **/
+ */
 @Slf4j
-@Component
 public class LogFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

@@ -27,6 +27,29 @@ public class UserService {
     private final Map<Long, User> store = new ConcurrentHashMap<>();
     private final AtomicLong idGenerator = new AtomicLong(0);
 
+    /**
+     * 预置几条数据，分页接口一调就有内容，不用先手动新增。
+     */
+    public UserService() {
+        seed("张三", 18, "zhangsan@example.com", "江苏南京");
+        seed("李四", 19, "lisi@example.com", "江苏苏州");
+        seed("王五", 20, "wangwu@example.com", "浙江杭州");
+        seed("赵六", 21, "zhaoliu@example.com", "上海");
+        seed("孙七", 22, "sunqi@example.com", "安徽合肥");
+        seed("周八", 23, "zhouba@example.com", "山东济南");
+    }
+
+    private void seed(String username, int age, String email, String address) {
+        User user = new User();
+        user.setId(idGenerator.incrementAndGet());
+        user.setUsername(username);
+        user.setAge(age);
+        user.setEmail(email);
+        user.setAddress(address);
+        user.setBirthday(LocalDate.of(2005, (age % 12) + 1, 1));
+        store.put(user.getId(), user);
+    }
+
     public PageResult<User> page(int pageNum, int pageSize) {
         List<User> all = new ArrayList<>(store.values());
         all.sort(Comparator.comparing(User::getId));
@@ -59,7 +82,7 @@ public class UserService {
     public User update(Long id, UserUpdateRequest request) {
         User user = getById(id);
         user.setUsername(request.getUsername());
-        //user.setAge(request.getAge());
+        user.setAge(request.getAge());
         user.setEmail(request.getEmail());
         return user;
     }

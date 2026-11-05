@@ -2,17 +2,16 @@ package top.mqxu.web.filter;
 
 import jakarta.servlet.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 /**
+ * 演示用的第二个过滤器，用来观察多个过滤器的执行顺序。
+ * 同样不加 @Component，注册方式见 FilterConfig。
+ *
  * @author mqxu
- * @date 2026/10/28
- * @description MyFilter
- **/
+ */
 @Slf4j
-@Component
 public class MyFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

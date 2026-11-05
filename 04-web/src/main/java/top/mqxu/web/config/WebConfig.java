@@ -5,7 +5,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import top.mqxu.web.interceptor.CallbackTraceInterceptor;
 import top.mqxu.web.interceptor.TimeStatInterceptor;
+import top.mqxu.web.interceptor.TokenInterceptor;
 
 /**
  * Web 配置
@@ -16,18 +18,27 @@ import top.mqxu.web.interceptor.TimeStatInterceptor;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
     private final TimeStatInterceptor timeStatInterceptor;
+    private final CallbackTraceInterceptor callbackTraceInterceptor;
+    private final TokenInterceptor tokenInterceptor;
 
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 注册耗时统计拦截器
+        // 全局耗时统计，排除静态资源和错误页
         registry.addInterceptor(timeStatInterceptor)
-                // 拦截所有路径
                 .addPathPatterns("/**")
-                // 排除静态资源和错误页
                 .excludePathPatterns("/static/**", "/error")
-                // 执行顺序（值越小越先执行）
                 .order(1);
+
+        // 只挂在演示路径上，用来观察三个回调的顺序
+        registry.addInterceptor(callbackTraceInterceptor)
+                .addPathPatterns("/demo/callback")
+                .order(2);
+
+        // 只挂在演示路径上，校验不过直接短路
+        registry.addInterceptor(tokenInterceptor)
+                .addPathPatterns("/demo/token")
+                .order(3);
     }
 
     @Override
