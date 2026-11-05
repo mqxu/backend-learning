@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <rect width="1000" height="400" fill="#ffffff"/>
+
+  <text x="20" y="36" font-size="17" font-weight="600" fill="#1f2329">五个类别，十二个控制器</text>
+  <text x="20" y="58" font-size="12" fill="#6b7280">每个需求的套路一样：Controller 收参数、Service 干活、DTO 用 record。区别在于各自踩的坑不一样。</text>
+
+  <!-- 第一列：安全 -->
+  <text x="20" y="86" font-size="12" font-weight="600" fill="#0b63c5">身份与安全</text>
+  <line x1="20" y1="94" x2="196" y2="94" stroke="#0b63c5" stroke-width="1.2"/>
+
+  <rect x="20" y="102" width="176" height="56" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="32" y="124" font-size="11.5" font-weight="600" fill="#0b63c5">图形验证码</text>
+  <text x="32" y="142" font-size="10" fill="#3d7cc9">四种样式 + 算术题</text>
+
+  <rect x="20" y="166" width="176" height="56" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="32" y="188" font-size="11.5" font-weight="600" fill="#0b63c5">接口签名</text>
+  <text x="32" y="206" font-size="10" fill="#3d7cc9">HMAC-SHA256，防重放</text>
+
+  <rect x="20" y="230" width="176" height="56" rx="6" fill="#eaf2fd" stroke="#0b63c5"/>
+  <text x="32" y="252" font-size="11.5" font-weight="600" fill="#0b63c5">数据脱敏</text>
+  <text x="32" y="270" font-size="10" fill="#3d7cc9">AES 存储，按角色展示</text>
+
+  <!-- 第二列：文本 -->
+  <text x="216" y="86" font-size="12" font-weight="600" fill="#a4701c">文本处理</text>
+  <line x1="216" y1="94" x2="392" y2="94" stroke="#d99a2b" stroke-width="1.2"/>
+
+  <rect x="216" y="102" width="176" height="56" rx="6" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="228" y="124" font-size="11.5" font-weight="600" fill="#a4701c">结构化信息提取</text>
+  <text x="228" y="142" font-size="10" fill="#a4701c">手机、邮箱、IP、身份证</text>
+
+  <rect x="216" y="166" width="176" height="56" rx="6" fill="#fdf3e3" stroke="#d99a2b"/>
+  <text x="228" y="188" font-size="11.5" font-weight="600" fill="#a4701c">敏感词检测</text>
+  <text x="228" y="206" font-size="10" fill="#a4701c">DFA 树，一次扫描</text>
+
+  <!-- 第三列：文件 -->
+  <text x="412" y="86" font-size="12" font-weight="600" fill="#4a5568">文件与数据</text>
+  <line x1="412" y1="94" x2="588" y2="94" stroke="#9aa4b2" stroke-width="1.2"/>
+
+  <rect x="412" y="102" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="424" y="124" font-size="11.5" font-weight="600" fill="#1f2329">分片上传</text>
+  <text x="424" y="142" font-size="10" fill="#6b7280">断点续传 + MD5 校验</text>
+
+  <rect x="412" y="166" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="424" y="188" font-size="11.5" font-weight="600" fill="#1f2329">Excel 导入导出</text>
+  <text x="424" y="206" font-size="10" fill="#6b7280">逐行回写失败原因</text>
+
+  <rect x="412" y="230" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="424" y="252" font-size="11.5" font-weight="600" fill="#1f2329">文件类型校验</text>
+  <text x="424" y="270" font-size="10" fill="#6b7280">看文件头，不看扩展名</text>
+
+  <!-- 第四列：编码 -->
+  <text x="608" y="86" font-size="12" font-weight="600" fill="#4a5568">编码与跳转</text>
+  <line x1="608" y1="94" x2="784" y2="94" stroke="#9aa4b2" stroke-width="1.2"/>
+
+  <rect x="608" y="102" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="620" y="124" font-size="11.5" font-weight="600" fill="#1f2329">短链</text>
+  <text x="620" y="142" font-size="10" fill="#6b7280">六位码 + 点击计数</text>
+
+  <rect x="608" y="166" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="620" y="188" font-size="11.5" font-weight="600" fill="#1f2329">二维码登录</text>
+  <text x="620" y="206" font-size="10" fill="#6b7280">待扫、已扫、已确认</text>
+
+  <rect x="608" y="230" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="620" y="252" font-size="11.5" font-weight="600" fill="#1f2329">海报生成</text>
+  <text x="620" y="270" font-size="10" fill="#6b7280">图片叠文字与二维码</text>
+
+  <!-- 第五列：运维 -->
+  <text x="804" y="86" font-size="12" font-weight="600" fill="#4a5568">运维辅助</text>
+  <line x1="804" y1="94" x2="980" y2="94" stroke="#9aa4b2" stroke-width="1.2"/>
+
+  <rect x="804" y="102" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="816" y="124" font-size="11.5" font-weight="600" fill="#1f2329">接口巡检</text>
+  <text x="816" y="142" font-size="10" fill="#6b7280">线程池并发探测</text>
+
+  <rect x="804" y="166" width="176" height="56" rx="6" fill="#ffffff" stroke="#c7d2de"/>
+  <text x="816" y="188" font-size="11.5" font-weight="600" fill="#1f2329">系统信息</text>
+  <text x="816" y="206" font-size="10" fill="#6b7280">CPU、内存、磁盘</text>
+
+  <line x1="20" y1="306" x2="980" y2="306" stroke="#e6e9ee"/>
+
+  <text x="20" y="330" font-size="12" fill="#1f2329">十三种需求共用一个 ToolkitProperties，密钥、过期时间、临时目录全部外置，代码里不写死。</text>
+  <text x="20" y="352" font-size="12" fill="#6b7280">蓝色那列是安全相关，出错的代价最高；其余几列错了只是功能不对，这一列错了是数据泄露。</text>
+  <text x="20" y="374" font-size="12" fill="#6b7280">文件与数据、编码与跳转、运维辅助三列实现思路相近，重点看它们各自处理的边界情况。</text>
+</svg>
