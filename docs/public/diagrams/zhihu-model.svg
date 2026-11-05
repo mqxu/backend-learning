@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" width="1000" height="430" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#8b95a5"/>
+    </marker>
+    <marker id="ab" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0b63c5"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="430" fill="#f7f8fa"/>
+
+  <text x="30" y="36" font-size="14" fill="#1f2329" font-weight="600">知乎案例的六张表</text>
+  <text x="30" y="58" font-size="11.5" fill="#6b7280">箭头方向是“一对多”：一个问题有多条回答，一条回答有多条评论</text>
+
+  <!-- 用户 -->
+  <rect x="30" y="86" width="170" height="66" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="115" y="112" font-size="14" fill="#1f2329" text-anchor="middle">z_user</text>
+  <text x="115" y="132" font-size="11" fill="#8b95a5" text-anchor="middle">账号、昵称、BCrypt 密文</text>
+
+  <!-- 问题 -->
+  <rect x="300" y="86" width="180" height="66" rx="8" fill="#ffffff" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="390" y="112" font-size="14" fill="#1f2329" text-anchor="middle">z_question</text>
+  <text x="390" y="132" font-size="11" fill="#8b95a5" text-anchor="middle">标题、正文、回答数、浏览数</text>
+
+  <!-- 话题 -->
+  <rect x="590" y="86" width="170" height="66" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="675" y="112" font-size="14" fill="#1f2329" text-anchor="middle">z_topic</text>
+  <text x="675" y="132" font-size="11" fill="#8b95a5" text-anchor="middle">分类、关注数、问题数</text>
+
+  <!-- 专栏 -->
+  <rect x="800" y="86" width="170" height="66" rx="8" fill="#ffffff" stroke="#d7dce3" stroke-dasharray="4 3"/>
+  <text x="885" y="112" font-size="14" fill="#1f2329" text-anchor="middle">z_special</text>
+  <text x="885" y="132" font-size="11" fill="#8b95a5" text-anchor="middle">原案例保留，前端仍在读</text>
+
+  <line x1="204" y1="119" x2="296" y2="119" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#ab)"/>
+  <text x="250" y="110" font-size="10.5" fill="#0b63c5" text-anchor="middle">提问</text>
+  <text x="250" y="138" font-size="10" fill="#8b95a5" text-anchor="middle">author_id</text>
+
+  <line x1="594" y1="119" x2="484" y2="119" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="539" y="110" font-size="10.5" fill="#6b7280" text-anchor="middle">归属</text>
+  <text x="539" y="138" font-size="10" fill="#8b95a5" text-anchor="middle">topic_id</text>
+
+  <!-- 回答 -->
+  <rect x="300" y="214" width="180" height="66" rx="8" fill="#ffffff" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="390" y="240" font-size="14" fill="#1f2329" text-anchor="middle">z_answer</text>
+  <text x="390" y="260" font-size="11" fill="#8b95a5" text-anchor="middle">赞同、反对、采纳标记</text>
+
+  <line x1="390" y1="156" x2="390" y2="210" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#ab)"/>
+  <text x="400" y="188" font-size="10.5" fill="#0b63c5">1 : N</text>
+
+  <!-- 评论 -->
+  <rect x="590" y="214" width="170" height="66" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="675" y="240" font-size="14" fill="#1f2329" text-anchor="middle">z_comment</text>
+  <text x="675" y="260" font-size="11" fill="#8b95a5" text-anchor="middle">一级评论 + 楼中楼</text>
+
+  <line x1="484" y1="247" x2="586" y2="247" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="535" y="238" font-size="10.5" fill="#6b7280" text-anchor="middle">1 : N</text>
+
+  <!-- 投票与关注 -->
+  <rect x="30" y="214" width="170" height="66" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="115" y="240" font-size="14" fill="#1f2329" text-anchor="middle">z_vote</text>
+  <text x="115" y="260" font-size="11" fill="#8b95a5" text-anchor="middle">用户 + 目标 唯一</text>
+
+  <line x1="204" y1="247" x2="296" y2="247" stroke="#8b95a5" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <text x="250" y="238" font-size="10.5" fill="#6b7280" text-anchor="middle">指向</text>
+
+  <rect x="590" y="330" width="170" height="60" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="675" y="354" font-size="14" fill="#1f2329" text-anchor="middle">z_follow</text>
+  <text x="675" y="373" font-size="11" fill="#8b95a5" text-anchor="middle">人 / 问题 / 话题</text>
+
+  <line x1="675" y1="284" x2="675" y2="326" stroke="#8b95a5" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <text x="686" y="310" font-size="10.5" fill="#6b7280">动态流的数据来源</text>
+
+  <text x="30" y="360" font-size="11.5" fill="#6b7280">两张关系表的结构一样：</text>
+  <text x="30" y="380" font-size="11.5" fill="#6b7280">(user_id, target_type, target_id) 唯一键，</text>
+  <text x="30" y="400" font-size="11.5" fill="#6b7280">靠 target_type 区分指向哪类对象。</text>
+
+  <text x="300" y="366" font-size="11.5" fill="#9aa4b2">计数列（answer_count、vote_up）是冗余字段，</text>
+  <text x="300" y="386" font-size="11.5" fill="#9aa4b2">列表页靠它避免每行 COUNT 一次。</text>
+</svg>
