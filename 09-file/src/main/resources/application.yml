@@ -1,0 +1,36 @@
+server:
+  port: 8009
+
+spring:
+  application:
+    name: 09-file 文件上传下载
+  servlet:
+    multipart:
+      max-file-size: 10MB      # 单个文件上限
+      max-request-size: 50MB   # 单次请求总容量，批量上传要留够
+
+file:
+  # 存储方式：local 落本地磁盘，oss 传阿里云对象存储
+  storage-type: local
+  # 业务层自己再校验一次，和上面的 multipart 限制保持一致
+  max-file-size: 10MB
+  date-pattern: yyyy/MM/dd
+  allowed-extensions: jpg,jpeg,png,gif,webp,bmp,pdf,txt,md,csv,doc,docx,xls,xlsx,ppt,pptx,zip
+  local:
+    base-dir: ./uploads
+    # 对外访问前缀，前面挂 Nginx 时可以换成 https://static.example.com/uploads
+    url-prefix: /uploads
+  oss:
+    # 切到 OSS 时把 storage-type 改成 oss，再把下面四项填上
+    endpoint: https://oss-cn-hangzhou.aliyuncs.com
+    access-key-id: ${OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${OSS_BUCKET:}
+    # 统一放在 bucket 的哪个目录下
+    dir: files
+    # 绑定了自定义域名或 CDN 就填在这里，留空则用 bucket 默认域名拼地址
+    domain:
+
+logging:
+  level:
+    top.mqxu.file: info

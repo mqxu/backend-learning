@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="d" markerWidth="9" markerHeight="8" refX="4.5" refY="7" orient="auto">
+      <path d="M0,0 L9,0 L4.5,8 Z" fill="#9aa4b2"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="520" fill="#f7f8fa"/>
+
+  <text x="40" y="32" font-size="14" font-weight="600" fill="#1f2329">一个上传请求要过六道关卡</text>
+  <text x="40" y="52" font-size="11" fill="#8b95a5">前三道在进业务之前，后三道在写盘之前；任何一道不过，都不会留下半截文件</text>
+
+  <!-- 请求 -->
+  <rect x="40" y="66" width="150" height="30" rx="15" fill="#0b63c5"/>
+  <text x="115" y="86" font-size="12" fill="#ffffff" text-anchor="middle">POST multipart</text>
+
+  <!-- 关卡 -->
+  <!-- 1 -->
+  <rect x="40" y="112" width="900" height="56" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <circle cx="70" cy="140" r="13" fill="#94a3b8"/>
+  <text x="70" y="145" font-size="11" fill="#ffffff" text-anchor="middle">1</text>
+  <text x="96" y="136" font-size="13" fill="#1f2329">容器层：max-file-size = 10MB</text>
+  <text x="96" y="155" font-size="11" fill="#8b95a5">Tomcat 解析请求体时直接拒绝，Controller 一行都不会执行</text>
+  <rect x="790" y="126" width="132" height="28" rx="4" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="856" y="145" font-size="11" fill="#c2410c" text-anchor="middle">413 文件过大</text>
+
+  <!-- 2 -->
+  <rect x="40" y="176" width="900" height="56" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <circle cx="70" cy="204" r="13" fill="#94a3b8"/>
+  <text x="70" y="209" font-size="11" fill="#ffffff" text-anchor="middle">2</text>
+  <text x="96" y="200" font-size="13" fill="#1f2329">空文件判断</text>
+  <text x="96" y="219" font-size="11" fill="#8b95a5">file.isEmpty()，0 字节的文件没有任何处理价值</text>
+  <rect x="790" y="190" width="132" height="28" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="856" y="209" font-size="11" fill="#b91c1c" text-anchor="middle">400 文件为空</text>
+
+  <!-- 3 -->
+  <rect x="40" y="240" width="900" height="56" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <circle cx="70" cy="268" r="13" fill="#2563eb"/>
+  <text x="70" y="273" font-size="11" fill="#ffffff" text-anchor="middle">3</text>
+  <text x="96" y="264" font-size="13" fill="#1f2329">扩展名白名单</text>
+  <text x="96" y="283" font-size="11" fill="#8b95a5">只认配置里列出的 18 种，其余一律拒；扩展名从原始文件名取最后一段</text>
+  <rect x="790" y="254" width="132" height="28" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="856" y="273" font-size="11" fill="#b91c1c" text-anchor="middle">400 类型不支持</text>
+
+  <!-- 4 -->
+  <rect x="40" y="304" width="900" height="56" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <circle cx="70" cy="332" r="13" fill="#2563eb"/>
+  <text x="70" y="337" font-size="11" fill="#ffffff" text-anchor="middle">4</text>
+  <text x="96" y="328" font-size="13" fill="#1f2329">文件头魔数：读前 12 个字节</text>
+  <text x="96" y="347" font-size="11" fill="#8b95a5">扩展名和 Content-Type 都能伪造，只有字节骗不了人；exe、elf 直接拒</text>
+  <rect x="790" y="318" width="132" height="28" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="856" y="337" font-size="11" fill="#b91c1c" text-anchor="middle">400 类型不支持</text>
+
+  <!-- 5 -->
+  <rect x="40" y="368" width="900" height="56" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <circle cx="70" cy="396" r="13" fill="#2563eb"/>
+  <text x="70" y="401" font-size="11" fill="#ffffff" text-anchor="middle">5</text>
+  <text x="96" y="392" font-size="13" fill="#1f2329">扩展名与文件头必须对得上</text>
+  <text x="96" y="411" font-size="11" fill="#8b95a5">叫 .png 的必须是图片，挡住"改名换姓"的木马</text>
+  <rect x="790" y="382" width="132" height="28" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="856" y="401" font-size="11" fill="#b91c1c" text-anchor="middle">400 内容与扩展名不符</text>
+
+  <!-- 6 -->
+  <rect x="40" y="432" width="900" height="56" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <circle cx="70" cy="460" r="13" fill="#0f766e"/>
+  <text x="70" y="465" font-size="11" fill="#ffffff" text-anchor="middle">6</text>
+  <text x="96" y="456" font-size="13" fill="#1f2329">落地前 resolve：必须仍在根目录内</text>
+  <text x="96" y="475" font-size="11" fill="#8b95a5">客户端能构造 key，normalize 之后要 startsWith(base)，挡住 ../../</text>
+  <rect x="790" y="446" width="132" height="28" rx="4" fill="#f0fdfa" stroke="#5eead4"/>
+  <text x="856" y="465" font-size="11" fill="#0f766e" text-anchor="middle">400 非法路径</text>
+
+  <text x="40" y="510" font-size="11" fill="#6b7280">第 1 道由容器执行，异常到不了 Controller，只能在全局异常处理器里接；第 2 到 6 道在业务层，抛的是统一的 BusinessException。</text>
+</svg>
