@@ -1,0 +1,82 @@
+server:
+  port: 8008
+
+spring:
+  application:
+    name: 08-认证与授权
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/backend_learning?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    hikari:
+      pool-name: security-demo-pool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+
+  # 启动时先建表再灌数据。MySQL 是非内嵌库，必须显式写 always
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      encoding: UTF-8
+
+  # 验证码存这里，和 06-redis 用不同的 database，互不干扰
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: abc123
+      database: 11
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1s
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      table-underline: true
+
+# 本模块的安全参数
+mqxu:
+  security:
+    jwt:
+      # HS512 要求密钥不少于 64 字节。生产环境从环境变量注入，不要进仓库
+      secret: 3f2b8d1e7c9a4f6b0d5e8a2c7f1b9d4e6a3c8f2b5d7e9a1c4f6b8d2e5a7c9f1b
+      expire-minutes: 120
+    sms:
+      # redis: 验证码存 Redis，多实例可用；memory: 进程内 Map，重启即失效
+      store: redis
+      # 演示用：把验证码写回响应，本地 curl 不用去日志里翻。生产必须 false
+      expose-code: true
+      # 验证码有效期
+      code-ttl: 5m
+      # 同一手机号两次发送的最小间隔
+      send-interval: 60s
+      # 同一个验证码允许输错的次数，超过就作废
+      max-fail-count: 5
+      # 手机号没注册过时是否自动建号
+      auto-register: true
+    cors:
+      # 生产环境写具体域名，不要用通配
+      allowed-origins:
+        - http://localhost:5173
+        - http://localhost:3000
+        - http://127.0.0.1:5173
+
+logging:
+  level:
+    # 排查 Security 问题最有用的开关：DEBUG 看过滤器链，TRACE 看谁拒的
+    org.springframework.security: INFO

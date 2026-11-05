@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 540" width="1000" height="540" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#9aa4b2"/>
+    </marker>
+    <marker id="aBlue" markerWidth="9" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#0b63c5"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="540" fill="#f7f8fa"/>
+
+  <text x="40" y="32" font-size="14" font-weight="600" fill="#1f2329">一个请求进来，先按路径分到五条链</text>
+  <text x="40" y="52" font-size="11" fill="#8b95a5">五个阶段在同一个进程里同时跑，用 securityMatcher 隔开，改一条不影响其它四条</text>
+
+  <!-- 请求 -->
+  <rect x="60" y="66" width="150" height="34" rx="17" fill="#0b63c5"/>
+  <text x="135" y="88" font-size="12" fill="#ffffff" text-anchor="middle">HTTP 请求</text>
+
+  <line x1="214" y1="83" x2="256" y2="83" stroke="#0b63c5" stroke-width="1.4" marker-end="url(#aBlue)"/>
+
+  <rect x="260" y="66" width="310" height="34" rx="6" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="274" y="88" font-size="11" fill="#1f2329">按 @Order 从小到大，逐条匹配 securityMatcher</text>
+
+  <text x="600" y="88" font-size="11" fill="#8b95a5">命中一条就停止匹配，不再往下看</text>
+
+  <!-- 五条链 -->
+  <!-- 1 -->
+  <rect x="40" y="120" width="920" height="60" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <rect x="40" y="120" width="4" height="60" rx="2" fill="#94a3b8"/>
+  <text x="64" y="145" font-size="13" fill="#1f2329">① stage1</text>
+  <text x="64" y="165" font-size="11" fill="#8b95a5">/stage1/**</text>
+  <text x="380" y="145" font-size="12" fill="#1f2329">HTTP Basic</text>
+  <text x="380" y="165" font-size="11" fill="#8b95a5">每次请求都带用户名密码</text>
+  <text x="640" y="145" font-size="12" fill="#1f2329">anyRequest().authenticated()</text>
+  <text x="640" y="165" font-size="11" fill="#8b95a5">全拦截，只有这一句</text>
+
+  <!-- 2 -->
+  <rect x="40" y="190" width="920" height="60" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <rect x="40" y="190" width="4" height="60" rx="2" fill="#2563eb"/>
+  <text x="64" y="215" font-size="13" fill="#1f2329">② stage2</text>
+  <text x="64" y="235" font-size="11" fill="#8b95a5">/stage2/**</text>
+  <text x="380" y="215" font-size="12" fill="#1f2329">HTTP Basic</text>
+  <text x="380" y="235" font-size="11" fill="#8b95a5">同上</text>
+  <text x="640" y="215" font-size="12" fill="#1f2329">白名单 + 按方法放行</text>
+  <text x="640" y="235" font-size="11" fill="#8b95a5">/public/** 放行；GET /articles/** 放行</text>
+
+  <!-- 3 -->
+  <rect x="40" y="260" width="920" height="60" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <rect x="40" y="260" width="4" height="60" rx="2" fill="#0f766e"/>
+  <text x="64" y="285" font-size="13" fill="#1f2329">③ stage3</text>
+  <text x="64" y="305" font-size="11" fill="#8b95a5">/stage3/**</text>
+  <text x="380" y="285" font-size="12" fill="#1f2329">HTTP Basic</text>
+  <text x="380" y="305" font-size="11" fill="#8b95a5">同上</text>
+  <text x="640" y="285" font-size="12" fill="#1f2329">hasRole / hasAnyRole / hasAllRoles</text>
+  <text x="640" y="305" font-size="11" fill="#8b95a5">再加一个 hasAuthority 的权限点</text>
+
+  <!-- 4 -->
+  <rect x="40" y="330" width="920" height="60" rx="8" fill="#ffffff" stroke="#e2e6ec"/>
+  <rect x="40" y="330" width="4" height="60" rx="2" fill="#7c3aed"/>
+  <text x="64" y="355" font-size="13" fill="#1f2329">④ stage4</text>
+  <text x="64" y="375" font-size="11" fill="#8b95a5">/stage4/**</text>
+  <text x="380" y="355" font-size="12" fill="#1f2329">表单登录 + Session</text>
+  <text x="380" y="375" font-size="11" fill="#8b95a5">有登录页，有 CSRF</text>
+  <text x="640" y="355" font-size="12" fill="#1f2329">登录页放行，其余 authenticated</text>
+  <text x="640" y="375" font-size="11" fill="#8b95a5">/stage4/admin/** 要 ROLE_ADMIN</text>
+
+  <!-- 5 -->
+  <rect x="40" y="400" width="920" height="68" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+  <rect x="40" y="400" width="4" height="68" rx="2" fill="#15803d"/>
+  <text x="64" y="426" font-size="13" fill="#1f2329">⑤ api（其余所有路径）</text>
+  <text x="64" y="446" font-size="11" fill="#8b95a5">/api/**、静态资源</text>
+  <text x="380" y="426" font-size="12" fill="#1f2329">JWT，无状态</text>
+  <text x="380" y="446" font-size="11" fill="#8b95a5">不建 Session，关掉表单与 Basic</text>
+  <text x="640" y="426" font-size="12" fill="#1f2329">白名单 + hasRole + @PreAuthorize</text>
+  <text x="640" y="446" font-size="11" fill="#8b95a5">DELETE 文章要 ARTICLE_DELETE 权限点</text>
+
+  <!-- 出口 -->
+  <line x1="500" y1="468" x2="500" y2="484" stroke="#9aa4b2" stroke-width="1.2"/>
+  <rect x="330" y="484" width="340" height="26" rx="6" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="500" y="502" font-size="11" fill="#6b7280" text-anchor="middle">任一条链通过 → Controller；不通 → 401 / 403 的 JSON</text>
+
+  <text x="40" y="530" font-size="11" fill="#6b7280">第 ⑤ 条没有 securityMatcher，兜住所有剩余路径，所以必须放最后；把它挪到前面，前四条链永远匹配不到。</text>
+</svg>

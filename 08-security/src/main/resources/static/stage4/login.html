@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 · 08-security</title>
+    <link rel="stylesheet" href="/stage4/login.css">
+</head>
+<body>
+<main class="card">
+    <h1>表单登录</h1>
+    <p class="sub">阶段四：Session + CSRF，传统 Web 那一套</p>
+
+    <div id="err" class="tip tip-error">用户名或密码不正确</div>
+    <div id="out" class="tip tip-ok">已退出登录</div>
+
+    <form method="post" action="/stage4/login" id="loginForm">
+        <label for="username">用户名</label>
+        <input id="username" name="username" autocomplete="username" value="bob" required>
+
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" value="123456" required>
+
+        <!-- CSRF 隐藏域，值由下面的脚本取回来填入。缺了它 POST 直接 403 -->
+        <input type="hidden" id="csrf" name="_csrf">
+
+        <button type="submit">登 录</button>
+    </form>
+
+    <form method="post" action="/stage4/logout" id="logoutForm">
+        <input type="hidden" name="_csrf" class="csrf-out">
+        <button type="submit" class="link">退出登录</button>
+    </form>
+
+    <p class="hint">
+        可用账号：bob / carol（管理员）、alice / erin（普通账号）、dave（已禁用）、frank（已锁定），密码都是 123456。
+    </p>
+</main>
+
+<script>
+    // 从 URL 参数读提示，不需要后端传 model
+    const params = new URLSearchParams(location.search);
+    if (params.has('error')) document.getElementById('err').classList.add('show');
+    if (params.has('logout')) document.getElementById('out').classList.add('show');
+
+    // 登录页是静态资源，取一次 token 让服务端把 XSRF-TOKEN 写进 Cookie，
+    // 同时把同一个值填进表单隐藏域。两处必须一致，否则 403。
+    fetch('/stage4/csrf-token', {credentials: 'same-origin'})
+        .then(res => res.json())
+        .then(json => {
+            const token = json.data.token;
+            document.getElementById('csrf').value = token;
+            document.querySelectorAll('.csrf-out').forEach(el => el.value = token);
+        })
+        .catch(() => {
+            document.getElementById('err').textContent = 'CSRF token 获取失败，刷新页面重试';
+            document.getElementById('err').classList.add('show');
+        });
+</script>
+</body>
+</html>
