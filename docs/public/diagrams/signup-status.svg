@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="c1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0b63c5"/>
+    </marker>
+    <marker id="c2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#8b95a5"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="400" fill="#f7f8fa"/>
+
+  <text x="30" y="34" font-size="14" fill="#1f2329" font-weight="600">报名单的状态流转</text>
+  <text x="30" y="56" font-size="11.5" fill="#6b7280">七个状态看着多，实际只有三条去向：占座、候补、作废</text>
+
+  <!-- 主流程 -->
+  <rect x="40" y="86" width="150" height="56" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="115" y="110" font-size="13" fill="#1f2329" text-anchor="middle">PENDING</text>
+  <text x="115" y="129" font-size="10.5" fill="#8b95a5" text-anchor="middle">待审核</text>
+
+  <rect x="290" y="86" width="150" height="56" rx="8" fill="#ffffff" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="365" y="110" font-size="13" fill="#1f2329" text-anchor="middle">SUCCESS</text>
+  <text x="365" y="129" font-size="10.5" fill="#8b95a5" text-anchor="middle">报名成功，占一个名额</text>
+
+  <rect x="540" y="86" width="150" height="56" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="615" y="110" font-size="13" fill="#1f2329" text-anchor="middle">CHECKED_IN</text>
+  <text x="615" y="129" font-size="10.5" fill="#8b95a5" text-anchor="middle">已签到</text>
+
+  <rect x="790" y="86" width="150" height="56" rx="8" fill="#ffffff" stroke="#d7dce3" stroke-dasharray="4 3"/>
+  <text x="865" y="110" font-size="13" fill="#1f2329" text-anchor="middle">NO_SHOW</text>
+  <text x="865" y="129" font-size="10.5" fill="#8b95a5" text-anchor="middle">未到场，仍占名额</text>
+
+  <line x1="194" y1="114" x2="286" y2="114" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#c1)"/>
+  <text x="240" y="106" font-size="10.5" fill="#0b63c5" text-anchor="middle">审核通过</text>
+
+  <line x1="444" y1="114" x2="536" y2="114" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#c1)"/>
+  <text x="490" y="106" font-size="10.5" fill="#0b63c5" text-anchor="middle">签到码校验</text>
+
+  <line x1="694" y1="114" x2="786" y2="114" stroke="#8b95a5" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#c2)"/>
+  <text x="740" y="106" font-size="10.5" fill="#6b7280" text-anchor="middle">活动结束</text>
+
+  <!-- 候补 -->
+  <rect x="290" y="196" width="150" height="56" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="365" y="220" font-size="13" fill="#1f2329" text-anchor="middle">WAITLIST</text>
+  <text x="365" y="239" font-size="10.5" fill="#8b95a5" text-anchor="middle">候补中</text>
+
+  <line x1="340" y1="146" x2="340" y2="192" stroke="#8b95a5" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#c2)"/>
+  <text x="332" y="174" font-size="10.5" fill="#6b7280" text-anchor="end">名额满</text>
+
+  <line x1="392" y1="192" x2="392" y2="150" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#c1)"/>
+  <text x="400" y="174" font-size="10.5" fill="#0b63c5">有人取消转正</text>
+
+  <!-- 作废 -->
+  <rect x="40" y="196" width="150" height="56" rx="8" fill="#ffffff" stroke="#c62828" stroke-dasharray="4 3"/>
+  <text x="115" y="220" font-size="13" fill="#1f2329" text-anchor="middle">CANCELLED</text>
+  <text x="115" y="239" font-size="10.5" fill="#8b95a5" text-anchor="middle">已取消</text>
+
+  <rect x="540" y="196" width="150" height="56" rx="8" fill="#ffffff" stroke="#c62828" stroke-dasharray="4 3"/>
+  <text x="615" y="220" font-size="13" fill="#1f2329" text-anchor="middle">REJECTED</text>
+  <text x="615" y="239" font-size="10.5" fill="#8b95a5" text-anchor="middle">审核未通过</text>
+
+  <line x1="115" y1="146" x2="115" y2="192" stroke="#c62828" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#c2)"/>
+  <text x="126" y="174" font-size="10.5" fill="#c62828">本人取消</text>
+
+  <line x1="615" y1="146" x2="615" y2="192" stroke="#c62828" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#c2)"/>
+  <text x="626" y="174" font-size="10.5" fill="#c62828">组织者驳回</text>
+
+  <!-- 说明 -->
+  <text x="40" y="300" font-size="11.5" fill="#6b7280">occupiesSeat() 决定是否占名额：SUCCESS、CHECKED_IN、NO_SHOW 三个算占，WAITLIST 与 PENDING 不算。</text>
+  <text x="40" y="322" font-size="11.5" fill="#6b7280">cancellable() 决定能不能取消：只有 PENDING、SUCCESS、WAITLIST 可以，已签到和已作废的不行。</text>
+  <text x="40" y="348" font-size="11.5" fill="#9aa4b2">这两条规则写在枚举里，而不是散落在 Service 的 if 里，改规则只改一处。</text>
+</svg>
