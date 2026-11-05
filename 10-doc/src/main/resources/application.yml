@@ -1,0 +1,29 @@
+server:
+  port: 8010
+
+spring:
+  application:
+    name: 10-接口文档
+
+# OpenAPI 文档由 springdoc 生成，路径与排序都在这里调
+springdoc:
+  api-docs:
+    # 原始 OpenAPI JSON 的地址，Apifox / Postman 导入的就是它
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    # 页面地址：/swagger-ui.html
+    path: /swagger-ui.html
+    # alpha 按字母排，method 按请求方法排；接口多时排序比默认顺序好用
+    tags-sorter: alpha
+    operations-sorter: method
+    # 默认展开所有接口，不用一个个点开
+    doc-expansion: list
+  # 生成的接口按路径分组后，每组可以单独导出
+  group-configs:
+    - group: book
+      display-name: 图书业务
+      paths-to-match: /books/**
+    - group: ops
+      display-name: 运维接口
+      paths-to-match: /ops/**,/actuator/**
