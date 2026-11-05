@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="da" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#a8b2c0"/>
+    </marker>
+    <marker id="db" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#0b63c5"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="470" fill="#f7f8fa"/>
+  <text x="30" y="34" font-size="14" fill="#1f2329" font-weight="500">一次分页查询要经过五步，每一步都能插东西</text>
+
+  <!-- 左列：调用链 -->
+  <rect x="30" y="56" width="250" height="58" rx="7" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="155" y="80" font-size="12.5" fill="#1f2329" text-anchor="middle">Controller</text>
+  <text x="155" y="100" font-size="10.5" fill="#9aa3af" text-anchor="middle">service.page(query)  只做接参与返回</text>
+
+  <path d="M155,118 L155,146" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#da)"/>
+
+  <rect x="30" y="150" width="250" height="76" rx="7" fill="#eaf2fd" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="155" y="174" font-size="12.5" fill="#0b63c5" text-anchor="middle" font-weight="600">Service</text>
+  <text x="155" y="194" font-size="10.5" fill="#3b7dc4" text-anchor="middle">业务规则 + 事务边界</text>
+  <text x="155" y="212" font-size="10.5" fill="#3b7dc4" text-anchor="middle">@Transactional 在这一层</text>
+
+  <path d="M155,230 L155,258" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#da)"/>
+
+  <rect x="30" y="262" width="250" height="76" rx="7" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="155" y="286" font-size="12.5" fill="#1f2329" text-anchor="middle">Mapper（BaseMapper）</text>
+  <text x="155" y="306" font-size="10.5" fill="#9aa3af" text-anchor="middle">selectPage(page, wrapper)</text>
+  <text x="155" y="324" font-size="10.5" fill="#9aa3af" text-anchor="middle">不用写 SQL，方法由框架提供</text>
+
+  <path d="M155,342 L155,370" stroke="#a8b2c0" stroke-width="1.5" marker-end="url(#da)"/>
+
+  <rect x="30" y="374" width="250" height="66" rx="7" fill="#f0f8f3" stroke="#2da44e"/>
+  <text x="155" y="398" font-size="12.5" fill="#1a7f37" text-anchor="middle">MySQL</text>
+  <text x="155" y="418" font-size="10.5" fill="#4a8f5e" text-anchor="middle">真正执行 SQL 的地方</text>
+
+  <!-- 右侧：每步发生什么 -->
+  <text x="330" y="76" font-size="12" fill="#6b7280" letter-spacing="0.5">这一步实际发生了什么</text>
+
+  <!-- 步骤 1 -->
+  <rect x="330" y="56" width="640" height="58" rx="7" fill="#ffffff" stroke="#eef0f3"/>
+  <text x="346" y="78" font-size="12" fill="#1f2329" font-weight="600">1　拼条件</text>
+  <text x="346" y="98" font-size="11" fill="#5b6472">LambdaQueryWrapper 把 if 判断收进方法参数，第一个参数是"这个条件要不要拼"</text>
+
+  <!-- 步骤 2 -->
+  <rect x="330" y="150" width="640" height="76" rx="7" fill="#ffffff" stroke="#eef0f3"/>
+  <text x="346" y="172" font-size="12" fill="#1f2329" font-weight="600">2　插件改写 SQL</text>
+  <text x="346" y="192" font-size="11" fill="#5b6472">PaginationInnerInterceptor 干两件事：在 SQL 末尾追加 LIMIT，另发一条 SELECT COUNT(*)</text>
+  <text x="346" y="212" font-size="11" fill="#8b95a5">逻辑删除插件再给 WHERE 补上 deleted = 0</text>
+
+  <!-- 步骤 3 -->
+  <rect x="330" y="262" width="640" height="76" rx="7" fill="#ffffff" stroke="#eef0f3"/>
+  <text x="346" y="284" font-size="12" fill="#1f2329" font-weight="600">3　执行与映射</text>
+  <text x="346" y="304" font-size="11" fill="#5b6472">ResultSet 的列名 member_level 映射到字段 memberLevel（下划线转驼峰）</text>
+  <text x="346" y="324" font-size="11" fill="#8b95a5">JSON 列靠 typeHandler 转成 List&lt;String&gt;</text>
+
+  <!-- 步骤 4 -->
+  <rect x="330" y="374" width="640" height="66" rx="7" fill="#ffffff" stroke="#eef0f3"/>
+  <text x="346" y="396" font-size="12" fill="#1f2329" font-weight="600">4　组装结果</text>
+  <text x="346" y="416" font-size="11" fill="#5b6472">Page 对象里装着 records、total、current、size、pages，直接序列化给前端</text>
+</svg>

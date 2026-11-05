@@ -1,182 +1,223 @@
-# 05 · 数据访问 —— 用 MyBatis-Plus 持久化数据
+# 05 · 数据访问：把数据真正存下去
 
 > - 难度：进阶
-> - 前置模块：04-web
-> - 预计时长：约 90 分钟
+> - 前置条件：完成 [04-web](04-web.md)；会写基本的 SQL（`SELECT`、`INSERT`、`JOIN`）
+> - 预计时长：120~150 分钟
 > - 对应代码：[05-mybatis](https://github.com/mqxu/backend-learning/tree/main/05-mybatis)
 
-## 1. 本节导读
-
-学完本节，你将能：
-
-1. 建一张覆盖 MySQL 常用数据类型的表，并把每种类型正确映射到 Java；
-2. 用 `BaseMapper` / `IService` 完成单表增删改查，不写一条 SQL；
-3. 用 `MetaObjectHandler` 做字段自动填充，用逻辑删除代替物理删除，用乐观锁处理并发更新；
-4. 用 `LambdaQueryWrapper` / `LambdaUpdateWrapper` 写常见的条件查询与更新；
-5. 理解并落地 Service 分层与 `@Transactional` 事务；
-6. 配好连接池参数，知道池大小、超时和 MySQL 连接上限之间的关系，会用 Druid 监控页看池状态。
-
-**前置知识**：会 `04-web`；懂一点 SQL 与关系型数据库。
+前面几个模块的数据都在内存里，重启就没了。这一节换成 MySQL，并解决随之而来的一堆问题：字段怎么映射、分页怎么写、多个操作怎么保证要么全成要么全败。
 
 ---
 
-## 2. 概念铺垫
+## 0. 先看结果
 
-### 2.1 为什么要 ORM
+做完这一节，你会有一个能真正存数据的模块：
 
-操作数据库要写 SQL、把结果一行行塞进 Java 对象，非常繁琐。ORM（对象关系映射）帮我们做“对象 ↔ 表”的自动映射：操作对象就像操作数据。
+```bash
+# 新增一个用户
+curl -X POST http://127.0.0.1:8005/users -H "Content-Type: application/json" \
+  -d '{"username":"testuser","nickname":"接口测试","age":25}'
 
-MyBatis-Plus 是在 MyBatis 基础上的增强：提供 `BaseMapper` 通用 CRUD，连 SQL 都能省掉大半。
+# 重启应用后再查，数据还在
+curl http://127.0.0.1:8005/users/7
+```
 
-### 2.2 三层结构：Mapper / Service / Controller
+同时下面这些都能跑通：
 
-| 层 | 职责 | 对应 |
+| 能力 | 用哪个接口验证 |
+| --- | --- |
+| 单表增删改查 | `/users` 系列 |
+| 条件查询（模糊、区间、排序） | `/users/keyword`、`/users/age-range`、`/users/top` |
+| 分页 | `/users/page?current=1&size=3` |
+| 聚合统计 | `/users/statistics` |
+| 逻辑删除 | 删除后再查返回 null，库里那行还在 |
+| 事务回滚 | 库存不足时下单失败，库存不变 |
+| 多表关联 | `/students/1/scores` 返回三张表拼出来的成绩单 |
+
+### 这一节的路线
+
+| 步骤 | 做什么 | 验证 |
 | --- | --- | --- |
-| Controller | 接收参数、调用 Service、返回结果 | `UserController` |
-| Service | 业务逻辑、事务 | `UserService` / `UserServiceImpl` |
-| Mapper | 数据访问、SQL | `UserMapper` |
-
-规则：上层只能调用紧邻的下层，不能跨层（Controller 不能直接碰 Mapper）。
-
-### 2.3 什么是事务
-
-一次业务可能改多张表（下单 = 减库存 + 生成订单 + 扣款），要么全成功、要么全回滚，这就是事务。`@Transactional` 让它自动提交或回滚。
-
-### 2.4 连接池解决什么问题
-
-`DriverManager.getConnection()` 每次都要走 TCP 握手、身份认证、会话初始化，本机 MySQL 8 上一次大约 30~50 ms，跨网络更久。接口 QPS 上来后，这部分开销会超过 SQL 本身。
-
-连接池的做法是启动时先建好一批连接，用完归还池子而不是真正关闭，请求来了直接取用，省掉建连开销。
-
-有三条约束要记住：
-
-- 数据库能承受的连接数有上限（MySQL `max_connections` 默认 151）。所有应用实例的池上限之和不能超过它，否则报 `Too many connections`。
-- 池不是越大越好。连接数远超 MySQL 的处理能力时，请求只是排进更长的队列，单条 SQL 延迟反而变高。HikariCP 官方给的起点是 `CPU 核数 * 2 + 磁盘数`。
-- 池被占满时的表现由 `connection-timeout` 决定：默认 30 秒内取不到连接就抛 `SQLTransientConnectionException: Connection is not available`。
-
-Spring Boot 默认的连接池是 HikariCP，随 `spring-boot-starter-jdbc` 一起引入，不需要额外依赖。
-
-### 2.5 MySQL 常用数据类型与 Java 映射
-
-先按“数据长什么样”选类型，再按类型选 Java 类。
-
-| 用在什么字段上 | MySQL 类型 | 取值范围 / 说明 | Java 类型 |
-| --- | --- | --- | --- |
-| 自增主键 | `BIGINT` | 大整数，可加 `UNSIGNED` 只留非负 | `Long` |
-| 用户名、标题 | `VARCHAR(n)` | 变长，n 是最大字符数，按需给 | `String` |
-| 手机号、身份证 | `CHAR(n)` | 定长，长度固定且查询频繁时比 `VARCHAR` 略快 | `String` |
-| 状态、性别、是否会员 | `TINYINT` | -128~127；`UNSIGNED` 时 0~255 | `Integer` / `Boolean` |
-| 年龄、积分 | `INT` / `SMALLINT` | 常规计数 | `Integer` |
-| 金额 | `DECIMAL(m,d)` | 定点数，精确，`DECIMAL(12,2)` 表示最多 12 位、其中 2 位小数 | `BigDecimal` |
-| 评分、比例 | `FLOAT` / `DOUBLE` | 浮点数，近似值，不适合存钱 | `Float` / `Double` |
-| 取值固定的枚举 | `ENUM('A','B')` | 只能取列出的值，插入其他值会被拒绝 | `String` |
-| 生日、入职日期 | `DATE` | `yyyy-MM-dd` | `LocalDate` |
-| 上下午班时间 | `TIME` | `HH:mm:ss` | `LocalTime` |
-| 创建时间、最后登录 | `DATETIME` | `yyyy-MM-dd HH:mm:ss`，不做时区换算 | `LocalDateTime` |
-| 跨时区的时间点 | `TIMESTAMP` | 存 UTC、取出按会话时区换算，范围只到 2038 年 | `LocalDateTime` |
-| 个人简介、文章正文 | `TEXT` | 最大 64 KB，超长用 `MEDIUMTEXT` | `String` |
-| 标签、扩展参数 | `JSON` | 结构不固定又想在库里查 | `List` / `Map`，配 type handler |
-| 头像、附件内容 | `BLOB` / `VARBINARY` | 二进制。生产更常见的做法是存文件服务地址，而不是把文件塞进库 | `byte[]` |
-
-两个容易踩的点：
-
-- 金额和任何参与精确计算的数用 `DECIMAL`，不要用 `FLOAT` / `DOUBLE`，浮点的舍入误差累加后会算错账。
-- `UNSIGNED` 不是“更省空间”，而是“不允许负数”。给年龄、积分这类字段加 `UNSIGNED` 之后，写 `-1` 会被数据库直接拒绝并报 `Out of range value`，业务层的校验要提前拦住这类值。
-
-### 2.6 MyBatis-Plus 帮你做了哪些事
-
-| 能力 | 用法 | 省掉了什么 |
-| --- | --- | --- |
-| 通用 CRUD | `BaseMapper` / `IService` | 单表增删改查的 SQL 与 XML |
-| 条件构造器 | `LambdaQueryWrapper` / `LambdaUpdateWrapper` | 手拼 `WHERE`，且字段名靠方法引用，改字段不会漏改字符串 |
-| 分页 | `PaginationInnerInterceptor` + `Page` | 自己写 `LIMIT` 与 `COUNT` |
-| 字段自动填充 | `MetaObjectHandler` + `@TableField(fill = ...)` | 每个 Service 方法里手写 `setCreateTime(new Date())` |
-| 逻辑删除 | `@TableLogic` | 手写 `UPDATE ... SET deleted = 1` 与每条查询补 `deleted = 0` |
-| 乐观锁 | `@Version` + `OptimisticLockerInnerInterceptor` | 手拼版本号条件 |
+| 1 | 装 MySQL、建库 | 能连上，库存在 |
+| 2 | 建模块，加三个依赖 | `mvn compile` 通过 |
+| 3 | 写数据源与初始化脚本 | 启动时自动建表灌数据 |
+| 4 | 写实体与 Mapper | 能按 ID 查到一条 |
+| 5 | 写 Service 与自动填充 | 新增时 `create_time` 自动有值 |
+| 6 | 配分页插件 | 分页返回 total |
+| 7 | 逻辑删除与乐观锁 | 删除后查不到，版本号自增 |
+| 8 | 条件构造器 | 模糊、区间、排序都生效 |
+| 9 | 事务 | 失败时库存回滚 |
+| 10 | 多表查询 | 三张表拼成一个对象 |
 
 ---
 
-## 3. 环境准备
+## 1. 为什么不直接写 JDBC
 
-1. 安装并启动 MySQL（本教程用 `backend_learning` 库）；
-2. 建库与建表：
+用原生 JDBC 查一个用户：
+
+```java
+String sql = "SELECT id, username, nickname, gender, age FROM t_user WHERE id = ?";
+try (Connection conn = dataSource.getConnection();
+     PreparedStatement ps = conn.prepareStatement(sql)) {
+    ps.setLong(1, id);
+    try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+            User user = new User();
+            user.setId(rs.getLong("id"));
+            user.setUsername(rs.getString("username"));
+            user.setNickname(rs.getString("nickname"));
+            user.setGender(rs.getInt("gender"));
+            user.setAge(rs.getInt("age"));
+            return user;
+        }
+    }
+}
+```
+
+一张五个字段的表就要写十几行。加个字段，SQL 和映射两处都要改，漏一处就是空值。
+
+ORM 把这层映射接过去：
+
+```java
+User user = userMapper.selectById(id);
+```
+
+一行。字段对应关系由注解声明一次，之后加字段只改实体。
+
+MyBatis 属于"半自动"：SQL 还是你写（或者由 MyBatis-Plus 生成），但参数绑定和结果映射交给框架。
+
+---
+
+## 2. 准备 MySQL
+
+### 2.1 装库与建库
+
+本地已经有 MySQL 8 的话直接跳到建库。没有的话，Docker 最快：
+
+```bash
+docker run -d --name mysql8 \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=你的密码 \
+  mysql:8.4
+```
+
+建库：
 
 ```sql
 CREATE DATABASE IF NOT EXISTS backend_learning DEFAULT CHARSET utf8mb4;
-
-USE backend_learning;
-
-CREATE TABLE t_user
-(
-    id              BIGINT UNSIGNED AUTO_INCREMENT COMMENT '主键',
-    username        VARCHAR(50)  NOT NULL COMMENT '登录名',
-    password        CHAR(64)     NOT NULL COMMENT '密码，SHA-256 摘要定长 64 位',
-    nickname        VARCHAR(50) COMMENT '昵称',
-    gender          TINYINT      NOT NULL DEFAULT 0 COMMENT '性别，0 未设置 / 1 男 / 2 女',
-    age             TINYINT UNSIGNED COMMENT '年龄',
-    member_level    ENUM ('BRONZE','SILVER','GOLD') NOT NULL DEFAULT 'BRONZE' COMMENT '会员等级',
-    points          INT          NOT NULL DEFAULT 0 COMMENT '积分',
-    balance         DECIMAL(12, 2) NOT NULL DEFAULT 0.00 COMMENT '账户余额，金额用定点数',
-    score           FLOAT COMMENT '推荐评分，近似小数用浮点',
-    phone           VARCHAR(20) COMMENT '手机号',
-    email           VARCHAR(100) COMMENT '邮箱',
-    avatar          VARCHAR(255) COMMENT '头像地址',
-    intro           TEXT COMMENT '个人简介，长文本',
-    tags            JSON COMMENT '标签数组，如 ["Java","篮球"]',
-    birthday        DATE COMMENT '生日',
-    work_time       TIME COMMENT '每日上班时间',
-    vip             TINYINT      NOT NULL DEFAULT 0 COMMENT '是否会员，0 否 / 1 是',
-    status          TINYINT      NOT NULL DEFAULT 1 COMMENT '状态，1 正常 / 0 禁用',
-    last_login_time DATETIME COMMENT '最后登录时间',
-    create_time     DATETIME     NOT NULL COMMENT '创建时间，MyBatis-Plus 自动填充',
-    update_time     DATETIME     NOT NULL COMMENT '更新时间，MyBatis-Plus 自动填充',
-    deleted         TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除，0 未删除 / 1 已删除',
-    version         INT          NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_username (username),
-    KEY idx_status_gender (status, gender)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4 COMMENT ='用户表';
 ```
 
-建表脚本放在 `src/main/resources/schema.sql`，初始化数据放在 `data.sql`，配合 `spring.sql.init` 在应用启动时自动执行。
+字符集必须是 `utf8mb4`，不是 `utf8`。MySQL 的 `utf8` 只支持三个字节，存不了 emoji 和部分生僻字。
 
-两个脚本都在开头写了 `DROP TABLE IF EXISTS`，也就是**每次启动都把表删掉重建并重写示例数据**。这样改了字段不用手工 `ALTER`，表结构永远和实体类一致；代价是数据不持久。真实项目用 Flyway / Liquibase 做版本化迁移，不会这么干。
+### 2.2 确认能连上
 
-> 用命令行手动执行脚本时记得先选中库：`mysql -uroot -p -D backend_learning < schema.sql`。
-
-依赖（Spring Boot 4.1.1 下实测可用）：
-
-```xml
-<dependency>
-    <groupId>com.baomidou</groupId>
-    <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
-    <version>3.5.17</version>
-</dependency>
-<!-- 分页插件依赖 JSqlParser，3.5.9 起拆成独立构件，需单独引入 -->
-<dependency>
-    <groupId>com.baomidou</groupId>
-    <artifactId>mybatis-plus-jsqlparser</artifactId>
-    <version>3.5.17</version>
-</dependency>
-<dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-    <scope>runtime</scope>
-</dependency>
+```bash
+mysql -uroot -p -h127.0.0.1 -P3306 -e "show databases;"
 ```
 
-> 版本要点：Spring Boot 4 用 `mybatis-plus-spring-boot4-starter`（Spring Boot 3 对应 `-spring-boot3-starter`）；`mysql-connector-j` 的版本由 `spring-boot-dependencies` 管理，无需手写。
+看到 `backend_learning` 就行。
 
-> 连接池用 Spring Boot 默认的 HikariCP（无需额外依赖），参数配置与监控见步骤 10。要换 Druid 需引入 `druid-spring-boot-4-starter`（Spring Boot 4 对应版本，Spring Boot 3 用 `druid-spring-boot-3-starter`）。
+### 2.3 三个与新手相关的概念
+
+| 概念 | 一句话 |
+| --- | --- |
+| 连接池 | 预先建好一批连接反复用，避免每次请求都握手认证 |
+| 事务 | 一组操作要么全成功要么全回滚 |
+| 字符集 | 库、表、连接三处都要 utf8mb4，不然中文可能变成问号 |
 
 ---
 
-## 4. 动手实战
+## 3. 创建模块
 
-### 步骤 1：配置数据源与初始化脚本
+### 3.1 POM
 
-`application.yml`：
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>top.mqxu</groupId>
+        <artifactId>backend-learning</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>05-mybatis</artifactId>
+
+    <properties>
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Boot 4 专用 starter，注意 artifactId 里带 4 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+
+        <!-- MySQL 驱动，版本由 Spring Boot 统一管理 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- 分页插件依赖 JSqlParser，3.5.9 起被拆成独立构件，必须显式引入 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>
+```
+
+三个依赖各有讲究：
+
+**为什么 artifactId 里带 `4`**
+
+MyBatis-Plus 针对 Spring Boot 3 和 4 出了不同的 starter。Spring Boot 4 用的是 `mybatis-plus-spring-boot4-starter`。写成 `mybatis-plus-boot-starter`（Boot 2 时代的名字）会启动失败，报自动配置类找不到。
+
+**为什么要 `mybatis-plus-jsqlparser`**
+
+3.5.9 之后，分页插件依赖的 JSqlParser 被拆成了独立构件。只引 starter 的话，配分页插件时会报 `ClassNotFoundException: net.sf.jsqlparser.parser.CCJSqlParserUtil`。这是升级版本时最常见的一个坑。
+
+**为什么 mysql 驱动是 `runtime`**
+
+编译时用不到驱动类（代码里没有 `import com.mysql...`），运行时才需要。用 `runtime` 范围能避免误用。
+
+### 3.2 目录结构
+
+```
+05-mybatis
+└── src/main
+    ├── java/top/mqxu/mybatis
+    │   ├── MybatisApplication.java
+    │   ├── entity        User / Product / Order / Student / Course / Score
+    │   ├── dto           UserQuery
+    │   ├── vo            ScoreSheetVO
+    │   ├── mapper        六个 Mapper，多数只有一行
+    │   ├── service       接口
+    │   │   └── impl      实现，业务逻辑都在这
+    │   ├── controller    接口层
+    │   └── config
+    │       ├── MybatisPlusConfig.java      # 分页与乐观锁插件
+    │       └── MyMetaObjectHandler.java    # 字段自动填充
+    └── resources
+        ├── application.yml
+        ├── schema.sql    建表
+        └── data.sql      初始数据
+```
+
+---
+
+## 4. 配置数据源
+
+`src/main/resources/application.yml`：
 
 ```yaml
 server:
@@ -185,19 +226,20 @@ server:
 spring:
   application:
     name: 05-数据访问
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/backend_learning?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456            # 按本机 MySQL 实际密码修改
-    hikari:                     # 连接池参数，不写就用默认值
+    password: 你的密码
+    hikari:
       pool-name: backend-learning-pool
       maximum-pool-size: 10     # 池上限
       minimum-idle: 5           # 空闲保底连接数
       connection-timeout: 3000  # 取连接超时，毫秒
       max-lifetime: 1800000     # 连接最长存活，毫秒
-  # 启动时先执行 schema.sql 建表，再执行 data.sql 写入示例数据
-  # MySQL 属于非内嵌库，必须显式写 always 才会执行
+
+  # 启动时执行建表与初始化数据
   sql:
     init:
       mode: always
@@ -207,26 +249,106 @@ spring:
 
 mybatis-plus:
   configuration:
-    map-underscore-to-camel-case: true   # 下划线转驼峰
+    map-underscore-to-camel-case: true   # member_level -> memberLevel
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印 SQL，开发期用
   global-config:
     banner: false
     db-config:
       id-type: auto                      # 主键自增
       table-underline: true              # 实体驼峰转表名下划线
-      # 逻辑删除：delete 变成 update deleted=1，查询自动追加 deleted=0
-      logic-delete-field: deleted
+      logic-delete-field: deleted        # 逻辑删除字段
       logic-delete-value: 1
       logic-not-delete-value: 0
 ```
 
-`spring.sql.init.mode` 的默认值是 `embedded`，只对内嵌库（H2、HSQLDB）生效。连 MySQL 这类外部库必须显式改成 `always`，否则脚本不会执行。
+五处值得单独说：
 
-数据源与连接池的完整说明见步骤 10。
+**`serverTimezone=Asia/Shanghai`**
 
-### 步骤 2：实体类
+不加这个参数，`LocalDateTime` 存进去和读出来会差 8 小时。原因是驱动默认按 UTC 解释时间。
 
-实体字段和表字段一一对应，靠 `map-underscore-to-camel-case` 把 `create_time` 映射到 `createTime`。
+**`sql.init.mode: always`**
+
+对 MySQL 这种非内嵌数据库，必须显式写 `always`，默认的 `embedded` 不会执行脚本。这个值让每次启动都执行 `schema.sql`（先 DROP 再 CREATE）和 `data.sql`。
+
+对学习仓库来说这很方便：每次启动都是干净数据，改表结构不用手动 `ALTER`。真实项目不能这么干，要用 Flyway 或 Liquibase 做版本化迁移。
+
+**`hikari.maximum-pool-size: 10`**
+
+池子不是越大越好。数据库的连接数有上限，二十个实例各开五十个连接，MySQL 会直接拒绝。经验值是 CPU 核数 × 2 + 磁盘数。
+
+**`map-underscore-to-camel-case`**
+
+数据库列名 `member_level` 自动映射到 Java 字段 `memberLevel`。不开这个，查出来的对象字段全是 null。
+
+**`log-impl: StdOutImpl`**
+
+把执行的 SQL 打到控制台。开发期非常有用，能看到"到底执行了什么 SQL、参数是什么"。生产环境要关掉，否则日志量惊人。
+
+---
+
+## 5. 建表
+
+`schema.sql` 的关键部分（完整文件还有 `t_course`、`t_product`、`t_order`、`t_student`、`t_score`）：
+
+```sql
+CREATE DATABASE IF NOT EXISTS backend_learning DEFAULT CHARSET utf8mb4;
+USE backend_learning;
+
+-- 先删后建：改字段时不用手工 ALTER，保证表结构与实体一致
+DROP TABLE IF EXISTS t_user;
+
+CREATE TABLE t_user
+(
+    id              BIGINT UNSIGNED AUTO_INCREMENT COMMENT '主键',
+    username        VARCHAR(50)                     NOT NULL COMMENT '登录名',
+    password        CHAR(64)                        NOT NULL COMMENT '密码摘要',
+    nickname        VARCHAR(50) COMMENT '昵称',
+    gender          TINYINT                         NOT NULL DEFAULT 0 COMMENT '0 未设置 / 1 男 / 2 女',
+    age             TINYINT UNSIGNED COMMENT '年龄',
+    member_level    ENUM ('BRONZE','SILVER','GOLD') NOT NULL DEFAULT 'BRONZE' COMMENT '会员等级',
+    points          INT                             NOT NULL DEFAULT 0 COMMENT '积分',
+    balance         DECIMAL(12, 2)                  NOT NULL DEFAULT 0.00 COMMENT '余额',
+    score           FLOAT COMMENT '推荐评分',
+    phone           VARCHAR(20) COMMENT '手机号',
+    email           VARCHAR(100) COMMENT '邮箱',
+    avatar          VARCHAR(255) COMMENT '头像',
+    intro           TEXT COMMENT '个人简介',
+    tags            JSON COMMENT '标签数组',
+    birthday        DATE COMMENT '生日',
+    work_time       TIME COMMENT '上班时间',
+    vip             TINYINT                         NOT NULL DEFAULT 0 COMMENT '是否会员',
+    status          TINYINT                         NOT NULL DEFAULT 1 COMMENT '1 正常 / 0 禁用',
+    last_login_time DATETIME COMMENT '最后登录时间',
+    create_time     DATETIME                        NOT NULL COMMENT '创建时间',
+    update_time     DATETIME                        NOT NULL COMMENT '更新时间',
+    deleted         TINYINT                         NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+    version         INT                             NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_username (username),
+    KEY idx_status_gender (status, gender)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='用户表';
+```
+
+这张表刻意覆盖了常用类型，方便一次讲清映射关系：
+
+| MySQL 类型 | Java 类型 | 注意 |
+| --- | --- | --- |
+| `BIGINT UNSIGNED` | `Long` | 主键首选，留够增长空间 |
+| `DECIMAL(12,2)` | `BigDecimal` | 金额必须用定点数 |
+| `FLOAT` | `Float` | 近似值，不要用于金额 |
+| `DATE` / `TIME` / `DATETIME` | `LocalDate` / `LocalTime` / `LocalDateTime` | 用 `java.time`，别用 `Date` |
+| `JSON` | `List<String>` | 需要 `typeHandler` |
+| `TINYINT` | `Integer` / `Boolean` | 表示布尔时用 `Integer` 更直观 |
+
+金额用 `double` 是经典事故：`0.1 + 0.2` 在二进制浮点里等于 `0.30000000000000004`，对账时差一分钱要查一整天。
+
+---
+
+## 6. 实体映射
+
+`entity/User.java`：
 
 ```java
 package top.mqxu.mybatis.entity;
@@ -239,8 +361,6 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -257,287 +377,153 @@ public class User {
     private Long id;
 
     private String username;
-
-    /** 只接收不返回，避免接口把密码摘要吐出去 */
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
-
     private String nickname;
-
     private Integer gender;
-
     private Integer age;
-
     private String memberLevel;
-
     private Integer points;
-
     private BigDecimal balance;
-
     private Float score;
-
     private String phone;
-
     private String email;
-
     private String avatar;
-
     private String intro;
 
-    /** JSON 列，autoResultMap = true 才会走 typeHandler 反序列化 */
+    /** JSON 列与 List 互转 */
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private List<String> tags;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthday;
-
-    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime workTime;
-
-    private Boolean vip;
-
+    private Integer vip;
     private Integer status;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastLoginTime;
 
     @TableField(fill = FieldFill.INSERT)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
     @TableLogic
-    @TableField(fill = FieldFill.INSERT)
     private Integer deleted;
 
     @Version
-    @TableField(fill = FieldFill.INSERT)
     private Integer version;
 }
 ```
 
-讲解：
+逐个注解说明：
 
-- `@TableName("t_user")` 指定表名；`@TableId(type = IdType.AUTO)` 自增主键；
-- `autoResultMap = true` 是 JSON 字段能查出来的前提，漏了它 `tags` 会是 null；
-- `@JsonProperty(access = WRITE_ONLY)` 让 `password` 可以随请求体传进来，但不出现在响应里；
-- `@JsonFormat` 解决时间格式：Jackson 3 默认只认带 `T` 的 ISO 格式（`2008-03-25T01:58:41`），加上注解后 `2008-03-25 01:58:41` 这种 SQL 风格的字符串也能正常接收和返回；
-- `Boolean vip` 对应 `TINYINT`，JDBC 读出来非 0 即 true。
+| 注解 | 作用 | 不写会怎样 |
+| --- | --- | --- |
+| `@TableName("t_user")` | 指定表名 | 按类名推导成 `user`，与 `t_user` 对不上，报表不存在 |
+| `@TableId(type = AUTO)` | 主键用数据库自增 | 默认雪花 ID，插入后拿不到自增值 |
+| `@TableField(fill = INSERT)` | 插入时自动填充 | `create_time` 为 null，`NOT NULL` 约束报错 |
+| `@TableField(fill = INSERT_UPDATE)` | 插入和更新都填充 | 更新时间永远是创建时间 |
+| `@TableField(typeHandler = ...)` | JSON 列转换 | 存进去是乱码或反序列化失败 |
+| `@TableLogic` | 逻辑删除 | `delete` 变成真删，数据无法恢复 |
+| `@Version` | 乐观锁 | 并发更新互相覆盖 |
 
-### 步骤 3：Mapper
+`autoResultMap = true` 是 `typeHandler` 生效的前提，漏了之后查询出来的 `tags` 会是 null——这个坑很隐蔽，因为插入看起来是正常的。
+
+字段名与列名的对应靠约定：`memberLevel` → `member_level`，由 `table-underline: true` 和 `map-underscore-to-camel-case: true` 共同保证。
+
+---
+
+## 7. Mapper 与 Service
+
+### 7.1 Mapper 只有一行
 
 ```java
 package top.mqxu.mybatis.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Mapper;
 import top.mqxu.mybatis.entity.User;
 
-@Mapper
 public interface UserMapper extends BaseMapper<User> {
 }
 ```
 
-接口体是空的，方法都由 `BaseMapper` 提供：
-
-| 方法 | 作用 |
-| --- | --- |
-| `insert(entity)` | 新增，主键回填到实体 |
-| `deleteById(id)` / `deleteByIds(ids)` | 按主键删除（配 `@TableLogic` 时是逻辑删除） |
-| `delete(Wrapper)` / `deleteByMap(map)` | 按条件删除 |
-| `updateById(entity)` | 按主键更新，只更新非 null 字段 |
-| `update(entity, Wrapper)` | 按条件更新 |
-| `selectById(id)` | 按主键查询 |
-| `selectBatchIds(ids)` | 按主键批量查询 |
-| `selectList(Wrapper)` / `selectOne(Wrapper)` | 条件查询 |
-| `selectCount(Wrapper)` | 计数 |
-| `selectPage(page, Wrapper)` | 分页 |
-| `selectObjs(Wrapper)` | 只取第一列的值 |
-| `selectMaps(Wrapper)` | 返回 `Map` 列表，做分组统计时用 |
-
-### 步骤 4：Service 层把基础 CRUD 写全
-
-`IService` 已经提供了完整的单表操作，直接继承即可用。下面只补充带业务语义的封装和各类条件查询。
+`BaseMapper` 已经带了 17 个方法：
 
 ```java
+User selectById(Serializable id);
+List<User> selectList(Wrapper<User> wrapper);
+Long selectCount(Wrapper<User> wrapper);
+int insert(User entity);
+int updateById(User entity);
+int deleteById(Serializable id);
+// ...
+```
+
+单表 CRUD 一行 SQL 都不用写。
+
+### 7.2 Service 继承 ServiceImpl
+
+```java
+package top.mqxu.mybatis.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import top.mqxu.mybatis.entity.User;
+
 public interface UserService extends IService<User> {
-
-    /* 增 */
-    boolean createUser(User user);
-    boolean createUserBatch(List<User> users);
-
-    /* 删 */
-    boolean removeUser(Long id);
-    boolean removeUserBatch(List<Long> ids);
-    boolean removeUserByStatus(Integer status);
-
-    /* 改 */
-    boolean modifyUser(User user);
-    boolean modifyUserStatus(Long id, Integer status);
-    boolean recharge(Long id, BigDecimal amount);
-
-    /* 查（基础） */
-    User getUser(Long id);
-    List<User> listUsers();
-    Page<User> pageUsers(long current, long size);
-
-    /* 查（Lambda 条件） */
-    List<User> listByCondition(UserQuery query);
-    Page<User> pageByCondition(UserQuery query, long current, long size);
-    List<User> searchByKeyword(String keyword);
-    List<User> listByAgeRange(Integer minAge, Integer maxAge);
-    List<User> listTop(Integer limit);
-    List<String> listUsernames();
-    List<User> listByTag(String tag);
-    boolean existsUsername(String username);
-    long countByGender(Integer gender);
-    Map<String, Object> statistics();
 }
 ```
 
-`IService` 自带的方法和上面这些封装的对应关系：
-
-| 操作 | `IService` / `IRepository` 自带 | 本模块封装 |
-| --- | --- | --- |
-| 新增 | `save(entity)` | `createUser`（补默认值 + 校验 + 事务） |
-| 批量新增 | `saveBatch(collection, batchSize)` | `createUserBatch` |
-| 按主键更新 | `updateById(entity)` | `modifyUser`（先确认记录存在） |
-| 批量更新 | `updateBatchById(collection, batchSize)` | — |
-| 按主键删除 | `removeById(id)` | `removeUser` |
-| 批量删除 | `removeByIds(collection)` | `removeUserBatch` |
-| 条件删除 | `remove(Wrapper)` | `removeUserByStatus` |
-| 批量查询 | `listByIds(collection)` | — |
-| 按主键查询 | `getById(id)` | `getUser` |
-| 查询全部 | `list()` | `listUsers` |
-| 条件列表 | `list(Wrapper)` | `listByCondition` |
-| 分页 | `page(Page)` / `page(Page, Wrapper)` | `pageUsers` / `pageByCondition` |
-| 单条 | `getOne(Wrapper)` | — |
-| 计数 | `count()` / `count(Wrapper)` | `countByGender` |
-| 存在判断 | `exists(Wrapper)` | `existsUsername` |
-
-实现类里几个有代表性的方法：
-
 ```java
+package top.mqxu.mybatis.service.impl;
+
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+import top.mqxu.mybatis.entity.User;
+import top.mqxu.mybatis.mapper.UserMapper;
+import top.mqxu.mybatis.service.UserService;
+
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-
-    private static final String DEFAULT_PASSWORD = "123456";
-    private static final int BATCH_SIZE = 100;
-
-    @Transactional(rollbackFor = Exception.class)
-    @Override
-    public boolean createUser(User user) {
-        applyDefaults(user);
-
-        // 第一步：先写库
-        save(user);
-
-        // 第二步：后续业务校验失败，抛异常观察第一步是否被回滚
-        // age 列是 TINYINT UNSIGNED，-1 这类负数在数据库层就会被拒绝，这里校验的是业务上不合理的取值
-        if (user.getAge() != null && (user.getAge() < 0 || user.getAge() > 150)) {
-            throw new RuntimeException("年龄超出合理范围，回滚");
-        }
-        return true;
-    }
-
-    @Override
-    public boolean modifyUser(User user) {
-        if (user.getId() == null) {
-            throw new IllegalArgumentException("更新时必须携带主键 id");
-        }
-        if (getById(user.getId()) == null) {
-            throw new IllegalArgumentException("用户不存在：" + user.getId());
-        }
-        return updateById(user);
-    }
-
-    @Override
-    public boolean modifyUserStatus(Long id, Integer status) {
-        return update(new LambdaUpdateWrapper<User>()
-                .eq(User::getId, id)
-                .set(User::getStatus, status));
-    }
-
-    @Override
-    public boolean recharge(Long id, BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("充值金额必须大于 0");
-        }
-        User user = getById(id);
-        if (user == null) {
-            throw new IllegalArgumentException("用户不存在：" + id);
-        }
-        user.setBalance(user.getBalance().add(amount));
-        // 实体带 version，updateById 会拼上 AND version = ? 并把版本加一
-        return updateById(user);
-    }
 }
 ```
 
-`applyDefaults` 负责给未传的字段补上默认值，避免 `NOT NULL` 列报错，同时把明文密码转成 SHA-256 摘要（64 位十六进制，刚好对上表里的 `CHAR(64)`）：
+注意 `ServiceImpl` 的包名：`com.baomidou.mybatisplus.spring.service.impl`。旧版本是 `com.baomidou.mybatisplus.extension.service.impl`，Boot 4 适配版换了包。照旧教程写会编译不过。
+
+`ServiceImpl` 提供了 `baseMapper`、`getById()`、`save()`、`saveBatch()`、`lambdaQuery()` 等便利方法。
+
+### 7.3 第一个查询
+
+在 `UserServiceImpl` 里用 `getById`：
 
 ```java
-private void applyDefaults(User user) {
-    if (!StringUtils.hasText(user.getUsername())) {
-        throw new IllegalArgumentException("用户名不能为空");
-    }
-    if (!StringUtils.hasText(user.getPassword())) {
-        user.setPassword(sha256(DEFAULT_PASSWORD));
-    }
-    if (user.getGender() == null) {
-        user.setGender(0);
-    }
-    if (user.getMemberLevel() == null) {
-        user.setMemberLevel("BRONZE");
-    }
-    if (user.getPoints() == null) {
-        user.setPoints(0);
-    }
-    if (user.getBalance() == null) {
-        user.setBalance(BigDecimal.ZERO);
-    }
-    if (user.getVip() == null) {
-        user.setVip(false);
-    }
-    if (user.getStatus() == null) {
-        user.setStatus(1);
-    }
-}
-
-private String sha256(String raw) {
-    try {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return HexFormat.of().formatHex(digest.digest(raw.getBytes(StandardCharsets.UTF_8)));
-    } catch (NoSuchAlgorithmException e) {
-        throw new IllegalStateException("当前 JDK 不支持 SHA-256", e);
-    }
+@Override
+public User getById(Long id) {
+    return getBaseMapper().selectById(id);
 }
 ```
 
-跑起来之后，MP 生成的 SQL 长这样：
-
-```sql
--- save(user)
-INSERT INTO t_user ( username, password, nickname, gender, age, member_level, points, balance,
-                     tags, birthday, work_time, vip, status, create_time, update_time, deleted, version )
-VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
-
--- updateById(user)，实体带 version
-UPDATE t_user SET username=?, ..., version=?
-WHERE id=? AND version=? AND deleted=0
-
--- removeById(id)，逻辑删除
-UPDATE t_user SET update_time=?, deleted=1 WHERE id=? AND deleted=0
-```
-
-### 步骤 5：字段自动填充
-
-`create_time` / `update_time` / `deleted` / `version` 这几列不需要业务代码关心，交给 `MetaObjectHandler`：
+`ServiceImpl` 自己实现了 `IService.getById`，所以大多数时候不用重写，直接调：
 
 ```java
+User user = userService.getById(2L);
+```
+
+---
+
+## 8. 字段自动填充
+
+`create_time` 和 `update_time` 是 `NOT NULL`，但代码里不该每次都手动 set。交给填充器。
+
+`config/MyMetaObjectHandler.java`：
+
+```java
+package top.mqxu.mybatis.config;
+
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+
 @Component
 public class MyMetaObjectHandler implements MetaObjectHandler {
 
@@ -551,50 +537,54 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        // 这里不能用 strictUpdateFill：严格填充只在字段为 null 时才写，
-        // 而从库里查出来的实体 updateTime 已有旧值，会被原样写回去，等于没刷新
-        setFieldValByName("updateTime", LocalDateTime.now(), metaObject);
+        // 不能用 strictUpdateFill：严格填充只在字段为 null 时写，
+        // 而从库里查出来的实体 updateTime 已有旧值，会被原样写回，等于没刷新
+        if (metaObject.hasSetter("updateTime")) {
+            setFieldValByName("updateTime", LocalDateTime.now(), metaObject);
+        }
     }
 }
 ```
 
-要点：
+两个实战细节：
 
-- 填充只对实体上标了 `@TableField(fill = ...)` 的字段生效。`FieldFill.INSERT` 只在新增时填，`FieldFill.INSERT_UPDATE` 新增和更新都填；
-- 新增用 `strictInsertFill` 是安全的：只在传入值为 null 时才补默认值，调用方显式传了 `createTime` 就尊重传入值；
-- 更新不能用 `strictUpdateFill`。它的判断和新增一样是“字段为 null 才填”，而更新时实体通常是从库里查出来的，`updateTime` 已经有旧值，结果就是时间永远不变。用 `setFieldValByName` 直接覆盖。
+**`strictInsertFill` 只在字段为 null 时填充**
 
-### 步骤 6：逻辑删除与乐观锁
+不会覆盖你手动设置的值。比如你想导入历史数据、指定原始创建时间，直接 set 就行。
 
-两个都是“加注解 + 注册插件”就生效。
+**`hasSetter` 判断不能省**
 
-逻辑删除：实体字段加 `@TableLogic`，或者像本模块这样在 `application.yml` 里配置 `logic-delete-field` 全局生效。
+同一个填充器服务于所有实体，而 `t_course` 表没有 `updateTime` 字段。不判断的话，插入课程时会抛 `There is no setter for property named 'updateTime'`。
 
-```yaml
-mybatis-plus:
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-```
+时间字段的填充时机：
 
-效果是 `DELETE` 语句被改写成 `UPDATE`，所有查询自动追加条件：
+| 字段 | 策略 | 效果 |
+| --- | --- | --- |
+| `createTime` | `INSERT` | 只在插入时写 |
+| `updateTime` | `INSERT_UPDATE` | 插入和更新都刷新 |
 
-```sql
--- removeById(7)
-UPDATE t_user SET update_time=?, deleted=1 WHERE id=? AND deleted=0
+---
 
--- selectById(7)，查不到已删除的行
-SELECT ... FROM t_user WHERE id=? AND deleted=0
+## 9. 分页插件
 
--- selectList 带条件，用户条件会被括号包住，不会被 OR 漏出去
-SELECT ... FROM t_user WHERE deleted=0 AND ((username LIKE ? OR nickname LIKE ?))
-```
+分页看着只是"多查一个 COUNT"，实际上一共有五步。理解这五步，才知道每个拦截器该插在哪：
 
-乐观锁：`@Version` 注解 + 在配置类里注册插件。
+![一次分页查询的五步](./public/diagrams/mybatis-flow.svg)
+
+### 9.1 注册插件
+
+`config/MybatisPlusConfig.java`：
 
 ```java
+package top.mqxu.mybatis.config;
+
+import com.baomidou.mybatisplus.annotation.DbType;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 @Configuration
 public class MybatisPlusConfig {
 
@@ -609,141 +599,347 @@ public class MybatisPlusConfig {
 }
 ```
 
-更新时 MP 会拼上版本条件并把版本加一，`UPDATE` 影响行数为 0 就说明有人先改过：
+不注册这个插件，`selectPage` 会退化成全表查询——它不会报错，只是把你传的 `size` 忽略掉，把整张表的数据都返回。数据量小时看不出来，上线后才炸。
+
+### 9.2 用起来
+
+```java
+public Page<User> page(UserQuery query, long current, long size) {
+    LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+    wrapper.eq(query.getGender() != null, User::getGender, query.getGender());
+
+    Page<User> page = new Page<>(current, size);
+    return page(page, wrapper);
+}
+```
+
+`Page` 返回后能拿到：
+
+| 方法 | 含义 |
+| --- | --- |
+| `getRecords()` | 当前页数据 |
+| `getTotal()` | 总条数 |
+| `getCurrent()` | 当前页码 |
+| `getSize()` | 每页条数 |
+| `getPages()` | 总页数（自动算好） |
+
+序列化后前端直接能用。
+
+---
+
+## 10. 逻辑删除与乐观锁
+
+### 10.1 逻辑删除
+
+配置里已经声明了：
+
+```yaml
+logic-delete-field: deleted
+logic-delete-value: 1
+logic-not-delete-value: 0
+```
+
+实体字段加 `@TableLogic`。之后：
+
+```java
+userMapper.deleteById(5L);
+// 实际执行：UPDATE t_user SET deleted=1 WHERE id=5 AND deleted=0
+
+userMapper.selectById(5L);
+// 实际执行：SELECT ... WHERE id=5 AND deleted=0，查不到
+```
+
+好处是数据可追溯，"用户注销"之后还能做数据分析。
+
+两个代价：
+
+- 表会越来越大，需要定期归档
+- 所有唯一索引都要把 `deleted` 考虑进去，否则删掉 `zhangsan` 之后再注册同名用户会撞唯一键
+
+还有一条最容易忘：**手写的 SQL 不会自动加 `deleted = 0`**。多表查询的 `@Select` 里必须自己写。
+
+### 10.2 乐观锁
+
+```java
+User user = userMapper.selectById(1L);   // version = 0
+user.setNickname("新昵称");
+userMapper.updateById(user);
+// 实际执行：UPDATE t_user SET nickname=?, version=1 WHERE id=1 AND version=0
+```
+
+如果这中间有人改了同一条记录，`WHERE version=0` 匹配不到行，更新影响行数为 0。业务上要检查返回值：
+
+```java
+if (userMapper.updateById(user) == 0) {
+    throw new BusinessException("数据已被他人修改，请刷新后重试");
+}
+```
+
+乐观锁适合冲突少的场景（读多写少）。冲突频繁时会大量失败重试，那该用悲观锁（`SELECT ... FOR UPDATE`）。
+
+---
+
+## 11. 条件构造器
+
+### 11.1 基本用法
+
+```java
+// 等值
+wrapper.eq(User::getGender, 1);
+
+// 模糊
+wrapper.like(User::getUsername, "张");
+
+// 区间
+wrapper.ge(User::getAge, 20).le(User::getAge, 30);
+
+// 排序
+wrapper.orderByDesc(User::getPoints);
+
+// 只取一列
+wrapper.select(User::getUsername);
+```
+
+`User::getGender` 是方法引用，编译期就能检查字段是否存在。写错名字编译不过，这是 Lambda 版相比字符串版（`"gender"`）的最大好处。
+
+### 11.2 条件开关
+
+```java
+wrapper.eq(query.getGender() != null, User::getGender, query.getGender())
+       .ge(query.getMinAge() != null, User::getAge, query.getMinAge())
+       .le(query.getMaxAge() != null, User::getAge, query.getMaxAge());
+```
+
+第一个参数为 `false` 时，这个条件不拼进 SQL。省掉一堆 `if` 包裹。
+
+### 11.3 and / or 必须加括号
+
+```java
+// 期望：username LIKE '%张%' OR nickname LIKE '%张%'
+wrapper.and(w -> w.like(User::getUsername, keyword)
+                  .or()
+                  .like(User::getNickname, keyword));
+```
+
+不加 `and(w -> ...)` 会变成：
 
 ```sql
-UPDATE t_user SET nickname=?, version=1 WHERE id=? AND version=0 AND deleted=0
+-- 实际：username LIKE '%张%' OR nickname LIKE '%张%' AND deleted = 0
+-- 因为 OR 优先级低于 AND，等价于 username LIKE '%张%' OR (nickname LIKE ... AND deleted = 0)
 ```
 
+结果就是删掉的记录也可能被查出来。这类 bug 在测试数据少时看不出来。
+
+### 11.4 更新用 setSql
+
 ```java
-User first = userService.getUser(id);
-User stale = userService.getUser(id);
-
-first.setNickname("第一次改");
-userService.modifyUser(first);      // 成功，version 0 -> 1
-
-stale.setNickname("第二次改");
-userService.modifyUser(stale);      // 返回 false，WHERE version=0 已经不匹配
+// 充值：直接在数据库里加，避免先查后改的并发覆盖
+userMapper.update(null, new LambdaUpdateWrapper<User>()
+        .setSql("points = points + " + amount)
+        .eq(User::getId, id));
 ```
 
-注意版本号是实体上的值，只有实体带着 `version` 时才会拼条件。接口收到 `{"nickname":"x"}` 这种不含 `version` 的请求体时，更新不做版本校验——要不要让客户端回传版本号，取决于业务对并发冲突的容忍度。
+"先查出余额 100，加 50，再写回 150"，两个并发请求都读到 100，最后都是 150——少加了 50。`setSql` 让数据库自己算，不会丢更新。
 
-### 步骤 7：Lambda 条件构造器
-
-`LambdaQueryWrapper` 用方法引用指定字段（`User::getAge` 而不是 `"age"` 字符串），改字段名时编译器会报错，比手写字符串安全。
-
-常用写法：
-
-| 需求 | 写法 |
-| --- | --- |
-| 等于 / 不等于 | `.eq(User::getGender, 1)` / `.ne(...)` |
-| 模糊 | `.like(User::getUsername, "张")`，还有 `likeLeft` / `likeRight` |
-| 大小比较 | `.gt` / `.ge` / `.lt` / `.le` |
-| 区间 | `.between(User::getAge, 20, 30)` |
-| 集合 | `.in(User::getId, ids)` / `.notIn(...)` |
-| 空值判断 | `.isNull` / `.isNotNull` |
-| 排序 | `.orderByAsc(User::getId)` / `.orderByDesc(User::getPoints)` |
-| 或 | `.or()` |
-| 拼原生 SQL 片段 | `.apply("JSON_CONTAINS(tags, JSON_QUOTE({0}))", tag)` |
-| 追加到末尾 | `.last("LIMIT 3")` |
-| 只查某几列 | `.select(User::getUsername)` |
-| 分组 | `QueryWrapper.select("gender", "COUNT(*) AS cnt").groupBy("gender")` |
-| 条件可选 | 第一个参数传布尔值，`.eq(条件, 字段, 值)`，条件为 false 时该分支不进 SQL |
-
-几个实际用到的例子：
+### 11.5 聚合统计
 
 ```java
-/** 动态条件：条件为空的分支不参与 SQL */
-private LambdaQueryWrapper<User> buildCondition(UserQuery query) {
-    UserQuery condition = query == null ? new UserQuery() : query;
-    return new LambdaQueryWrapper<User>()
-            .eq(condition.getGender() != null, User::getGender, condition.getGender())
-            .eq(condition.getStatus() != null, User::getStatus, condition.getStatus())
-            .eq(condition.getVip() != null, User::getVip, condition.getVip())
-            .eq(StringUtils.hasText(condition.getMemberLevel()),
-                    User::getMemberLevel, condition.getMemberLevel())
-            .ge(condition.getMinAge() != null, User::getAge, condition.getMinAge())
-            .le(condition.getMaxAge() != null, User::getAge, condition.getMaxAge())
-            .and(StringUtils.hasText(condition.getKeyword()),
-                    w -> w.like(User::getUsername, condition.getKeyword())
-                            .or()
-                            .like(User::getNickname, condition.getKeyword()))
-            .orderByDesc(User::getId);
-}
+QueryWrapper<User> wrapper = new QueryWrapper<>();
+wrapper.select("COUNT(*) AS totalCount",
+               "SUM(balance) AS totalBalance",
+               "MAX(age) AS maxAge");
+Map<String, Object> summary = getMap(wrapper);
 ```
 
-```java
-/** 模糊查询：and 包一层括号，避免 OR 把其他条件一起放开 */
-public List<User> searchByKeyword(String keyword) {
-    return list(new LambdaQueryWrapper<User>()
-            .and(StringUtils.hasText(keyword),
-                    w -> w.like(User::getUsername, keyword)
-                            .or()
-                            .like(User::getNickname, keyword))
-            .orderByAsc(User::getId));
-}
-```
+`getMap` 返回的 key 是 SQL 里的别名。注意这里用的是 `QueryWrapper`（字符串列名）而不是 `LambdaQueryWrapper`——聚合表达式没法用方法引用表达。
+
+---
+
+## 12. 事务
+
+### 12.1 一个必须原子化的场景
+
+下单要做两件事：扣库存、写订单。第二件失败时，第一件必须撤销，否则库存凭空少了。
+
+`service/impl/OrderServiceImpl.java`：
 
 ```java
-/** 取前 N 条：last 会原样拼到 SQL 末尾，只能拼自己算过的数字，不能拼用户输入 */
-public List<User> listTop(Integer limit) {
-    int size = limit == null || limit <= 0 ? 3 : Math.min(limit, 50);
-    return list(new LambdaQueryWrapper<User>()
-            .orderByDesc(User::getPoints)
-            .last("LIMIT " + size));
-}
-```
+package top.mqxu.mybatis.service.impl;
 
-```java
-/** 只查一列：select 指定列 + listObjs 取值，不把整行查出来 */
-public List<String> listUsernames() {
-    return listObjs(new LambdaQueryWrapper<User>()
-            .select(User::getUsername)
-            .orderByAsc(User::getId), Object::toString);
-}
-```
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import top.mqxu.mybatis.entity.Order;
+import top.mqxu.mybatis.entity.Product;
+import top.mqxu.mybatis.mapper.OrderMapper;
+import top.mqxu.mybatis.mapper.ProductMapper;
+import top.mqxu.mybatis.service.OrderService;
 
-```java
-/** JSON 列查询：{0} 会被替换成参数占位符，拼的是值不是 SQL */
-public List<User> listByTag(String tag) {
-    return list(new LambdaQueryWrapper<User>()
-            .apply("JSON_CONTAINS(tags, JSON_QUOTE({0}))", tag)
-            .orderByAsc(User::getId));
-}
-```
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
-```java
-/** 分组统计：getMap 取单行聚合，listMaps 取多行分组结果 */
-public Map<String, Object> statistics() {
-    Map<String, Object> result = new LinkedHashMap<>();
+@Service
+@RequiredArgsConstructor
+public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
 
-    Map<String, Object> aggregate = getMap(new QueryWrapper<User>()
-            .select("COUNT(*) AS totalCount",
-                    "IFNULL(SUM(balance), 0) AS totalBalance",
-                    "IFNULL(MAX(age), 0) AS maxAge"));
-    if (aggregate != null) {
-        result.putAll(aggregate);
+    private final ProductMapper productMapper;
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Order createOrder(Long userId, Long productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("购买数量必须大于 0");
+        }
+
+        Product product = productMapper.selectById(productId);
+        if (product == null) {
+            throw new IllegalArgumentException("商品不存在：" + productId);
+        }
+
+        int stockBefore = product.getStock();
+
+        // 第一步：扣库存，先改库
+        product.setStock(stockBefore - quantity);
+        productMapper.updateById(product);
+
+        // 第二步：库存成负数就抛异常，让第一步回滚。
+        // 故意把校验放在写库之后，是为了让"扣库存已执行"暴露在回滚面前
+        if (product.getStock() < 0) {
+            throw new IllegalStateException("库存不足：剩余 " + stockBefore + "，需要 " + quantity);
+        }
+
+        // 第三步：写订单
+        Order order = new Order();
+        order.setOrderNo(generateOrderNo());
+        order.setUserId(userId);
+        order.setProductId(productId);
+        order.setQuantity(quantity);
+        order.setAmount(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
+        order.setStatus(1);
+        save(order);
+        return order;
     }
 
-    result.put("genderCount", listMaps(new QueryWrapper<User>()
-            .select("gender", "COUNT(*) AS cnt")
-            .groupBy("gender")
-            .orderByAsc("gender")));
-    return result;
+    @Override
+    public List<Order> listByUser(Long userId) {
+        return list(new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, userId)
+                .orderByDesc(Order::getId));
+    }
+
+    @Override
+    public boolean cancelOrder(Long orderId) {
+        Order order = getById(orderId);
+        if (order == null) {
+            throw new IllegalArgumentException("订单不存在：" + orderId);
+        }
+        if (Integer.valueOf(0).equals(order.getStatus())) {
+            return false;
+        }
+        order.setStatus(0);
+        return updateById(order);
+    }
+
+    @Override
+    public boolean removeOrder(Long orderId) {
+        return removeById(orderId);
+    }
+
+    private String generateOrderNo() {
+        return "NO" + System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(1000, 10000);
+    }
 }
 ```
 
-更新条件用 `LambdaUpdateWrapper`，`set` 指定的字段会出现在 `SET` 子句里：
+### 12.2 四个必须知道的点
+
+**`rollbackFor = Exception.class` 不能省**
+
+默认只对 `RuntimeException` 回滚。抛受检异常（比如 `IOException`）时事务照常提交——这是 Spring 事务最经典的坑。
+
+**校验放在写库之后是有意的**
+
+按正常思维应该先判断 `stock >= quantity` 再扣。这里故意反过来，是为了让"扣库存已经执行了"这件事暴露在回滚面前——如果事务不生效，库存就会变成负数，一眼能看出来。教学演示用，生产代码应该先判断。
+
+**`@Transactional` 靠代理生效**
+
+同类内部方法调用（`this.xxx()`）不走代理，事务不生效。要调用带事务的方法，必须从外部通过 Bean 调用。
+
+**方法必须是 `public`**
+
+`private`、`protected` 方法上的 `@Transactional` 不生效，Spring 的代理拦不到。
+
+---
+
+## 13. 多表查询
+
+`BaseMapper` 只管单表。要三张表拼成一张成绩单，得自己写 SQL。
+
+`mapper/ScoreMapper.java`：
 
 ```java
-public boolean modifyUserStatus(Long id, Integer status) {
-    return update(new LambdaUpdateWrapper<User>()
-            .eq(User::getId, id)
-            .set(User::getStatus, status));
+package top.mqxu.mybatis.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import top.mqxu.mybatis.entity.Score;
+import top.mqxu.mybatis.vo.ScoreSheetVO;
+
+import java.util.List;
+
+public interface ScoreMapper extends BaseMapper<Score> {
+
+    @Select("""
+            SELECT s.id        AS scoreId,
+                   st.name     AS studentName,
+                   c.name      AS courseName,
+                   s.score     AS score
+            FROM t_score s
+                     JOIN t_student st ON st.id = s.student_id AND st.deleted = 0
+                     JOIN t_course c ON c.id = s.course_id
+            WHERE s.deleted = 0
+              AND s.student_id = #{studentId}
+            ORDER BY s.id
+            """)
+    List<ScoreSheetVO> selectScoreSheet(@Param("studentId") Long studentId);
 }
 ```
 
-### 步骤 8：控制器
+三个要点：
+
+**别名要和 VO 的属性名一致**
+
+数据库返回的列叫 `studentName`，VO 里也叫 `studentName`，MyBatis 才能自动填进去。写成 `student_name` 就对不上——除非开了下划线转驼峰（本项目开了，但显式别名更稳）。
+
+**`deleted = 0` 要自己写**
+
+逻辑删除只对 MyBatis-Plus 生成的那几条 SQL 生效，手写的 SQL 它不管。两个表的条件都要写。
+
+**`#{studentId}` 是预编译参数**
+
+用 `#{}` 不是 `${}`。后者是字符串拼接，有 SQL 注入风险。
+
+多表查询的五种做法对比：
+
+| 方式 | 适用 | 代价 |
+| --- | --- | --- |
+| 分步查单表，内存拼装 | 关联少、数据量小 | N+1 查询 |
+| `@Select` 映射到 VO | 一两张表、字段少 | SQL 长了难维护 |
+| XML + `resultMap` | 三张以上表、需要复用 | 要维护 XML |
+| 一条 join 直接分页 | 列表页需要总数 | join 后分页粒度是"行"不是"主表记录" |
+| `mybatis-plus-join` | 想用 lambda 写 join | 多一个依赖 |
+
+最后一条的坑值得记：join 之后 `COUNT(*)` 数的是结果行数。一个学生三门课，按学生分页会把这个学生算成三条。
+
+---
+
+## 14. 接口清单
+
+`controller/UserController.java`（节选核心方法，方法名与 `UserService` 接口一一对应）：
 
 ```java
 @RestController
@@ -753,7 +949,8 @@ public class UserController {
 
     private final UserService userService;
 
-    /* 增 */
+    /* ==================== 增 ==================== */
+
     @PostMapping
     public User create(@RequestBody User user) {
         userService.createUser(user);
@@ -766,17 +963,21 @@ public class UserController {
         return users.size();
     }
 
-    /* 查 */
+    /* ==================== 查 ==================== */
+
+    /** 按主键查询 */
     @GetMapping("/{id}")
     public User getById(@PathVariable Long id) {
         return userService.getUser(id);
     }
 
+    /** 条件列表，不传参数即查全部 */
     @GetMapping
     public List<User> list(UserQuery query) {
         return userService.listByCondition(query);
     }
 
+    /** 条件分页 */
     @GetMapping("/page")
     public Page<User> page(UserQuery query,
                            @RequestParam(defaultValue = "1") long current,
@@ -784,48 +985,58 @@ public class UserController {
         return userService.pageByCondition(query, current, size);
     }
 
+    /** 关键词模糊匹配 username 或 nickname */
     @GetMapping("/keyword")
     public List<User> keyword(@RequestParam String keyword) {
         return userService.searchByKeyword(keyword);
     }
 
+    /** 年龄区间查询 */
     @GetMapping("/age-range")
     public List<User> ageRange(@RequestParam(required = false) Integer minAge,
                                @RequestParam(required = false) Integer maxAge) {
         return userService.listByAgeRange(minAge, maxAge);
     }
 
+    /** 按积分倒序取前 N 条 */
     @GetMapping("/top")
     public List<User> top(@RequestParam(defaultValue = "3") Integer limit) {
         return userService.listTop(limit);
     }
 
+    /** 只取用户名列 */
     @GetMapping("/usernames")
     public List<String> usernames() {
         return userService.listUsernames();
     }
 
+    /** 按 JSON 标签查询 */
     @GetMapping("/tag")
     public List<User> byTag(@RequestParam String tag) {
         return userService.listByTag(tag);
     }
 
+    /** 用户名是否已存在 */
     @GetMapping("/exists")
     public boolean exists(@RequestParam String username) {
         return userService.existsUsername(username);
     }
 
+    /** 按性别统计人数 */
     @GetMapping("/count")
     public long count(@RequestParam(required = false) Integer gender) {
         return userService.countByGender(gender);
     }
 
+    /** 汇总统计：总数、余额合计、最大年龄、按性别分组人数 */
     @GetMapping("/statistics")
     public Map<String, Object> statistics() {
         return userService.statistics();
     }
 
-    /* 改 */
+    /* ==================== 改 ==================== */
+
+    /** 按主键更新，路径上的 id 覆盖请求体中的 id */
     @PutMapping("/{id}")
     public User update(@PathVariable Long id, @RequestBody User user) {
         user.setId(id);
@@ -833,28 +1044,40 @@ public class UserController {
         return userService.getUser(id);
     }
 
+    /** 只改状态 */
     @PutMapping("/{id}/status")
     public boolean updateStatus(@PathVariable Long id, @RequestParam Integer status) {
         return userService.modifyUserStatus(id, status);
     }
 
+    /** 充值 */
     @PostMapping("/{id}/recharge")
     public User recharge(@PathVariable Long id, @RequestParam BigDecimal amount) {
         userService.recharge(id, amount);
         return userService.getUser(id);
     }
 
-    /* 删 */
+    /** 按用户名改邮箱，路径是字面量，会比 /{id} 优先匹配 */
+    @PutMapping("/email")
+    public boolean updateEmail(@RequestParam String username, @RequestParam String email) {
+        return userService.modifyEmailByUsername(username, email);
+    }
+
+    /* ==================== 删 ==================== */
+
+    /** 按主键删除（逻辑删除） */
     @DeleteMapping("/{id}")
     public boolean delete(@PathVariable Long id) {
         return userService.removeUser(id);
     }
 
+    /** 批量删除，ids 用逗号分隔 */
     @DeleteMapping("/batch")
     public boolean deleteBatch(@RequestParam List<Long> ids) {
         return userService.removeUserBatch(ids);
     }
 
+    /** 按状态批量删除 */
     @DeleteMapping("/status/{status}")
     public boolean deleteByStatus(@PathVariable Integer status) {
         return userService.removeUserByStatus(status);
@@ -862,752 +1085,245 @@ public class UserController {
 }
 ```
 
-`UserQuery` 是查询条件对象，字段全为空时等价于查全部：
+完整接口表：
 
-```java
-@Data
-public class UserQuery {
-    private String keyword;        // 匹配 username 或 nickname
-    private Integer gender;
-    private String memberLevel;
-    private Boolean vip;
-    private Integer status;
-    private Integer minAge;
-    private Integer maxAge;
-}
-```
-
-### 步骤 9：事务
-
-目标：多个写操作要么都成功、要么都回滚。
-
-```java
-@Transactional(rollbackFor = Exception.class)
-@Override
-public boolean createUser(User user) {
-    applyDefaults(user);
-    save(user);                        // 第一步先写库
-    if (user.getAge() != null && (user.getAge() < 0 || user.getAge() > 150)) {
-        throw new RuntimeException("年龄超出合理范围，回滚");   // 第二步失败
-    }
-    return true;
-}
-```
-
-讲解：
-
-- `@Transactional(rollbackFor = Exception.class)` 表示遇到任何异常都回滚（默认只对 `RuntimeException` / `Error` 回滚，显式指定更明确）；
-- 事务方法内抛异常，前面的写操作会被回滚；
-- 事务靠 Spring 的代理生效，同类内部方法自调用（`this.xxx()`）不走代理，`@Transactional` 会失效。要么把方法拆到另一个 Bean，要么从外部调用。
-
----
-
-### 步骤 10：连接池参数与监控
-
-#### 10.1 HikariCP 常用参数
-
-配置前缀 `spring.datasource.hikari`。
-
-| 配置项 | 默认值 | 说明 |
+| 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| `maximum-pool-size` | 10 | 池上限，同时也是能同时访问数据库的连接数上限 |
-| `minimum-idle` | 等于 `maximum-pool-size` | 空闲保底连接数。设小可以省连接，代价是流量回升时要现建连接 |
-| `connection-timeout` | 30000 ms | 从池里取连接的等待上限，超时抛 `SQLTransientConnectionException` |
-| `idle-timeout` | 600000 ms | 空闲连接回收时间，只在 `minimum-idle` 小于 `maximum-pool-size` 时生效 |
-| `max-lifetime` | 1800000 ms | 连接最长存活时间，必须小于 MySQL 的 `wait_timeout`（默认 28800 秒），否则会拿到已被服务端断开的连接 |
-| `keepalive-time` | 0（关闭） | 定期给空闲连接发探活，避免被防火墙/中间件掐断 |
-| `pool-name` | `HikariPool-1` | 池名字，多数据源时用来区分日志 |
-
-#### 10.2 池大小怎么定
-
-- 起点取 `CPU 核数 * 2 + 磁盘数`，这是 HikariCP 官方给的经验值，不是越大越好；
-- 上限受 MySQL 约束：所有应用实例的 `maximum-pool-size` 之和要小于 `max_connections`（默认 151），还要给运维连接和其他服务留出余量；
-- 判断当前连接数：MySQL 里执行 `SHOW STATUS LIKE 'Threads_connected'`，或 `SHOW PROCESSLIST` 看连接都在干什么。
-
-池打满时有两种典型现象：应用侧日志出现 `Connection is not available, request timed out after 3000ms`；MySQL 侧连接数顶到上限后新连接报 `Too many connections`。两种情况的排查方向不同，前者多半是慢 SQL 或长事务占着连接不放，后者是池总量配得太大。
-
-#### 10.3 怎么看连接池状态
-
-启动日志里能直接看到池的建立与告警：
-
-```
-HikariPool-1 - Starting...
-HikariPool-1 - Start completed.
-```
-
-运行期想看得更细，用 Druid 的监控页（见 10.4）。
-
-#### 10.4 换成 Druid 并打开监控页
-
-Druid 参数与 HikariCP 的对应关系：
-
-| 语义 | HikariCP | Druid |
-| --- | --- | --- |
-| 池上限 | `maximum-pool-size` | `max-active` |
-| 最小空闲 | `minimum-idle` | `min-idle` |
-| 取连接超时 | `connection-timeout` | `max-wait` |
-| 空闲回收 | `idle-timeout` | `min-evictable-idle-time-millis` |
-
-本模块把 Druid 放在 Maven profile 里，默认构建仍是 HikariCP，需要时这样启动：
-
-```bash
-mvn -pl 05-mybatis -Pdruid spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=druid"
-```
-
-配置见 `src/main/resources/application-druid.yml`，监控页地址 `http://localhost:8005/druid/`，账号密码在 `stat-view-servlet` 里配置。登录后 Datasource 页能看到当前连接数、活跃连接数、执行过的 SQL 与慢 SQL 列表。
-
-> 注意：Druid 依赖只在 `druid` profile 下引入。如果把它写进常驻依赖，Druid 的自动配置会顶掉 HikariCP，步骤 1 里的 `hikari` 参数就全部失效了。
+| POST | `/users` | 新增 |
+| POST | `/users/batch` | 批量新增 |
+| GET | `/users/{id}` | 按主键查询 |
+| GET | `/users` | 条件列表 |
+| GET | `/users/page` | 条件分页 |
+| GET | `/users/keyword` | 关键词模糊查询 |
+| GET | `/users/age-range` | 年龄区间 |
+| GET | `/users/top` | 按积分取前 N |
+| GET | `/users/usernames` | 只取用户名 |
+| GET | `/users/count` | 按性别统计人数 |
+| GET | `/users/statistics` | 汇总统计 |
+| PUT | `/users/{id}` | 按主键更新 |
+| PUT | `/users/{id}/status` | 只改状态 |
+| POST | `/users/{id}/recharge` | 充值（原子自增） |
+| DELETE | `/users/{id}` | 逻辑删除 |
+| DELETE | `/users/batch` | 批量删除 |
+| GET | `/students/page` | 学生分页 |
+| GET | `/students/{id}/scores` | 成绩单（三表 join） |
+| GET | `/students/statistics` | 按学生分组统计 |
+| POST | `/courses/batch` | 批量新增课程 |
+| GET | `/products` | 商品与库存 |
+| POST | `/orders` | 下单（事务） |
+| GET | `/orders` | 按用户查订单 |
+| PUT | `/orders/{id}/cancel` | 取消订单 |
+| DELETE | `/orders/{id}` | 逻辑删除订单 |
 
 ---
 
-## 5. 完整代码与目录结构
+## 15. 运行与实测
 
-```
-05-mybatis
-└── src
-    ├── main
-    │   ├── java/top/mqxu/mybatis
-    │   │   ├── MybatisApplication.java
-    │   │   ├── controller
-    │   │   │   ├── UserController.java
-    │   │   │   ├── CourseController.java
-    │   │   │   ├── ProductController.java
-    │   │   │   ├── OrderController.java
-    │   │   │   └── DiagnosticsController.java
-    │   │   ├── service
-    │   │   │   ├── UserService.java
-    │   │   │   ├── CourseService.java
-    │   │   │   ├── ProductService.java
-    │   │   │   ├── OrderService.java
-    │   │   │   └── impl
-    │   │   │       ├── UserServiceImpl.java
-    │   │   │       ├── CourseServiceImpl.java
-    │   │   │       ├── ProductServiceImpl.java
-    │   │   │       └── OrderServiceImpl.java
-    │   │   ├── mapper
-    │   │   │   ├── UserMapper.java
-    │   │   │   ├── CourseMapper.java
-    │   │   │   ├── ProductMapper.java
-    │   │   │   └── OrderMapper.java
-    │   │   ├── entity
-    │   │   │   ├── User.java
-    │   │   │   ├── Course.java
-    │   │   │   ├── Product.java
-    │   │   │   └── Order.java
-    │   │   ├── dto/UserQuery.java
-    │   │   └── config
-    │   │       ├── MybatisPlusConfig.java
-    │   │       └── MyMetaObjectHandler.java
-    │   └── resources
-    │       ├── application.yml
-    │       ├── application-druid.yml
-    │       ├── application-pool1.yml
-    │       ├── schema.sql
-    │       └── data.sql
-    └── test/java/top/mqxu/mybatis
-        ├── UserServiceTest.java
-        ├── UserLambdaQueryTest.java
-        ├── UserApiTest.java
-        ├── PracticeTest.java
-        ├── HomeworkTest.java
-        └── OrderApiTest.java
-```
-
-`Course` / `Product` / `Order` 三套代码是第 8 节练习的参考实现，`DiagnosticsController` 只服务于连接池实验。
-
-> `IService` 与 `ServiceImpl` 在 3.5.9 之后的构件里移到了 `com.baomidou.mybatisplus.spring.service` 包下，IDE 提示旧路径 `extension.service` 时直接改成新路径。
-
----
-
-## 6. 运行与验证
+### 15.1 启动
 
 ```bash
 mvn -pl 05-mybatis spring-boot:run
 ```
 
-> 不加 `-am`：加上 `-am` 会把父工程一并放进 reactor，`spring-boot:run` 在父工程（pom 打包、无主类）上会直接失败。
+启动时会执行 `schema.sql` 与 `data.sql`，控制台能看到建表和插入语句（因为配了 `StdOutImpl`）。
 
-启动后 `t_user` 里有 6 条记录，其中 1 条 `deleted = 1`（查不到）、1 条 `status = 0`；`t_course` 有 3 条课程，`t_product` 有 2 件商品，`t_order` 为空。逐个接口验证：
+### 15.2 增删改查
 
-| 操作 | 请求 | 期望 |
-| --- | --- | --- |
-| 新增 | `POST /users` body `{"username":"zhouba","age":28,"tags":["Java"]}` | 返回带 id、`createTime`、`version=0` 的用户，`password` 不出现 |
-| 批量新增 | `POST /users/batch` body 为数组 | 返回成功条数 |
-| 详情 | `GET /users/1` | 返回完整用户，含 `tags` 数组 |
-| 条件列表 | `GET /users?gender=1&minAge=20&maxAge=30` | 只返回符合条件的用户 |
-| 条件分页 | `GET /users/page?current=1&size=3` | 返回 `records/total/current/pages` |
-| 模糊查询 | `GET /users/keyword?keyword=张` | 命中 nickname 为张三的记录 |
-| 区间查询 | `GET /users/age-range?minAge=20&maxAge=25` | 按年龄升序返回 |
-| 取前 N | `GET /users/top?limit=2` | 按积分倒序的前两条 |
-| 单列 | `GET /users/usernames` | 字符串数组 |
-| JSON 标签 | `GET /users/tag?tag=Java` | 命中标签含 Java 的用户 |
-| 是否存在 | `GET /users/exists?username=admin` | `true` / `false` |
-| 计数 | `GET /users/count?gender=1` | 数字 |
-| 汇总统计 | `GET /users/statistics` | `totalCount` / `totalBalance` / `maxAge` / `genderCount` |
-| 更新 | `PUT /users/2` body `{"nickname":"张三改名","age":21}` | 返回更新后的用户，`updateTime` 已刷新 |
-| 改状态 | `PUT /users/2/status?status=0` | `true` |
-| 充值 | `POST /users/3/recharge?amount=100.25` | 余额累加，`version` 加一 |
-| 删除 | `DELETE /users/{id}` | `true`，再查返回 null，库里那行 `deleted=1` 仍在 |
-| 批量删除 | `DELETE /users/batch?ids=8,9` | `true` |
-| 按状态删除 | `DELETE /users/status/0` | `true` |
-| 事务回滚 | `POST /users` body `{"username":"x","age":200}` | 返回 500“年龄超出合理范围，回滚”，库里不落数据 |
-| 改邮箱 | `PUT /users/email?username=zhangsan&email=zhangsan@mqxu.top` | `true`，`version` 不变 |
-| 课程列表 | `GET /courses` | 3 条课程 |
-| 课程批量新增 | `POST /courses/batch` body 为数组 | `true` |
-| 课程批量删除 | `DELETE /courses/batch?ids=4,5` | `true`，物理删除 |
-| 商品列表 | `GET /products` | 2 件商品，含 `stock` |
-| 下单 | `POST /orders?userId=1&productId=1&quantity=2` | 返回订单，商品库存同步减 2 |
-| 下单超卖 | `POST /orders?userId=1&productId=1&quantity=99` | 返回 500“库存不足”，库存与订单表都不变 |
-| 我的订单 | `GET /orders?userId=1` | 按 id 倒序的订单列表 |
-| 取消订单 | `PUT /orders/{id}/cancel` | `true`，`status` 变 0、`version` 加一 |
-| 删除订单 | `DELETE /orders/{id}` | `true`，逻辑删除 |
+![增删改查实测](./public/shots/05-mybatis-crud.png)
 
-手工测试跑完记得按 8.4 恢复示例数据。
+对照着看四件事：
 
-自动化测试连本地 MySQL（与 `application.yml` 用同一套数据源），每条用例前清空自己涉及的表，跑之前先启动 MySQL：
+- 列表返回 5 条。`data.sql` 里有 6 条，少的那个是 `deleted=1` 的，被逻辑删除条件过滤掉了
+- 新增时请求体没有 `createTime`，响应里却有值——自动填充生效
+- 充值 100 后余额从 88.50 变 188.50，`setSql` 自增的结果
+- 删除返回 `true`，回查返回空响应体——逻辑删除后查不到，但数据库里那行还在
+
+### 15.3 条件查询与统计
+
+![条件查询与统计实测](./public/shots/05-mybatis-query.png)
+
+- 分页返回 `records` / `total` / `size` / `current` / `pages`，`total` 是**过滤后的总数**
+- 关键词 `张` 命中 `zhangsan`，`and` 嵌套结构生效
+- `/users/usernames` 只返回字符串数组，用于下拉框
+- 统计里 `totalCount` 是 5（不含逻辑删除的），`genderCount` 是分组结果
+
+### 15.4 多表与分页
+
+![多表查询实测](./public/shots/05-mybatis-join.png)
+
+三表 join 出来的成绩单字段是驼峰的（`studentName`、`courseName`），因为 `@Select` 里写了别名。
+
+`/students/statistics` 返回的字段是下划线形式（`student_id`、`avg_score`），因为它返回的是 `List<Map>`，没有实体可以套驼峰规则。
+
+### 15.5 事务与库存
+
+![事务与库存实测](./public/shots/05-mybatis-tx.png)
+
+这组最能说明事务的价值：
+
+- 下单 2 件，库存从 10 变 8，订单落库
+- 下单 999 件，库存不够，抛异常返回 500
+- 再查库存，还是 8——失败那单没有扣减
+
+同时 `version` 从 0 变成 1，乐观锁参与了这次更新。
+
+---
+
+## 16. 写测试
+
+数据层的测试要连真实数据库。这个模块用 `schema.sql` + `data.sql` 每次重建，测试是干净的。
+
+`src/test/java/top/mqxu/mybatis/UserServiceTest.java`：
+
+```java
+package top.mqxu.mybatis;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import top.mqxu.mybatis.entity.User;
+import top.mqxu.mybatis.service.UserService;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+class UserServiceTest {
+
+    @Autowired
+    private UserService userService;
+
+    @Test
+    void 逻辑删除的记录查不到() {
+        // data.sql 里 id=5 的记录 deleted=1
+        assertThat(userService.getById(5L)).isNull();
+        assertThat(userService.count()).isEqualTo(5);
+    }
+
+    @Test
+    void 新增时自动填充创建时间() {
+        User user = new User();
+        user.setUsername("auto-fill-test");
+        user.setPassword("x");
+        user.setGender(1);
+
+        userService.save(user);
+
+        User saved = userService.getById(user.getId());
+        assertThat(saved.getCreateTime()).isNotNull();
+        assertThat(saved.getUpdateTime()).isNotNull();
+        assertThat(saved.getDeleted()).isZero();
+        assertThat(saved.getVersion()).isZero();
+    }
+
+    @Test
+    void 按关键词模糊匹配用户名或昵称() {
+        List<User> users = userService.searchByKeyword("张");
+        assertThat(users).isNotEmpty();
+        assertThat(users).allMatch(u -> u.getUsername().contains("张")
+                || (u.getNickname() != null && u.getNickname().contains("张")));
+    }
+
+    @Test
+    void 充值后余额按金额增加() {
+        User before = userService.getById(2L);
+        java.math.BigDecimal origin = before.getBalance();
+
+        userService.recharge(2L, new java.math.BigDecimal("100"));
+
+        assertThat(userService.getById(2L).getBalance())
+                .isEqualByComparingTo(origin.add(new java.math.BigDecimal("100")));
+    }
+}
+```
+
+跑：
 
 ```bash
 mvn -pl 05-mybatis test
 ```
 
-六个测试类共 57 个用例：`UserServiceTest` 覆盖增删改查、自动填充、逻辑删除、乐观锁与事务；`UserLambdaQueryTest` 覆盖各类条件查询；`UserApiTest` 逐个验证上面的接口表；`PracticeTest`、`HomeworkTest`、`OrderApiTest` 是第 8 节练习的参考答案与验证。
+四个用例覆盖了逻辑删除、自动填充、条件查询、原子更新。注意测试之间共享同一个数据库，改数据的用例（充值、新增）会影响后续用例——真实项目要用 `@Transactional` 让每个测试自动回滚：
 
-> 注意：`schema.sql` 每次启动都会重建表，DevTools 热重启同样会触发，数据会被重置成 `data.sql` 里的示例数据。
+```java
+@SpringBootTest
+@Transactional   // 每个测试方法结束后回滚
+class UserServiceTest { ... }
+```
+
+加上注解后，`save` 和 `recharge` 的效果在测试结束时被撤销，用例之间互不干扰。
 
 ---
 
-## 7. 常见问题与避坑
+## 17. 常见问题
 
 | 现象 | 原因 | 解决 |
 | --- | --- | --- |
-| 连接失败 | url / 账号密码错，或 MySQL 未启动 | 核对 `datasource` 配置 |
-| 启动时 `schema.sql` 没执行 | `spring.sql.init.mode` 默认只对内嵌库生效 | 显式设成 `always` |
-| 表找不到 | 实体与表名不一致 | 用 `@TableName` 指定，或统一命名 |
-| 字段映射为 null | 下划线未转驼峰 | 开 `map-underscore-to-camel-case` |
-| JSON 字段查出来是 null | 少了 `autoResultMap = true` | `@TableName(value = "t_user", autoResultMap = true)` |
-| 编译找不到分页插件 | 没引入 JSqlParser 构件 | 加依赖 `mybatis-plus-jsqlparser` |
-| 编译找不到 `IService` / `ServiceImpl` | 3.5.9 起类已换包 | 用 `com.baomidou.mybatisplus.spring.service` 下的同名类 |
-| 分页返回全量数据 | 没注册 `PaginationInnerInterceptor` | 加 `MybatisPlusInterceptor` Bean |
-| 插入 `age = -1` 报 `Out of range value for column 'age'` | 列是 `TINYINT UNSIGNED`，不接受负数 | 业务层先校验；确实要存负数就把列改成有符号类型 |
-| 更新后 `update_time` 没变 | `strictUpdateFill` 只在字段为 null 时才填，查出来的实体已有旧值 | `updateFill` 里改用 `setFieldValByName` |
-| `deleteById` 变成 `UPDATE`，物理行还在 | `@TableLogic` 逻辑删除生效 | 符合预期；要物理删除用原生 SQL 或另建 Mapper 方法 |
-| `selectById` 查不到刚删的数据 | 逻辑删除后查询自动追加 `deleted = 0` | 符合预期；确实要看已删数据就绕过逻辑删除条件 |
-| 乐观锁没生效 | 实体上的 `version` 为 null，MP 不拼版本条件 | 先 `getById` 拿到带版本的实体再改，或让客户端回传版本号 |
-| 日志报 `Connection is not available, request timed out` | 池被占满 | 查慢 SQL 与长事务；确属高并发再调大 `maximum-pool-size` |
-| MySQL 报 `Too many connections` | 各实例池上限之和超过 `max_connections` | 减小 `maximum-pool-size`，或调大 MySQL 的 `max_connections` |
-| 用 Druid 时 Hikari 参数不生效 | Druid 自动配置顶掉了 HikariCP | 两者选一个，删掉另一套配置 |
-| Druid 启动报 `illegal maxActive 1` | `max-active` 小于 `min-idle`，或 `initial-size` 大于 `max-active` | 三个值一起调；这两种情况抛的消息都只写 `maxActive`，别只看字面 |
-| 池明明没用满却报取不到连接 | 慢 SQL 或长事务占着连接不放 | 用 8.3 的实验复现一遍，再查慢日志 |
-| 想复现超卖却一次就拦住 | 把库存校验写在了扣减之前，扣减没执行 | 先扣减再校验，让已执行的写操作暴露在回滚面前 |
-| 批量删除没把行删掉 | 实体上有 `@TableLogic`，删的是标记不是行 | 符合预期；要物理删除就换成不带 `@TableLogic` 的实体 |
-| 事务没回滚 | 异常类型不在回滚范围，或方法是自调用 | 用 `rollbackFor = Exception.class`；别在同类内部自调用 |
+| 启动报 `Table doesn't exist` | `sql.init.mode` 没设 `always` | 非内嵌库必须显式设 |
+| 插入报 `Field 'create_time' doesn't have a default value` | 自动填充没生效 | 检查 `@TableField(fill=...)` 与填充器 Bean |
+| 查询出来的对象字段全是 null | 没开下划线转驼峰 | `map-underscore-to-camel-case: true` |
+| JSON 字段查出来是 null | 缺 `autoResultMap = true` | 在 `@TableName` 上加 |
+| 分页返回全部数据 | 没注册分页插件 | 加 `PaginationInnerInterceptor` |
+| 分页报 `ClassNotFoundException: CCJSqlParserUtil` | 缺 `mybatis-plus-jsqlparser` | 补依赖（3.5.9+ 需要） |
+| 逻辑删除后手写 SQL 还能查到 | 手写 SQL 不管逻辑删除 | 自己加 `deleted = 0` |
+| 事务不回滚 | 抛受检异常 / 内部方法调用 / 异常被吞 | `rollbackFor`、`public`、别吞 |
+| 并发下超卖 | 先查库存再改 | `setSql` 条件扣减或悲观锁 |
+| 时间差 8 小时 | 连接串没配时区 | `serverTimezone=Asia/Shanghai` |
+| 金额出现 `0.30000000000000004` | 用了 `double` | 换 `BigDecimal` + `DECIMAL` 列 |
+| 编译报 `ServiceImpl` 找不到 | 包路径变了 | Boot 4 用 `com.baomidou.mybatisplus.spring.service.impl` |
 
 ---
 
-## 8. 练习与参考答案
+## 18. 练习
 
-练习的参考实现和验证用例都在本模块内：
+### 18.1 随堂练习（25 分钟）
 
-| 内容 | 文件 |
-| --- | --- |
-| 8.1 五题的用例 | `src/test/java/top/mqxu/mybatis/PracticeTest.java` |
-| 8.2 四题的用例 | `src/test/java/top/mqxu/mybatis/HomeworkTest.java` |
-| 商品与订单的接口用例 | `src/test/java/top/mqxu/mybatis/OrderApiTest.java` |
-| 连接池耗尽实验 | 手工步骤，见 8.3 |
-
-跑全部用例：
-
-```bash
-mvn -pl 05-mybatis test
-```
-
-只跑其中一题：
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice2AgeGreaterThan18AndVip
-```
-
-测试连的是 `application.yml` 里那个库，也就是本地 MySQL 的 `backend_learning`。每条用例开头清表，跑完库里是空的，恢复示例数据见 8.4。
-
-### 8.1 课堂随堂练习
-
-#### 练习 1：用 getById 查一个不存在的 id
-
-主键查询用 `IService` 的 `getById`，不需要额外写代码。
-
-```java
-User user = userService.getById(99999L);
-assertThat(user).isNull();
-```
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice1GetByIdReturnsNull
-```
-
-```
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
-```
-
-`getById` 生成的是 `SELECT ... FROM t_user WHERE id = ? AND deleted = 0`，没命中直接返回 null。用例里先用 `assertThatCode(...).doesNotThrowAnyException()` 确认调用本身不抛异常，再断言返回值为 null，两件事分开验证。
-
-#### 练习 2：age > 18 且 vip = true
-
-两个条件挂在同一个 `LambdaQueryWrapper` 上，默认按 AND 连接。
-
-```java
-List<User> result = userService.list(new LambdaQueryWrapper<User>()
-        .gt(User::getAge, 18)
-        .eq(User::getVip, true));
-```
-
-用例造了四条数据把边界卡住，比只造一条更能说明问题：
-
-| 数据 | 结果 |
-| --- | --- |
-| 成年会员 20 / vip=true | 命中 |
-| 未成年会员 17 / vip=true | 被 `gt` 挡住 |
-| 成年非会员 30 / vip=false | 被 `eq` 挡住 |
-| 刚好十八岁 18 / vip=true | 被 `gt` 挡住，`gt` 是严格大于 |
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice2AgeGreaterThan18AndVip
-```
-
-断言是 `containsExactly("成年会员")`，既确认命中一条，也确认没有多余的行混进来。
-
-#### 练习 3：新增 age = 200 的记录，观察事务回滚
-
-要看到回滚效果，方法体得是“先写库、再校验”的形状。`createUser` 就是按这个顺序写的：
-
-```java
-@Transactional(rollbackFor = Exception.class)
-public boolean createUser(User user) {
-    applyDefaults(user);
-    save(user);                                          // 第一步：insert 已经发出去了
-    if (user.getAge() != null && (user.getAge() < 0 || user.getAge() > 150)) {
-        throw new RuntimeException("年龄超出合理范围，回滚");   // 第二步：校验失败
-    }
-    return true;
-}
-```
-
-用例先记下 `count`，再断言异常类型与消息，最后比对数量，并额外查一次 username 确认那条记录确实没落库：
-
-```java
-long countBefore = userService.count();
-
-assertThatThrownBy(() -> userService.createUser(illegal))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("年龄超出合理范围");
-
-assertThat(userService.count()).isEqualTo(countBefore);
-assertThat(userService.getOne(new LambdaQueryWrapper<User>()
-        .eq(User::getUsername, "超龄用户"))).isNull();
-```
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice3IllegalAgeRollsBack
-```
-
-把 `@Transactional` 去掉再跑一次，`count` 会变成 `countBefore + 1`，这是确认事务确实在起作用最直接的办法。
-
-校验条件写成 `> 150` 而不是只判负数，是因为 `age` 列是 `TINYINT UNSIGNED`，写负数在数据库层就被 `Out of range value` 挡掉，走不到“插入成功之后再回滚”的路径。
-
-#### 练习 4：逻辑删除后 selectById
-
-```java
-assertThat(userService.removeById(user.getId())).isTrue();
-assertThat(userService.getById(user.getId())).isNull();
-
-Integer deleted = jdbcTemplate.queryForObject(
-        "SELECT deleted FROM t_user WHERE id = ?", Integer.class, user.getId());
-assertThat(deleted).isEqualTo(1);
-```
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice4LogicalDelete
-```
-
-“查不到”和“行还在”不矛盾，是两条不同的 SQL。`getById` 走 MyBatis-Plus，`@TableLogic` 让它在 WHERE 后面追加 `deleted = 0`；`JdbcTemplate` 绕过 MyBatis-Plus 直接查物理行，所以能看到 `deleted = 1`。这里用 `JdbcTemplate` 而不是再写一个 Mapper 方法，是为了让这条用例的意图一眼看得见。
-
-#### 练习 5：乐观锁拦下过期的更新
-
-乐观锁要比的是两个各自查过一次的版本号，用例读两次模拟两个请求：
-
-```java
-User requestA = userService.getById(user.getId());   // version = 0
-User requestB = userService.getById(user.getId());   // version = 0
-
-requestA.setNickname("A 改的");
-assertThat(userService.updateById(requestA)).isTrue();
-
-requestB.setNickname("B 改的");
-assertThat(userService.updateById(requestB)).isFalse();   // AND version = 0 匹配不到行
-
-assertThat(userService.getById(user.getId()).getNickname()).isEqualTo("A 改的");
-```
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice5OptimisticLockRejectsStaleUpdate
-```
-
-题面写的“同一个实体对象连续调两次 `updateById`，第二次返回 false”和实际行为不一致。更新成功后乐观锁插件会把新版本号写回实体，所以第二次拼出来的条件是 `AND version = 1`，正好对上库里那一行，照样成功。测试类里另外一条用例覆盖了这种情况：
-
-```java
-same.setNickname("第一次");
-assertThat(userService.updateById(same)).isTrue();
-assertThat(same.getVersion()).isEqualTo(1);   // 插件回填了新版本
-
-same.setNickname("第二次");
-assertThat(userService.updateById(same)).isTrue();        // 仍然成功
-assertThat(userService.getById(user.getId()).getVersion()).isEqualTo(2);
-```
-
-```bash
-mvn -pl 05-mybatis test -Dtest=PracticeTest#practice5SameInstanceTwiceSucceeds
-```
-
-要复现“第二次失败”，得让第二个更新持有过期的版本号，也就是前面那条用例的写法。
-
-### 8.2 课后练习
-
-#### 基础一：按 username 更新 email
-
-`email` 列在 `t_user` 里已经有了（`VARCHAR(100)`），补一个 Service 方法和对应接口即可。
-
-```java
-@Override
-public boolean modifyEmailByUsername(String username, String email) {
-    return update(new LambdaUpdateWrapper<User>()
-            .eq(User::getUsername, username)
-            .set(User::getEmail, email));
-}
-```
-
-```java
-@PutMapping("/email")
-public boolean updateEmail(@RequestParam String username, @RequestParam String email) {
-    return userService.modifyEmailByUsername(username, email);
-}
-```
-
-```bash
-mvn -pl 05-mybatis test -Dtest=HomeworkTest#basic1UpdateEmailByUsername
-```
-
-用例覆盖两点：改完之后 `email` 是新值；用户名不存在时返回 `false`，不抛异常。另外顺手断言了 `version` 仍是 0，因为 Wrapper 更新只拼 `SET email = ?`，不经过实体，乐观锁和 `updateTime` 自动填充都不会参与。
-
-手工调一次：
-
-```bash
-curl -X PUT "http://localhost:8005/users/email?username=zhangsan&email=zhangsan@mqxu.top"
-```
-
-#### 基础二：给时间字段补 @JsonFormat
-
-三个时间字段各自带上格式：
-
-```java
-@JsonFormat(pattern = "yyyy-MM-dd")
-private LocalDate birthday;
-
-@JsonFormat(pattern = "HH:mm:ss")
-private LocalTime workTime;
-
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-private LocalDateTime lastLoginTime;
-```
-
-`createTime` / `updateTime` 用同一套 `yyyy-MM-dd HH:mm:ss`。
-
-```bash
-mvn -pl 05-mybatis test -Dtest=HomeworkTest#basic2JsonFormatRoundTrip
-```
-
-用例从接口 POST 一条带三种时间格式的数据，再断言返回：
-
-```java
-mockMvc.perform(post("/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-        .andExpect(jsonPath("$.birthday").value("1998-05-05"))
-        .andExpect(jsonPath("$.workTime").value("08:45:00"))
-        .andExpect(jsonPath("$.lastLoginTime").value("2026-10-12 09:30:00"))
-        .andExpect(jsonPath("$.createTime",
-                matchesPattern("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")));
-```
-
-`createTime` 用正则匹配而不是固定值，因为它的值由自动填充生成，不确定，但格式必须一致。
-
-不加 `@JsonFormat` 时，Spring Boot 4 自带的 Jackson 3 对 `LocalDateTime` 只认带 `T` 的 ISO 格式，传 `"2026-10-12 09:30:00"` 会返回 400，错误信息里是 `Text '2026-10-12 09:30:00' could not be parsed at index 10`。
-
-#### 进阶一：t_course 表的批量操作
-
-建表按 2.5 的类型对照表选：主键 `BIGINT UNSIGNED`、`name VARCHAR(64)`、`teacher VARCHAR(32)`、`credit TINYINT UNSIGNED`。
-
-Service 两个方法：
-
-```java
-@Override
-public boolean saveCourses(List<Course> courses) {
-    if (courses == null || courses.isEmpty()) {
-        return false;
-    }
-    return saveBatch(courses, BATCH_SIZE);
-}
-
-@Override
-public boolean removeCourses(List<Long> ids) {
-    if (ids == null || ids.isEmpty()) {
-        return false;
-    }
-    return removeByIds(ids);
-}
-```
-
-对应接口是 `POST /courses/batch` 和 `DELETE /courses/batch?ids=1,2`。
-
-```bash
-mvn -pl 05-mybatis test -Dtest=HomeworkTest#advanced1CourseBatchSaveAndRemove
-```
-
-用例传三条课程进去，断言 `saveBatch` 之后每个对象的 `id` 都非空（自增主键会回填，不用再查一次库），再按前两条的 id 批量删除，最后 `listCourses()` 只剩一条。
-
-`t_course` 没有 `deleted` 列，`removeByIds` 走的是物理删除，SQL 是 `DELETE FROM t_course WHERE id IN (...)`。这和 `t_user` 的批量删除行为不同，对照着看能分清逻辑删除和物理删除。
-
-Course 实体刻意没写 `updateTime`，`MyMetaObjectHandler` 在填充时会先判断属性是否存在，避免在缺少审计字段的实体上报错。
-
-#### 进阶二：复现连接池耗尽
-
-需要单独起服务做实验，步骤见 8.3。
-
-#### 挑战：下单事务的原子性
-
-三张表配合：`t_product` 存库存，`t_order` 存订单，`t_order` 同样带自动填充、逻辑删除与乐观锁。
-
-下单方法把两次写操作放在同一个事务里。扣库存先执行，库存校验故意放在写库之后：
-
-```java
-@Transactional(rollbackFor = Exception.class)
-public Order createOrder(Long userId, Long productId, int quantity) {
-    ...
-    int stockBefore = product.getStock();
-
-    // 第一步：扣库存，先把库改了
-    product.setStock(stockBefore - quantity);
-    productMapper.updateById(product);
-
-    // 第二步：库存成负数就抛异常。
-    // 这里不提前 return，就是为了让“扣库存已经执行”暴露在回滚面前
-    if (product.getStock() < 0) {
-        throw new IllegalStateException("库存不足：剩余 " + stockBefore + "，需要 " + quantity);
-    }
-
-    // 第三步：写订单
-    Order order = new Order();
-    order.setOrderNo(generateOrderNo());
-    ...
-    save(order);
-    return order;
-}
-```
-
-库存 5、下单 6 件：
-
-```bash
-mvn -pl 05-mybatis test -Dtest=HomeworkTest#challenge1OrderTransactionRollsBack
-```
-
-```java
-assertThatThrownBy(() -> orderService.createOrder(1L, product.getId(), 6))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("库存不足");
-
-assertThat(productService.getById(product.getId()).getStock()).isEqualTo(5);   // 扣掉的库存回来了
-assertThat(orderService.count()).isZero();                                     // 订单没写进去
-```
-
-库存充足时下单成功：
-
-```bash
-mvn -pl 05-mybatis test -Dtest=HomeworkTest#challenge2OrderSucceeds
-```
-
-```java
-Order order = orderService.createOrder(1L, product.getId(), 2);
-
-assertThat(order.getId()).isNotNull();
-assertThat(order.getOrderNo()).startsWith("NO");
-assertThat(order.getAmount()).isEqualByComparingTo("798.00");   // 399.00 * 2
-assertThat(order.getStatus()).isEqualTo(1);
-assertThat(order.getCreateTime()).isNotNull();
-assertThat(order.getUpdateTime()).isNotNull();
-assertThat(order.getDeleted()).isZero();
-assertThat(order.getVersion()).isZero();
-```
-
-最后几个断言一次过掉自动填充：新增时 `createTime`、`updateTime`、`deleted`、`version` 四个字段都有值。
-
-取消与删除：
-
-```bash
-mvn -pl 05-mybatis test -Dtest=HomeworkTest#challenge3CancelAndLogicalDelete
-```
-
-```java
-assertThat(orderService.cancelOrder(order.getId())).isTrue();
-Order cancelled = orderService.getById(order.getId());
-assertThat(cancelled.getStatus()).isZero();
-assertThat(cancelled.getVersion()).isEqualTo(1);    // 更新一次，版本加一
-
-assertThat(orderService.removeOrder(order.getId())).isTrue();
-assertThat(orderService.getById(order.getId())).isNull();
-assertThat(jdbcTemplate.queryForObject(
-        "SELECT deleted FROM t_order WHERE id = ?", Integer.class, order.getId())).isEqualTo(1);
-```
-
-接口层再走一遍：
-
-```bash
-mvn -pl 05-mybatis test -Dtest=OrderApiTest
-```
-
-`OrderApiTest` 三个用例覆盖 `GET /products`、下单到删除的完整链路，以及库存不足时接口层的行为。
-
-### 8.3 连接池耗尽实验
-
-这一题要手工做：把池压到 1 个连接，再让一个慢查询把它占住，看后来的请求报什么。
-
-实验用到的两个文件：
-
-| 文件 | 作用 |
-| --- | --- |
-| `application-pool1.yml` | 把 Hikari 的池压到 1、取连接超时压到 1 秒 |
-| `controller/DiagnosticsController.java` | 只在 `pool1` profile 下注册的 `GET /diagnostics/slow-query?seconds=n`，内部执行 `SELECT SLEEP(n)` |
-
-`DiagnosticsController` 挂了 `@Profile("pool1")`，正常启动不会出现在接口列表里，演示代码不会混进业务路径。
-
-#### HikariCP 版
-
-用 8017 端口启动，避免和默认的 8005 冲突：
-
-```bash
-mvn -pl 05-mybatis spring-boot:run -Dspring-boot.run.arguments="--server.port=8017 --spring.profiles.active=pool1"
-```
-
-启动日志里能确认池配置生效：
-
-```
-com.zaxxer.hikari.HikariDataSource : backend-learning-pool-single - Starting...
-com.zaxxer.hikari.HikariPool       : backend-learning-pool-single - Added connection ...
-com.zaxxer.hikari.HikariDataSource : backend-learning-pool-single - Start completed.
-```
-
-第一步，后台发起一个 5 秒的慢查询，把唯一的连接占住；第二步，等 1 秒后请求 `/users`：
-
-```bash
-curl "http://127.0.0.1:8017/diagnostics/slow-query?seconds=5" &
-sleep 1
-curl -i "http://127.0.0.1:8017/users"
-```
-
-`/users` 返回 500，耗时约 1 秒（`connection-timeout` 设的是 1000 毫秒）。服务端日志里的根因是：
-
-```
-java.sql.SQLTransientConnectionException: backend-learning-pool-single -
-Connection is not available, request timed out after 1005ms (total=1, active=1, idle=0, waiting=0)
-```
-
-括号里四个数是这次实验最值得看的地方：`total=1` 池里一共 1 个连接，`active=1` 全被占着，`idle=0` 没有空闲的，`waiting=0` 连排队等待的线程都没有（请求已经超时退出）。等慢查询返回之后再请求一次 `/users`，恢复 200，说明连接归还了。
-
-#### Druid 版对照
-
-换 Druid 再看一遍，现象一样，报错信息不同：
-
-```bash
-mvn -pl 05-mybatis -Pdruid spring-boot:run -Dspring-boot.run.arguments="--server.port=8018 --spring.profiles.active=druid,pool1 --spring.datasource.druid.max-active=1 --spring.datasource.druid.min-idle=1 --spring.datasource.druid.initial-size=1 --spring.datasource.druid.max-wait=1000"
-```
-
-三个参数要一起覆盖。`application-druid.yml` 里 `min-idle: 5`，只把 `max-active` 改成 1 会触发 Druid 的参数校验，启动直接失败：
-
-```
-java.lang.IllegalArgumentException: illegal maxActive 1
-```
-
-Druid 的 `init()` 对 `maxActive <= 0`、`maxActive < minIdle`、`initialSize > maxActive` 三种情况都会拒绝启动，后两种抛的消息里都只写 `illegal maxActive`，排查时容易看错地方。
-
-同样的两步压测，`/users` 返回 500，日志里的根因：
-
-```
-com.alibaba.druid.pool.GetConnectionTimeoutException:
-wait millis 1005, active 1, maxActive 1, creating 0, runningSqlCount 1 : SELECT SLEEP(?) AS slept
-```
-
-`runningSqlCount 1` 后面跟着的正是占用连接的那条 SQL，比 Hikari 的提示更直接。
-
-Druid 的监控页也能看到这次等待。访问 `http://127.0.0.1:8018/druid/`，用 `admin / admin` 登录，数据源页上的指标：
-
-| 指标 | 值 | 含义 |
+| # | 练习 | 检查点 |
 | --- | --- | --- |
-| `MaxActive` | 1 | 池上限 |
-| `ActiveCount` / `ActivePeak` | 0 / 1 | 当前活跃连接数 / 峰值 |
-| `NotEmptyWaitCount` | 1 | 等待过连接的次数 |
-| `NotEmptyWaitMillis` | 1005 | 累计等待毫秒数 |
+| 1 | 给 `/users` 加 `memberLevel` 过滤，传 `GOLD` 只返回金卡 | 枚举字符串条件生效 |
+| 2 | 用 `@Select` 注解写"按班级查学生" | 注解 SQL 与条件构造器的差别 |
+| 3 | 把 `data.sql` 里 id=5 的记录改回 `deleted=0`，重启 | 列表条数变化 |
 
-`NotEmptyWaitCount` 和 `NotEmptyWaitMillis` 是判断池够不够用最直接的两个数：它们持续增长就说明有请求在排队等连接。HikariCP 没有监控页，要看这些数字得接 Micrometer，暴露 `hikaricp.connections.pending` 一类的指标。
+### 18.2 课后练习
 
-实验做完把 profile 去掉重启，或直接换回默认配置。
+**基础**：给 `t_order` 加"按状态 + 时间区间"的查询，两个条件都可空。
 
-### 8.4 全量测试与数据恢复
+**进阶**：把 `createOrder` 改成"扣库存失败时重试三次"。提示：重试要放在事务外层，因为事务一旦被标记回滚就不能继续用了。
 
-```bash
-mvn -pl 05-mybatis test
-```
-
-```
-Running top.mqxu.mybatis.OrderApiTest        Tests run: 3
-Running top.mqxu.mybatis.UserServiceTest     Tests run: 12
-Running top.mqxu.mybatis.HomeworkTest        Tests run: 6
-Running top.mqxu.mybatis.UserApiTest         Tests run: 20
-Running top.mqxu.mybatis.PracticeTest        Tests run: 6
-Running top.mqxu.mybatis.UserLambdaQueryTest Tests run: 10
-Tests run: 57, Failures: 0, Errors: 0, Skipped: 0
-BUILD SUCCESS
-```
-
-六个测试类跑在同一个 MySQL 库上，每条用例开头清掉自己涉及的表，顺序不影响结果。
-
-测试库和手工启动应用用的是同一个，`spring.sql.init.mode: always` 会在每次启动 Spring 上下文时执行一遍 `schema.sql` 与 `data.sql`。这意味着两件事：跑完测试库里是空的（用例清表后没有再灌数据），要恢复示例数据：
-
-```bash
-mysql -uroot -p123456 -D backend_learning --default-character-set=utf8mb4 < src/main/resources/schema.sql
-mysql -uroot -p123456 -D backend_learning --default-character-set=utf8mb4 < src/main/resources/data.sql
-```
-
-应用在跑的时候，DevTools 热重启同样会执行这两个脚本，手工测出来的数据会被重置回示例数据。
+**挑战**：实现深分页优化。接口接受 `lastId` 参数，用 `WHERE id > ? ORDER BY id LIMIT ?` 替代 `LIMIT offset, size`，并用一万条数据对比两种方式的耗时。提示：先造数据，再用 `EXPLAIN` 看执行计划。
 
 ---
 
-## 9. 小结与知识地图
+## 19. 小结
 
-| 知识点 | 一句话回顾 |
+### 19.1 核心概念
+
+| 知识点 | 一句话 |
 | --- | --- |
-| 数据类型 | 按数据形态选类型：金额用 `DECIMAL`、枚举用 `ENUM`、结构化数据用 `JSON`、时间用 `DATE` / `TIME` / `DATETIME` |
-| 类型映射 | 时间对应 `LocalDate` / `LocalTime` / `LocalDateTime`，`TINYINT` 可映射 `Boolean` |
-| 数据源 | `spring.datasource` 配 MySQL，默认 HikariCP |
-| 连接池 | 池上限之和要小于 MySQL `max_connections`；超时与回收靠 `connection-timeout`、`max-lifetime` 控制 |
-| 连接池监控 | HikariCP 看启动日志，Druid 用 `/druid/` 监控页 |
-| `BaseMapper` | 免写 SQL 的通用 CRUD |
-| `IService` | 在 Mapper 之上再包一层，批量、分页、计数都有现成方法 |
-| Service 分层 | Controller → Service → Mapper，不跨层 |
-| 自动填充 | `MetaObjectHandler` 管审计字段，更新时不要用 `strictUpdateFill` |
-| 逻辑删除 | `@TableLogic`，删除变更新，查询自动过滤 |
-| 乐观锁 | `@Version` + 插件，靠影响行数判断有没有人抢先改 |
-| 条件构造器 | `LambdaQueryWrapper` 选条件，`LambdaUpdateWrapper` 改数据，`and(w -> ...)` 记得包括号 |
-| 批量操作 | `saveBatch` 会把自增主键回填到对象上，`removeByIds` 是物理还是逻辑删除看实体有没有 `@TableLogic` |
-| `@Transactional` | 写操作原子性，显式 `rollbackFor`，把业务校验放在写库之后才能看见回滚，注意自调用失效 |
-| 分页插件 | `PaginationInnerInterceptor` + `Page` |
+| `BaseMapper` | 17 个单表方法，绝大多数 CRUD 不用写 SQL |
+| `@TableName` + `autoResultMap` | 表名映射与 JSON 字段处理的前提 |
+| 自动填充 | `INSERT` / `INSERT_UPDATE` 两种时机 |
+| 逻辑删除 | `delete` 变 `update`，查询自动加条件，手写 SQL 要自己加 |
+| 乐观锁 | `@Version` 参与 `WHERE` 与自增，冲突时影响行数为 0 |
+| 条件构造器 | 第一个参数控制是否拼接，`and()` 里的括号不能省 |
+| 分页插件 | 自动 `LIMIT` + `COUNT`，不注册就退化成全表查询 |
+| 事务 | `rollbackFor`、代理边界、别吞异常 |
+| 多表 | `@Select` 映射 VO，`deleted=0` 要手写 |
 
-下一节 [06-redis](06-redis.md) 会在数据访问之上加缓存，解决热点数据的高频查询。
+### 19.2 几条实践建议
 
-> 本节遵循的规范（官方 + 阿里手册）：三层分层职责单一、不跨层；实体类属性用包装类型；金额用 `DECIMAL` 不用浮点；事务方法显式 `rollbackFor`；Mapper 层不写业务逻辑。
+- 金额一律 `BigDecimal` + `DECIMAL`
+- 主键用自增 `BIGINT`，别用业务字段
+- 更新优先用条件表达式（`setSql`），少用"先查后改"
+- 事务方法 `public`，声明 `rollbackFor`
+- 手写 SQL 显式处理逻辑删除与表别名
+- 数据层测试加 `@Transactional`，让每个用例自动回滚
+
+### 19.3 下一节
+
+数据落库了，但每次查询都要走磁盘。热点数据（商品详情、配置项）完全没必要每次都查库。
+
+下一节 [06-redis](06-redis.md) 在数据库前面加一层缓存，把响应时间从毫秒降到微秒，并处理缓存穿透、击穿、雪崩这三个必答题。
+
+> 本节遵循的规范：金额用 `BigDecimal`；主键用自增 `BIGINT`；更新用条件表达式；事务方法 `public` 且声明 `rollbackFor`；手写 SQL 显式处理逻辑删除；连接串必须带时区。
