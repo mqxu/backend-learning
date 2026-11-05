@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#8b95a5"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0b63c5"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="300" fill="#f7f8fa"/>
+
+  <!-- 第一行：请求 -->
+  <text x="24" y="34" font-size="13" fill="#6b7280" letter-spacing="0.5">请求进来</text>
+
+  <rect x="24" y="48" width="140" height="58" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="94" y="74" font-size="14" fill="#1f2329" text-anchor="middle">浏览器 / curl</text>
+  <text x="94" y="93" font-size="11" fill="#8b95a5" text-anchor="middle">GET /user/1001</text>
+
+  <line x1="168" y1="77" x2="206" y2="77" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="210" y="48" width="140" height="58" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="280" y="74" font-size="14" fill="#1f2329" text-anchor="middle">Tomcat</text>
+  <text x="280" y="93" font-size="11" fill="#8b95a5" text-anchor="middle">内嵌容器，端口 8001</text>
+
+  <line x1="354" y1="77" x2="392" y2="77" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="396" y="48" width="176" height="58" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="484" y="74" font-size="14" fill="#1f2329" text-anchor="middle">DispatcherServlet</text>
+  <text x="484" y="93" font-size="11" fill="#8b95a5" text-anchor="middle">按路径找到方法</text>
+
+  <line x1="576" y1="77" x2="614" y2="77" stroke="#8b95a5" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="618" y="48" width="176" height="58" rx="8" fill="#eaf2fd" stroke="#0b63c5" stroke-width="1.5"/>
+  <text x="706" y="74" font-size="14" fill="#0b63c5" text-anchor="middle">UserController</text>
+  <text x="706" y="93" font-size="11" fill="#3b7dc4" text-anchor="middle">你写的那个方法</text>
+
+  <!-- 第二行：响应 -->
+  <text x="24" y="158" font-size="13" fill="#6b7280" letter-spacing="0.5">响应出去</text>
+
+  <rect x="618" y="172" width="176" height="58" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="706" y="198" font-size="14" fill="#1f2329" text-anchor="middle">返回 User 对象</text>
+  <text x="706" y="217" font-size="11" fill="#8b95a5" text-anchor="middle">Java 世界里还是对象</text>
+
+  <line x1="614" y1="201" x2="576" y2="201" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+  <rect x="396" y="172" width="176" height="58" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="484" y="198" font-size="14" fill="#1f2329" text-anchor="middle">Jackson</text>
+  <text x="484" y="217" font-size="11" fill="#8b95a5" text-anchor="middle">对象转 JSON</text>
+
+  <line x1="392" y1="201" x2="354" y2="201" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+  <rect x="210" y="172" width="140" height="58" rx="8" fill="#ffffff" stroke="#d7dce3"/>
+  <text x="280" y="198" font-size="14" fill="#1f2329" text-anchor="middle">写响应</text>
+  <text x="280" y="217" font-size="11" fill="#8b95a5" text-anchor="middle">状态码 + Content-Type</text>
+
+  <line x1="206" y1="201" x2="168" y2="201" stroke="#0b63c5" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+  <rect x="24" y="172" width="140" height="58" rx="8" fill="#f0f8f3" stroke="#2da44e"/>
+  <text x="94" y="198" font-size="14" fill="#1a7f37" text-anchor="middle">{"id":1001,...}</text>
+  <text x="94" y="217" font-size="11" fill="#4a8f5e" text-anchor="middle">200 OK</text>
+
+  <!-- 左侧竖线连接两行 -->
+  <path d="M706,106 L706,172" stroke="#c9d0d9" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <text x="716" y="144" font-size="11" fill="#8b95a5">方法返回</text>
+</svg>

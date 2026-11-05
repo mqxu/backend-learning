@@ -1,2 +1,6 @@
 server:
   port: 8001
+
+spring:
+  application:
+    name: 01-快速起步
