@@ -1,0 +1,57 @@
+{
+  "module": "13-deploy",
+  "port": 8013,
+  "title": "13 · 部署与 CI/CD",
+  "tag": "部署",
+  "groupSlug": { "部署信息": "info", "探活": "health" },
+  "cases": [
+    {
+      "id": "hello",
+      "name": "13.1 模块入口",
+      "desc": "确认应用正常启动。这个模块的重点不在业务，而在怎么把它打包成镜像。",
+      "group": "部署信息",
+      "req": { "method": "GET", "path": "/deploy/hello" },
+      "openapi": { "summary": "模块入口" }
+    },
+    {
+      "id": "info",
+      "name": "13.2 构建与运行信息",
+      "desc": "build 来自 META-INF/build-info.properties（mvn package 时生成），runtime 是进程实时读取的。排查\"这个实例跑的哪个版本\"就看这里。",
+      "group": "部署信息",
+      "req": { "method": "GET", "path": "/deploy/info" },
+      "openapi": { "summary": "构建与运行信息" }
+    },
+    {
+      "id": "pipeline",
+      "name": "13.3 部署命令清单",
+      "desc": "把构建、打镜像、运行、编排、探活五步命令集中返回，方便对照仓库里的 Dockerfile 与 compose 文件。",
+      "group": "部署信息",
+      "req": { "method": "GET", "path": "/deploy/pipeline" },
+      "openapi": { "summary": "部署命令清单" }
+    },
+    {
+      "id": "health",
+      "name": "13.4 容器探活端点",
+      "desc": "Dockerfile 里的 HEALTHCHECK 与 compose 的 healthcheck 都打这个地址，返回 UP 才算启动成功。",
+      "group": "探活",
+      "req": { "method": "GET", "path": "/actuator/health" },
+      "openapi": { "summary": "健康检查" }
+    },
+    {
+      "id": "liveness",
+      "name": "13.5 存活探针",
+      "desc": "liveness 只回答\"进程还活着吗\"，不该包含下游依赖；依赖挂了重启也解决不了问题。",
+      "group": "探活",
+      "req": { "method": "GET", "path": "/actuator/health/liveness" },
+      "openapi": { "summary": "存活探针" }
+    },
+    {
+      "id": "readiness",
+      "name": "13.6 就绪探针",
+      "desc": "readiness 决定要不要给这个实例分配流量。应用还没初始化完时返回 OUT_OF_SERVICE，负载均衡会跳过它。",
+      "group": "探活",
+      "req": { "method": "GET", "path": "/actuator/health/readiness" },
+      "openapi": { "summary": "就绪探针" }
+    }
+  ]
+}

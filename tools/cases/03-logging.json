@@ -1,0 +1,78 @@
+{
+  "module": "03-logging",
+  "port": 8003,
+  "title": "03 · 日志管理",
+  "tag": "日志",
+  "groupSlug": { "日志输出": "output", "异常与脱敏": "mask" },
+  "console": {
+    "title": "控制台输出（含 MDC 中的 traceId）",
+    "include": ["LoggingController"],
+    "limit": 24
+  },
+  "cases": [
+    {
+      "id": "hello",
+      "name": "3.1 基础接口",
+      "desc": "先确认模块能正常响应，后面的日志都基于这条链路。",
+      "group": "日志输出",
+      "req": { "method": "GET", "path": "/logging/hello" },
+      "openapi": { "summary": "基础接口" }
+    },
+    {
+      "id": "demo",
+      "name": "3.2 级别与占位符",
+      "desc": "同一方法里打 info/warn/error 三条；对比占位符和字符串拼接两种写法。",
+      "group": "日志输出",
+      "req": { "method": "GET", "path": "/logging/demo" },
+      "openapi": { "summary": "日志级别与参数占位符演示" }
+    },
+    {
+      "id": "levels",
+      "name": "3.3 五级日志与 traceId",
+      "desc": "trace 被 DEBUG 阈值挡掉，其余四级正常输出；响应头 X-Trace-Id 与日志里的编号一致。",
+      "group": "日志输出",
+      "req": { "method": "GET", "path": "/logging/levels" },
+      "openapi": { "summary": "输出五个级别的日志并返回 traceId" }
+    },
+    {
+      "id": "trace-passthrough",
+      "name": "3.4 透传上游 traceId",
+      "desc": "请求头带 X-Trace-Id 时沿用该值，不再生成新的，这样跨服务调用能串成一条链路。",
+      "group": "日志输出",
+      "req": {
+        "method": "GET",
+        "path": "/logging/levels",
+        "headers": { "X-Trace-Id": "upstream-trace-0001" }
+      },
+      "openapi": { "summary": "沿用上游传入的 traceId" }
+    },
+    {
+      "id": "mask",
+      "name": "3.5 敏感信息脱敏",
+      "desc": "手机号、身份证、邮箱、姓名四个字段在落日志前统一脱敏，响应里返回脱敏后的值。",
+      "group": "异常与脱敏",
+      "req": { "method": "GET", "path": "/logging/mask" },
+      "openapi": {
+        "summary": "脱敏工具演示",
+        "parameters": [
+          { "name": "phone", "in": "query", "schema": { "type": "string" } },
+          { "name": "idCard", "in": "query", "schema": { "type": "string" } },
+          { "name": "email", "in": "query", "schema": { "type": "string" } },
+          { "name": "name", "in": "query", "schema": { "type": "string" } }
+        ]
+      }
+    },
+    {
+      "id": "error",
+      "name": "3.6 异常日志带堆栈",
+      "desc": "error 只打一条并把异常对象作为最后一个参数传入，堆栈自动附上，不用手动 printStackTrace。",
+      "group": "异常与脱敏",
+      "expect": 500,
+      "req": { "method": "GET", "path": "/logging/error" },
+      "openapi": {
+        "summary": "异常日志演示",
+        "errors": { "500": { "description": "模拟业务异常" } }
+      }
+    }
+  ]
+}

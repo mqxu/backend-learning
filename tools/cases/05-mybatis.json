@@ -1,0 +1,499 @@
+{
+  "module": "05-mybatis",
+  "port": 8005,
+  "title": "05 · 数据访问",
+  "tag": "数据访问",
+  "groupSlug": {
+    "增删改查": "crud",
+    "条件查询与统计": "query",
+    "多表与分页": "join",
+    "事务与库存": "tx"
+  },
+  "cases": [
+    {
+      "id": "list",
+      "name": "5.1 条件列表",
+      "desc": "不传参数即查全部。t_user 里有 6 条数据，其中 id=5 是逻辑删除的，查询结果里不会出现。",
+      "group": "增删改查",
+      "req": {
+        "method": "GET",
+        "path": "/users"
+      },
+      "openapi": {
+        "summary": "用户列表（条件可空）"
+      }
+    },
+    {
+      "id": "get",
+      "name": "5.2 按主键查询",
+      "desc": "MyBatis-Plus 的 selectById，SQL 由框架生成，不需要写 XML。",
+      "group": "增删改查",
+      "req": {
+        "method": "GET",
+        "path": "/users/2"
+      },
+      "openapi": {
+        "summary": "按 ID 查询用户",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "create",
+      "name": "5.3 新增用户",
+      "desc": "只传业务字段，create_time / update_time / version 由 MyMetaObjectHandler 自动填充。",
+      "group": "增删改查",
+      "req": {
+        "method": "POST",
+        "path": "/users",
+        "json": {
+          "username": "testuser",
+          "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+          "nickname": "接口测试",
+          "gender": 1,
+          "age": 25,
+          "memberLevel": "BRONZE",
+          "email": "testuser@mqxu.top",
+          "tags": [
+            "测试",
+            "接口"
+          ]
+        },
+        "save": {
+          "newUserId": "id"
+        }
+      },
+      "openapi": {
+        "summary": "新增用户",
+        "responseDesc": "含自动填充字段的用户对象"
+      }
+    },
+    {
+      "id": "update",
+      "name": "5.4 按主键更新",
+      "desc": "路径上的 id 覆盖请求体里的 id；update_time 被自动刷新。",
+      "group": "增删改查",
+      "req": {
+        "method": "PUT",
+        "path": "/users/${newUserId}",
+        "json": {
+          "id": 999,
+          "username": "testuser",
+          "nickname": "改过昵称",
+          "age": 26
+        }
+      },
+      "openapi": {
+        "summary": "更新用户"
+      }
+    },
+    {
+      "id": "recharge",
+      "name": "5.5 余额充值",
+      "desc": "用 UpdateWrapper 做自增，避免先查后改带来的并发覆盖。",
+      "group": "增删改查",
+      "req": {
+        "method": "POST",
+        "path": "/users/2/recharge",
+        "query": {
+          "amount": 100
+        }
+      },
+      "openapi": {
+        "summary": "余额充值",
+        "parameters": [
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "delete",
+      "name": "5.6 逻辑删除",
+      "desc": "delete 不删数据，只把 deleted 置 1；之后再查这条记录返回 null。",
+      "group": "增删改查",
+      "req": {
+        "method": "DELETE",
+        "path": "/users/${newUserId}"
+      },
+      "openapi": {
+        "summary": "删除用户（逻辑删除）"
+      }
+    },
+    {
+      "id": "after-delete",
+      "name": "5.7 删除后回查",
+      "desc": "同一个 ID 再查，返回空响应体，说明逻辑删除后的记录被自动过滤了。",
+      "group": "增删改查",
+      "req": {
+        "method": "GET",
+        "path": "/users/${newUserId}"
+      },
+      "openapi": {
+        "summary": "逻辑删除后按 ID 查询"
+      }
+    },
+    {
+      "id": "page",
+      "name": "5.8 条件分页",
+      "desc": "分页插件自动改写 SQL 追加 LIMIT，并单独执行一次 count。",
+      "group": "条件查询与统计",
+      "req": {
+        "method": "GET",
+        "path": "/users/page",
+        "query": {
+          "current": 1,
+          "size": 3,
+          "gender": 1
+        }
+      },
+      "openapi": {
+        "summary": "按性别分页查询",
+        "parameters": [
+          {
+            "name": "current",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "keyword",
+      "name": "5.9 关键词模糊查询",
+      "desc": "LambdaQueryWrapper 的 and 嵌套，等价于 username LIKE %张% OR nickname LIKE %张%。",
+      "group": "条件查询与统计",
+      "req": {
+        "method": "GET",
+        "path": "/users/keyword",
+        "query": {
+          "keyword": "张"
+        }
+      },
+      "openapi": {
+        "summary": "按关键词模糊查询",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "age-range",
+      "name": "5.10 区间查询",
+      "desc": "ge / le 组合出 BETWEEN 的等价条件，两个边界都可省略。",
+      "group": "条件查询与统计",
+      "req": {
+        "method": "GET",
+        "path": "/users/age-range",
+        "query": {
+          "minAge": 20,
+          "maxAge": 30
+        }
+      },
+      "openapi": {
+        "summary": "按年龄区间查询",
+        "parameters": [
+          {
+            "name": "minAge",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "maxAge",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "usernames",
+      "name": "5.11 只查一列",
+      "desc": "select 指定列 + listObjs，返回 List<String> 而不是整个实体，减少数据传输。",
+      "group": "条件查询与统计",
+      "req": {
+        "method": "GET",
+        "path": "/users/usernames"
+      },
+      "openapi": {
+        "summary": "查询全部用户名"
+      }
+    },
+    {
+      "id": "statistics",
+      "name": "5.12 聚合统计",
+      "desc": "count / sum / max 加分组，用 QueryWrapper 的 select 拼接聚合表达式。",
+      "group": "条件查询与统计",
+      "req": {
+        "method": "GET",
+        "path": "/users/statistics"
+      },
+      "openapi": {
+        "summary": "用户汇总统计"
+      }
+    },
+    {
+      "id": "student-page",
+      "name": "5.13 学生分页",
+      "desc": "另一个实体的分页，验证分页插件对多表场景同样生效。",
+      "group": "多表与分页",
+      "req": {
+        "method": "GET",
+        "path": "/students/page",
+        "query": {
+          "current": 1,
+          "size": 3
+        }
+      },
+      "openapi": {
+        "summary": "学生分页",
+        "parameters": [
+          {
+            "name": "current",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "scores",
+      "name": "5.14 多表关联查询",
+      "desc": "学生 + 成绩 + 课程三张表联查，用 XML 手写 SQL 并映射到 VO。",
+      "group": "多表与分页",
+      "req": {
+        "method": "GET",
+        "path": "/students/1/scores"
+      },
+      "openapi": {
+        "summary": "查询某学生的成绩单",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-statistics",
+      "name": "5.15 分组统计",
+      "desc": "按班级分组统计人数与平均分，结果直接映射成 Map。",
+      "group": "多表与分页",
+      "req": {
+        "method": "GET",
+        "path": "/students/statistics"
+      },
+      "openapi": {
+        "summary": "按班级统计学生"
+      }
+    },
+    {
+      "id": "course-batch",
+      "name": "5.16 批量新增",
+      "desc": "saveBatch 内部按批次提交，比拼多次 insert 少很多网络往返。",
+      "group": "多表与分页",
+      "req": {
+        "method": "POST",
+        "path": "/courses/batch",
+        "json": [
+          {
+            "name": "数据库原理",
+            "teacher": "许老师",
+            "credit": 4
+          },
+          {
+            "name": "操作系统",
+            "teacher": "许老师",
+            "credit": 4
+          },
+          {
+            "name": "计算机网络",
+            "teacher": "许老师",
+            "credit": 3
+          }
+        ]
+      },
+      "openapi": {
+        "summary": "批量新增课程",
+        "responseDesc": "成功条数"
+      }
+    },
+    {
+      "id": "products",
+      "name": "5.17 商品列表",
+      "desc": "下单前先看库存，库存由数据库字段保证，不放在内存里。",
+      "group": "事务与库存",
+      "req": {
+        "method": "GET",
+        "path": "/products"
+      },
+      "openapi": {
+        "summary": "查询商品与库存"
+      }
+    },
+    {
+      "id": "order-create",
+      "name": "5.18 下单（事务）",
+      "desc": "扣库存和写订单在同一个事务里，任一步失败整体回滚。",
+      "group": "事务与库存",
+      "req": {
+        "method": "POST",
+        "path": "/orders",
+        "query": {
+          "userId": 2,
+          "productId": 1,
+          "quantity": 2
+        }
+      },
+      "openapi": {
+        "summary": "创建订单",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "quantity",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "orders",
+      "name": "5.19 按用户查订单",
+      "desc": "验证上一步的订单真的落库了。",
+      "group": "事务与库存",
+      "req": {
+        "method": "GET",
+        "path": "/orders",
+        "query": {
+          "userId": 2
+        }
+      },
+      "openapi": {
+        "summary": "查询用户订单",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "order-over-stock",
+      "name": "5.20 库存不足回滚",
+      "desc": "要买 999 件，库存不够直接抛异常，事务回滚后库存不变。",
+      "group": "事务与库存",
+      "expect": 500,
+      "req": {
+        "method": "POST",
+        "path": "/orders",
+        "query": {
+          "userId": 2,
+          "productId": 1,
+          "quantity": 999
+        }
+      },
+      "openapi": {
+        "summary": "库存不足下单",
+        "errors": {
+          "500": {
+            "description": "库存不足，事务回滚"
+          }
+        }
+      }
+    },
+    {
+      "id": "product-after",
+      "name": "5.21 回滚后核对库存",
+      "desc": "再查商品列表，库存只减少了成功那一单的数量，失败那单没有扣减。",
+      "group": "事务与库存",
+      "req": {
+        "method": "GET",
+        "path": "/products"
+      },
+      "openapi": {
+        "summary": "回滚后核对库存"
+      }
+    }
+  ]
+}

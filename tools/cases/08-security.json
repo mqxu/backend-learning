@@ -1,0 +1,460 @@
+{
+  "module": "08-security",
+  "port": 8008,
+  "title": "08 · 认证与授权",
+  "tag": "安全",
+  "groupSlug": {
+    "登录与鉴权": "auth",
+    "角色与权限": "rbac",
+    "短信登录与分阶段": "stage"
+  },
+  "resetRedis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "password": "abc123",
+    "db": 11
+  },
+  "cases": [
+    {
+      "id": "login-alice",
+      "name": "8.1 密码登录",
+      "desc": "用户名密码换 JWT，返回体里带 authorities，可以直观看到这个账号有哪些角色与权限点。",
+      "group": "登录与鉴权",
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "alice",
+          "password": "123456"
+        },
+        "save": {
+          "aliceToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "密码登录",
+        "responseDesc": "token + 用户名 + 权限列表"
+      }
+    },
+    {
+      "id": "me",
+      "name": "8.2 查询当前用户",
+      "desc": "JWT 解析出的身份被放进 SecurityContext，控制器用 Authentication 直接取。",
+      "group": "登录与鉴权",
+      "req": {
+        "method": "GET",
+        "path": "/api/auth/me",
+        "headers": {
+          "Authorization": "Bearer ${aliceToken}"
+        }
+      },
+      "openapi": {
+        "summary": "当前登录用户信息"
+      }
+    },
+    {
+      "id": "public",
+      "name": "8.3 匿名可访问",
+      "desc": "permitAll 的路径不需要 token，用来放登录页、健康检查这类接口。",
+      "group": "登录与鉴权",
+      "req": {
+        "method": "GET",
+        "path": "/api/public/info"
+      },
+      "openapi": {
+        "summary": "公开接口"
+      }
+    },
+    {
+      "id": "hello",
+      "name": "8.4 登录后可访问",
+      "desc": "anyRequest().authenticated() 兜底，带了合法 token 才能进。",
+      "group": "登录与鉴权",
+      "req": {
+        "method": "GET",
+        "path": "/api/hello",
+        "headers": {
+          "Authorization": "Bearer ${aliceToken}"
+        }
+      },
+      "openapi": {
+        "summary": "需要登录的接口"
+      }
+    },
+    {
+      "id": "no-token",
+      "name": "8.5 不带 token",
+      "desc": "没有 Authorization 头，由 JsonAuthenticationEntryPoint 返回 401，响应体是统一结构。",
+      "group": "登录与鉴权",
+      "expect": 401,
+      "req": {
+        "method": "GET",
+        "path": "/api/hello"
+      },
+      "openapi": {
+        "summary": "未认证访问",
+        "errors": {
+          "401": {
+            "description": "未登录"
+          }
+        }
+      }
+    },
+    {
+      "id": "bad-password",
+      "name": "8.6 密码错误",
+      "desc": "认证失败统一提示\"用户名或密码错误\"，不区分是哪个错——区分了等于告诉攻击者哪些用户名存在。",
+      "group": "登录与鉴权",
+      "expect": 401,
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "alice",
+          "password": "wrong-password"
+        }
+      },
+      "openapi": {
+        "summary": "密码错误",
+        "errors": {
+          "401": {
+            "description": "认证失败"
+          }
+        }
+      }
+    },
+    {
+      "id": "disabled-user",
+      "name": "8.7 账号被禁用",
+      "desc": "dave 的 enabled=false。认证阶段账号状态不可用，返回 403。",
+      "group": "登录与鉴权",
+      "expect": 403,
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "dave",
+          "password": "123456"
+        }
+      },
+      "openapi": {
+        "summary": "禁用账号登录",
+        "errors": {
+          "401": {
+            "description": "账号不可用"
+          }
+        }
+      }
+    },
+    {
+      "id": "locked-user",
+      "name": "8.8 账号被锁定",
+      "desc": "frank 的 locked=true，同样在认证阶段被拒，返回 403。锁定与禁用是两个状态，业务上分别处理。",
+      "group": "登录与鉴权",
+      "expect": 403,
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "frank",
+          "password": "123456"
+        }
+      },
+      "openapi": {
+        "summary": "锁定账号登录",
+        "errors": {
+          "401": {
+            "description": "账号已锁定"
+          }
+        }
+      }
+    },
+    {
+      "id": "login-bob",
+      "name": "8.9 登录管理员 bob",
+      "desc": "bob 同时具备 ADMIN 与 AUDITOR 两个角色。",
+      "group": "角色与权限",
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "bob",
+          "password": "123456"
+        },
+        "save": {
+          "bobToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "管理员登录"
+      }
+    },
+    {
+      "id": "login-carol",
+      "name": "8.10 登录 carol",
+      "desc": "carol 只有 ADMIN，缺 AUDITOR，用来对照 hasAllRoles。",
+      "group": "角色与权限",
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "carol",
+          "password": "123456"
+        },
+        "save": {
+          "carolToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "普通管理员登录"
+      }
+    },
+    {
+      "id": "login-erin",
+      "name": "8.11 登录 erin",
+      "desc": "erin 只有 AUDITOR，用来对照 hasAnyRole。",
+      "group": "角色与权限",
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "json": {
+          "username": "erin",
+          "password": "123456"
+        },
+        "save": {
+          "erinToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "审计员登录"
+      }
+    },
+    {
+      "id": "admin-denied",
+      "name": "8.12 hasRole 拒绝",
+      "desc": "alice 只有 USER 角色，访问 /api/admin/** 返回 403。注意是 403 而不是 401——身份已确认，只是没权限。",
+      "group": "角色与权限",
+      "expect": 403,
+      "req": {
+        "method": "GET",
+        "path": "/api/admin/dashboard",
+        "headers": {
+          "Authorization": "Bearer ${aliceToken}"
+        }
+      },
+      "openapi": {
+        "summary": "无权限访问管理接口",
+        "errors": {
+          "403": {
+            "description": "权限不足"
+          }
+        }
+      }
+    },
+    {
+      "id": "admin-ok",
+      "name": "8.13 hasRole 放行",
+      "desc": "bob 有 ADMIN 角色，正常返回。",
+      "group": "角色与权限",
+      "req": {
+        "method": "GET",
+        "path": "/api/admin/dashboard",
+        "headers": {
+          "Authorization": "Bearer ${bobToken}"
+        }
+      },
+      "openapi": {
+        "summary": "管理员访问"
+      }
+    },
+    {
+      "id": "allroles-denied",
+      "name": "8.14 hasAllRoles 拒绝",
+      "desc": "carol 只有 ADMIN，而 /stage3/audit/** 要求同时具备 ADMIN 与 AUDITOR。stage3 这条链用的是 HTTP Basic 认证，带上 Basic 头即可。",
+      "group": "角色与权限",
+      "expect": 403,
+      "req": {
+        "method": "GET",
+        "path": "/stage3/audit/logs",
+        "headers": {
+          "Authorization": "Basic Y2Fyb2w6MTIzNDU2"
+        }
+      },
+      "openapi": {
+        "summary": "角色不全被拒",
+        "errors": {
+          "403": {
+            "description": "权限不足"
+          }
+        }
+      }
+    },
+    {
+      "id": "allroles-ok",
+      "name": "8.15 hasAllRoles 放行",
+      "desc": "bob 两个角色都具备，可以访问审计日志。",
+      "group": "角色与权限",
+      "req": {
+        "method": "GET",
+        "path": "/stage3/audit/logs",
+        "headers": {
+          "Authorization": "Basic Ym9iOjEyMzQ1Ng=="
+        }
+      },
+      "openapi": {
+        "summary": "双角色访问审计日志"
+      }
+    },
+    {
+      "id": "anyrole-ok",
+      "name": "8.16 hasAnyRole 放行",
+      "desc": "erin 只有 AUDITOR，但 /stage3/ops/** 是 hasAnyRole(ADMIN, AUDITOR)，具备其一即可。",
+      "group": "角色与权限",
+      "req": {
+        "method": "GET",
+        "path": "/stage3/ops/alerts",
+        "headers": {
+          "Authorization": "Basic ZXJpbjoxMjM0NTY="
+        }
+      },
+      "openapi": {
+        "summary": "任一角色即可访问"
+      }
+    },
+    {
+      "id": "authority-ok",
+      "name": "8.17 hasAuthority 放行",
+      "desc": "alice 虽然没有管理角色，但单独授了 ARTICLE_DELETE 权限点，删除文章能通过。",
+      "group": "角色与权限",
+      "req": {
+        "method": "DELETE",
+        "path": "/api/articles/1001",
+        "headers": {
+          "Authorization": "Bearer ${aliceToken}"
+        }
+      },
+      "openapi": {
+        "summary": "按权限点访问"
+      }
+    },
+    {
+      "id": "authority-denied",
+      "name": "8.18 hasAuthority 拒绝",
+      "desc": "bob 是管理员，但没有 ARTICLE_DELETE 权限点，同样被拒。角色大不等于权限全。",
+      "group": "角色与权限",
+      "expect": 403,
+      "req": {
+        "method": "DELETE",
+        "path": "/api/articles/1001",
+        "headers": {
+          "Authorization": "Bearer ${bobToken}"
+        }
+      },
+      "openapi": {
+        "summary": "缺少权限点被拒",
+        "errors": {
+          "403": {
+            "description": "缺少权限点"
+          }
+        }
+      }
+    },
+    {
+      "id": "sms-code",
+      "name": "8.19 发送短信验证码",
+      "desc": "演示模式把验证码写回响应，生产环境要关掉 expose-code。",
+      "group": "短信登录与分阶段",
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/sms/code",
+        "query": {
+          "phone": "13900001111"
+        },
+        "save": {
+          "smsCode": {
+            "from": "data",
+            "regex": "验证码：(\\d+)"
+          }
+        }
+      },
+      "openapi": {
+        "summary": "发送短信验证码",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "sms-login",
+      "name": "8.20 短信验证码登录",
+      "desc": "短信登录不是另写一个接口，而是给 Security 增加一种凭证类型，校验与权限装配仍由框架完成。",
+      "group": "短信登录与分阶段",
+      "req": {
+        "method": "POST",
+        "path": "/api/auth/sms/login",
+        "json": {
+          "phone": "13900001111",
+          "code": "${smsCode}"
+        }
+      },
+      "openapi": {
+        "summary": "验证码登录"
+      }
+    },
+    {
+      "id": "stage2-get",
+      "name": "8.21 分阶段：匿名读",
+      "desc": "GET /stage2/articles/** 放行给所有人，演示按 HTTP 方法做细粒度放行。",
+      "group": "短信登录与分阶段",
+      "req": {
+        "method": "GET",
+        "path": "/stage2/articles/1"
+      },
+      "openapi": {
+        "summary": "匿名查看文章"
+      }
+    },
+    {
+      "id": "stage2-delete",
+      "name": "8.22 分阶段：删需登录",
+      "desc": "同一个路径的 DELETE 没有放行，匿名请求被 401 挡下。",
+      "group": "短信登录与分阶段",
+      "expect": 401,
+      "req": {
+        "method": "DELETE",
+        "path": "/stage2/articles/1"
+      },
+      "openapi": {
+        "summary": "匿名删除文章",
+        "errors": {
+          "401": {
+            "description": "未登录"
+          }
+        }
+      }
+    },
+    {
+      "id": "stage1",
+      "name": "8.23 分阶段：最简配置",
+      "desc": "stage1 只要求登录，认证方式是 HTTP Basic，不认 JWT——五条链各管一段路径，认证方式也各不相同。",
+      "group": "短信登录与分阶段",
+      "req": {
+        "method": "GET",
+        "path": "/stage1/hello",
+        "headers": {
+          "Authorization": "Basic YWxpY2U6MTIzNDU2"
+        }
+      },
+      "openapi": {
+        "summary": "stage1 需要登录"
+      }
+    }
+  ]
+}

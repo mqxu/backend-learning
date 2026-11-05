@@ -1,0 +1,134 @@
+{
+  "module": "12-actuator",
+  "port": 8012,
+  "title": "12 · 应用监控",
+  "tag": "监控",
+  "groupSlug": { "业务打点": "business", "监控端点": "endpoint" },
+  "cases": [
+    {
+      "id": "hello",
+      "name": "12.1 模块入口",
+      "desc": "返回三个监控端点地址，方便直接跳过去看。",
+      "group": "业务打点",
+      "req": { "method": "GET", "path": "/business/hello" },
+      "openapi": { "summary": "模块入口" }
+    },
+    {
+      "id": "order-1",
+      "name": "12.2 下单（第一次）",
+      "desc": "每次成功下单会给 business.orders.created 计数器加一，并记录一次处理耗时。",
+      "group": "业务打点",
+      "req": { "method": "POST", "path": "/business/orders", "query": { "amount": 199 } },
+      "openapi": { "summary": "创建订单", "parameters": [{ "name": "amount", "in": "query", "schema": { "type": "integer", "default": 100 } }] }
+    },
+    {
+      "id": "order-2",
+      "name": "12.3 下单（第二次）",
+      "desc": "再下一单，计数器变成 2。",
+      "group": "业务打点",
+      "req": { "method": "POST", "path": "/business/orders", "query": { "amount": 399 } },
+      "openapi": { "summary": "创建订单（第二次）" }
+    },
+    {
+      "id": "order-3",
+      "name": "12.4 下单（第三次）",
+      "desc": "第三次，计数器到 3。",
+      "group": "业务打点",
+      "req": { "method": "POST", "path": "/business/orders", "query": { "amount": 88 } },
+      "openapi": { "summary": "创建订单（第三次）" }
+    },
+    {
+      "id": "slow",
+      "name": "12.5 慢请求",
+      "desc": "睡 300ms，让 Timer 有足够大的样本，P95/P99 才有意义。",
+      "group": "业务打点",
+      "req": { "method": "GET", "path": "/business/slow", "query": { "ms": 300 } },
+      "openapi": { "summary": "模拟慢请求", "parameters": [{ "name": "ms", "in": "query", "schema": { "type": "integer", "default": 200 } }] }
+    },
+    {
+      "id": "fail",
+      "name": "12.6 失败打点（库存为空）",
+      "desc": "失败也计数，但带 reason 标签，面板上能按原因分组。",
+      "group": "业务打点",
+      "req": { "method": "GET", "path": "/business/fail", "query": { "reason": "stock_empty" } },
+      "openapi": { "summary": "模拟失败", "parameters": [{ "name": "reason", "in": "query", "schema": { "type": "string", "default": "stock_empty" } }] }
+    },
+    {
+      "id": "fail-2",
+      "name": "12.7 失败打点（支付超时）",
+      "desc": "换个 reason，验证标签能区分不同原因。",
+      "group": "业务打点",
+      "req": { "method": "GET", "path": "/business/fail", "query": { "reason": "pay_timeout" } },
+      "openapi": { "summary": "模拟失败（另一原因）" }
+    },
+    {
+      "id": "health",
+      "name": "12.8 健康检查",
+      "desc": "show-details=always 时能看到每个组件的状态，包含自定义的 inventory 检查。",
+      "group": "监控端点",
+      "req": { "method": "GET", "path": "/actuator/health" },
+      "openapi": { "summary": "健康检查" }
+    },
+    {
+      "id": "info",
+      "name": "12.9 应用信息",
+      "desc": "info 端点包含配置文件里的 info.app.* 与自定义 InfoContributor 写入的模块信息。",
+      "group": "监控端点",
+      "req": { "method": "GET", "path": "/actuator/info" },
+      "openapi": { "summary": "应用信息" }
+    },
+    {
+      "id": "metrics",
+      "name": "12.10 指标清单",
+      "desc": "列出所有可用的指标名，业务指标与 JVM、HTTP 指标都在这里。",
+      "group": "监控端点",
+      "maxBody": 1400,
+      "req": { "method": "GET", "path": "/actuator/metrics" },
+      "openapi": { "summary": "全部指标名" }
+    },
+    {
+      "id": "metric-counter",
+      "name": "12.11 查单个指标",
+      "desc": "按名字取某个指标的值与标签。这里的 COUNT 就是刚才三次下单的累计值。",
+      "group": "监控端点",
+      "req": { "method": "GET", "path": "/actuator/metrics/business.orders.created" },
+      "openapi": { "summary": "查询下单计数", "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }] }
+    },
+    {
+      "id": "metric-timer",
+      "name": "12.12 查耗时分布",
+      "desc": "Timer 指标带 count、total、max 以及各分位数，慢请求的效果在这里体现。",
+      "group": "监控端点",
+      "req": {
+        "method": "GET",
+        "path": "/actuator/metrics/business.order.handle",
+        "query": { "tag": "result:success" }
+      },
+      "openapi": {
+        "summary": "查询处理耗时",
+        "parameters": [{ "name": "tag", "in": "query", "schema": { "type": "string", "example": "result:success" } }]
+      }
+    },
+    {
+      "id": "metric-failed",
+      "name": "12.13 查失败计数",
+      "desc": "带标签的指标要按标签过滤才能分别取到，这两个 reason 各 1 次。",
+      "group": "监控端点",
+      "req": {
+        "method": "GET",
+        "path": "/actuator/metrics/business.orders.failed",
+        "query": { "tag": "reason:stock_empty" }
+      },
+      "openapi": { "summary": "查询失败计数" }
+    },
+    {
+      "id": "prometheus",
+      "name": "12.14 Prometheus 抓取格式",
+      "desc": "这个端点是给 Prometheus 抓的，文本格式，每行一条样本。内容很长，这里只显示开头。",
+      "group": "监控端点",
+      "maxBody": 1300,
+      "req": { "method": "GET", "path": "/actuator/prometheus" },
+      "openapi": { "summary": "Prometheus 指标输出" }
+    }
+  ]
+}

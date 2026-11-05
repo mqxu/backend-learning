@@ -1,0 +1,248 @@
+{
+  "module": "10-doc",
+  "port": 8010,
+  "title": "10 · 接口文档",
+  "tag": "图书",
+  "groupSlug": {
+    "图书接口": "book",
+    "校验与维护": "rules",
+    "文档元信息": "openapi"
+  },
+  "cases": [
+    {
+      "id": "page",
+      "name": "10.1 分页查询",
+      "desc": "查询参数用 POJO 接收，注解 @ParameterObject 会让文档把它展开成一个个独立参数，而不是一个对象。",
+      "group": "图书接口",
+      "req": {
+        "method": "GET",
+        "path": "/books",
+        "query": {
+          "pageNum": 1,
+          "pageSize": 3
+        }
+      },
+      "openapi": {
+        "summary": "分页查询图书"
+      }
+    },
+    {
+      "id": "filter",
+      "name": "10.2 条件过滤",
+      "desc": "keyword 匹配书名或作者，category 是枚举，文档里会渲染成下拉框。",
+      "group": "图书接口",
+      "req": {
+        "method": "GET",
+        "path": "/books",
+        "query": {
+          "keyword": "Java",
+          "category": "TECH"
+        }
+      },
+      "openapi": {
+        "summary": "按关键字与分类过滤"
+      }
+    },
+    {
+      "id": "detail",
+      "name": "10.3 查询详情",
+      "desc": "路径参数在文档里显示为 path 类型，带 example，调试时不用手填。",
+      "group": "图书接口",
+      "req": {
+        "method": "GET",
+        "path": "/books/1"
+      },
+      "openapi": {
+        "summary": "按 ID 查询图书",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "create",
+      "name": "10.4 新增图书",
+      "desc": "请求体注解里写了 example，Swagger UI 点开就有可用的示例 JSON，不用照着字段一个个填。",
+      "group": "图书接口",
+      "req": {
+        "method": "POST",
+        "path": "/books",
+        "json": {
+          "title": "重构：改善既有代码的设计",
+          "author": "Martin Fowler",
+          "isbn": "9787115508645",
+          "category": "TECH",
+          "price": 118.0,
+          "stock": 15,
+          "publishDate": "2019-05-01"
+        },
+        "save": {
+          "bookId": "data.id"
+        }
+      },
+      "openapi": {
+        "summary": "新增图书"
+      }
+    },
+    {
+      "id": "duplicate-isbn",
+      "name": "10.5 ISBN 重复",
+      "desc": "同一本 ISBN 再提交一次，返回 409 与业务码 20409。文档里 @ApiResponse 已经把这条写清楚了。",
+      "group": "校验与维护",
+      "expect": 409,
+      "req": {
+        "method": "POST",
+        "path": "/books",
+        "json": {
+          "title": "重构（重复）",
+          "author": "Martin Fowler",
+          "isbn": "9787115508645",
+          "category": "TECH",
+          "price": 118.0
+        }
+      },
+      "openapi": {
+        "summary": "ISBN 重复",
+        "errors": {
+          "409": {
+            "description": "ISBN 已存在"
+          }
+        }
+      }
+    },
+    {
+      "id": "validate",
+      "name": "10.6 参数校验失败",
+      "desc": "ISBN 不是 13 位数字，校验注解拦下。约束条件在文档的字段说明里也能看到。",
+      "group": "校验与维护",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/books",
+        "json": {
+          "title": "缺字段的书",
+          "author": "某作者",
+          "isbn": "123",
+          "category": "OTHER",
+          "price": 10
+        }
+      },
+      "openapi": {
+        "summary": "参数校验失败",
+        "errors": {
+          "400": {
+            "description": "参数不合法"
+          }
+        }
+      }
+    },
+    {
+      "id": "categories",
+      "name": "10.7 查询分类枚举",
+      "desc": "把枚举值做成接口返回，前端下拉框就不用把枚举硬编码一份。",
+      "group": "校验与维护",
+      "req": {
+        "method": "GET",
+        "path": "/books/categories"
+      },
+      "openapi": {
+        "summary": "查询全部分类"
+      }
+    },
+    {
+      "id": "delete",
+      "name": "10.8 删除图书",
+      "desc": "删除上一步新增的那本。",
+      "group": "校验与维护",
+      "req": {
+        "method": "DELETE",
+        "path": "/books/${bookId}"
+      },
+      "openapi": {
+        "summary": "删除图书"
+      }
+    },
+    {
+      "id": "after-delete",
+      "name": "10.9 删除后查询",
+      "desc": "返回 404 与业务码 20404，响应结构与其他模块保持一致。",
+      "group": "校验与维护",
+      "expect": 404,
+      "req": {
+        "method": "GET",
+        "path": "/books/${bookId}"
+      },
+      "openapi": {
+        "summary": "查询已删除的图书",
+        "errors": {
+          "404": {
+            "description": "图书不存在"
+          }
+        }
+      }
+    },
+    {
+      "id": "api-docs",
+      "name": "10.10 OpenAPI JSON",
+      "desc": "这是整份文档的原始 JSON，Apifox、Postman、代码生成器都从这里导入。真实体量有几千行，这里只显示开头。",
+      "group": "文档元信息",
+      "maxBody": 1100,
+      "req": {
+        "method": "GET",
+        "path": "/v3/api-docs"
+      },
+      "openapi": {
+        "summary": "获取完整 OpenAPI 文档"
+      }
+    },
+    {
+      "id": "api-docs-group",
+      "name": "10.11 按分组取文档",
+      "desc": "配置了 group-configs 后，每个分组可以单独导出，团队按业务线同步文档时很有用。",
+      "group": "文档元信息",
+      "maxBody": 900,
+      "req": {
+        "method": "GET",
+        "path": "/v3/api-docs/book"
+      },
+      "openapi": {
+        "summary": "获取图书分组文档"
+      }
+    },
+    {
+      "id": "swagger-ui",
+      "name": "10.12 Swagger UI 页面",
+      "desc": "浏览器打开 /swagger-ui.html 就是可交互的接口调试页，这里是它的 HTML 首屏（截断显示）。",
+      "group": "文档元信息",
+      "maxBody": 600,
+      "req": {
+        "method": "GET",
+        "path": "/swagger-ui/index.html"
+      },
+      "openapi": {
+        "summary": "Swagger UI 页面"
+      }
+    },
+    {
+      "id": "ops-health",
+      "name": "10.13 运维分组接口",
+      "desc": "/ops/** 被单独分到运维分组，演示按业务线拆分文档。",
+      "group": "文档元信息",
+      "req": {
+        "method": "GET",
+        "path": "/ops/health"
+      },
+      "openapi": {
+        "summary": "健康检查"
+      }
+    }
+  ]
+}

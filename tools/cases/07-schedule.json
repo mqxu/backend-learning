@@ -1,0 +1,121 @@
+{
+  "module": "07-schedule",
+  "port": 8007,
+  "title": "07 · 定时任务",
+  "tag": "定时任务",
+  "groupSlug": { "周期任务": "periodic", "动态任务": "dynamic", "外部任务": "weather" },
+  "console": {
+    "title": "控制台输出（三种触发方式交替出现）",
+    "include": ["fixedRate", "fixedDelay", "cron", "动态任务", "天气早报"],
+    "limit": 24
+  },
+  "cases": [
+    {
+      "id": "wait-periodic",
+      "name": "7.1 等待三个周期任务各跑几轮",
+      "desc": "fixedRate 每 3 秒、fixedDelay 每 5 秒、cron 每 10 秒。先等 11 秒，再查执行记录。",
+      "group": "周期任务",
+      "wait": 11000,
+      "req": { "method": "GET", "path": "/schedule/hello" },
+      "openapi": { "summary": "等待期" }
+    },
+    {
+      "id": "tasks",
+      "name": "7.2 任务执行统计",
+      "desc": "按任务名汇总执行次数、最近执行时间、平均耗时，用来确认任务真的在跑。",
+      "group": "周期任务",
+      "req": { "method": "GET", "path": "/schedule/tasks" },
+      "openapi": { "summary": "任务执行统计" }
+    },
+    {
+      "id": "records",
+      "name": "7.3 最近执行记录",
+      "desc": "每条记录带线程名。线程池配了 4 个线程，能看到不同任务跑在不同线程上。",
+      "group": "周期任务",
+      "req": { "method": "GET", "path": "/schedule/tasks/records", "query": { "limit": 12 } },
+      "openapi": {
+        "summary": "最近的执行记录",
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }]
+      }
+    },
+    {
+      "id": "register",
+      "name": "7.4 注册动态任务",
+      "desc": "运行期加一个每 5 秒执行的任务，不用改代码也不用重启。",
+      "group": "动态任务",
+      "req": {
+        "method": "POST",
+        "path": "/schedule/tasks/dynamic",
+        "query": { "name": "dynamicReport", "cron": "0/5 * * * * ?" }
+      },
+      "openapi": {
+        "summary": "注册动态任务",
+        "parameters": [
+          { "name": "name", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "cron", "in": "query", "schema": { "type": "string", "default": "0/5 * * * * ?" } }
+        ]
+      }
+    },
+    {
+      "id": "wait-dynamic",
+      "name": "7.5 等待动态任务执行",
+      "desc": "等 11 秒，让动态任务跑两轮以上。",
+      "group": "动态任务",
+      "wait": 11000,
+      "req": { "method": "GET", "path": "/schedule/tasks/dynamic" },
+      "openapi": { "summary": "查看动态任务状态" }
+    },
+    {
+      "id": "dynamic-records",
+      "name": "7.6 动态任务的执行记录",
+      "desc": "在记录里能按任务名找到 dynamicReport，说明注册成功并生效。",
+      "group": "动态任务",
+      "req": { "method": "GET", "path": "/schedule/tasks/records", "query": { "limit": 8 } },
+      "openapi": { "summary": "查看动态任务执行记录" }
+    },
+    {
+      "id": "cancel",
+      "name": "7.7 取消动态任务",
+      "desc": "cancel 之后不再产生新的执行记录，但已保留的记录仍在。",
+      "group": "动态任务",
+      "req": { "method": "DELETE", "path": "/schedule/tasks/dynamic/dynamicReport" },
+      "openapi": { "summary": "取消动态任务" }
+    },
+    {
+      "id": "after-cancel",
+      "name": "7.8 确认任务已停止",
+      "desc": "运行中的任务列表里已经没有 dynamicReport；再取消一次会返回任务不存在。",
+      "group": "动态任务",
+      "req": { "method": "DELETE", "path": "/schedule/tasks/dynamic/dynamicReport" },
+      "openapi": { "summary": "重复取消" }
+    },
+    {
+      "id": "bad-cron",
+      "name": "7.9 cron 表达式非法",
+      "desc": "表达式写错时 CronTrigger 构造即失败，接口把异常信息返回，不会注册出一个坏任务。",
+      "group": "动态任务",
+      "req": {
+        "method": "POST",
+        "path": "/schedule/tasks/dynamic",
+        "query": { "name": "badTask", "cron": "这不是 cron" }
+      },
+      "openapi": { "summary": "非法 cron 表达式" }
+    },
+    {
+      "id": "weather",
+      "name": "7.10 查询今日天气",
+      "desc": "mock 模式下返回内置天气数据；真实模式会调用和风天气接口，key 从环境变量注入。",
+      "group": "外部任务",
+      "req": { "method": "GET", "path": "/schedule/weather" },
+      "openapi": { "summary": "查询今日天气" }
+    },
+    {
+      "id": "weather-send",
+      "name": "7.11 手动触发天气邮件",
+      "desc": "定时任务与手动触发共用同一段业务代码。邮件 mock 模式下只打日志，不连 SMTP。",
+      "group": "外部任务",
+      "req": { "method": "POST", "path": "/schedule/weather/send" },
+      "openapi": { "summary": "手动发送天气邮件" }
+    }
+  ]
+}

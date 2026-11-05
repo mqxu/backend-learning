@@ -1,0 +1,422 @@
+{
+  "module": "14-toolkit",
+  "port": 8014,
+  "title": "14 · 工具库实战",
+  "tag": "工具",
+  "groupSlug": {
+    "验证码": "captcha",
+    "文本处理": "text",
+    "短链": "shortlink",
+    "数据脱敏": "sensitive",
+    "分片上传": "chunk",
+    "导出与巡检": "export"
+  },
+  "cases": [
+    {
+      "id": "captcha-line",
+      "name": "14.1 生成字符验证码",
+      "desc": "返回 key 与 base64 图片。key 是验证码的标识，前端提交时带上它，服务端按 key 取出答案比对。",
+      "group": "验证码",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/captcha",
+        "query": {
+          "type": "line"
+        },
+        "save": {
+          "captchaId": "data.captchaId"
+        }
+      },
+      "openapi": {
+        "summary": "生成字符验证码",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "line"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "captcha-verify-wrong",
+      "name": "14.2 验证码校验失败",
+      "desc": "故意传错验证码，返回 400 与剩余可试次数。校验失败会计次，连续错多次就作废这个 captchaId。",
+      "group": "验证码",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/captcha/verify",
+        "json": {
+          "captchaId": "${captchaId}",
+          "code": "0000"
+        }
+      },
+      "openapi": {
+        "summary": "校验验证码（错误示例）"
+      },
+      "expect": 400
+    },
+    {
+      "id": "captcha-arithmetic",
+      "name": "14.3 生成算术验证码",
+      "desc": "算术型把题目渲染成图片，答案由服务端保存，能挡住简单的图片识别脚本。",
+      "group": "验证码",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/captcha",
+        "query": {
+          "type": "arithmetic"
+        }
+      },
+      "openapi": {
+        "summary": "生成算术验证码"
+      }
+    },
+    {
+      "id": "text-extract",
+      "name": "14.4 提取文本中的结构化信息",
+      "desc": "从一段杂乱文本里抽出手机号、邮箱、URL、身份证等，用于客服工单、聊天记录整理这类场景。",
+      "group": "文本处理",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/text/extract",
+        "json": {
+          "text": "客户张三，手机 13812345678，邮箱 zhangsan@example.com，官网 https://example.com/order?id=1，身份证 320102200510241234。订单号 SO20261104001。"
+        }
+      },
+      "openapi": {
+        "summary": "提取文本中的手机号/邮箱/URL"
+      }
+    },
+    {
+      "id": "text-sensitive",
+      "name": "14.5 敏感词检测与替换",
+      "desc": "词表里有赌博、诈骗、代开发票，一次扫描全部命中，同时返回打码版与高亮版。",
+      "group": "文本处理",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/text/sensitive",
+        "json": {
+          "text": "这个平台涉嫌赌博，还有人做诈骗，甚至代开发票，必须处理。"
+        }
+      },
+      "openapi": {
+        "summary": "敏感词检测"
+      }
+    },
+    {
+      "id": "shortlink-create",
+      "name": "14.6 生成短链",
+      "desc": "长链接换短码。短码用发号器 + 进制转换生成，不用查库判断重复。",
+      "group": "短链",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/short-link",
+        "json": {
+          "url": "https://github.com/mqxu/backend-learning/tree/main/14-toolkit",
+          "ttlSeconds": 86400
+        },
+        "save": {
+          "shortCode": "data.code"
+        }
+      },
+      "openapi": {
+        "summary": "生成短链"
+      }
+    },
+    {
+      "id": "shortlink-stats",
+      "name": "14.7 短链访问统计",
+      "desc": "短链会记录访问次数与最近访问时间，运营活动靠这个看点击量。",
+      "group": "短链",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/short-link/${shortCode}"
+      },
+      "openapi": {
+        "summary": "短链统计",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "shortlink-redirect",
+      "name": "14.8 短链跳转",
+      "desc": "访问 /s/{code} 返回 302 与 Location 头，浏览器自动跳到原地址。",
+      "group": "短链",
+      "expect": 302,
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/s/${shortCode}",
+        "redirect": "manual"
+      },
+      "openapi": {
+        "summary": "短链跳转",
+        "errors": {
+          "404": {
+            "description": "短码不存在"
+          }
+        }
+      }
+    },
+    {
+      "id": "customer-create",
+      "name": "14.9 新增客户（明文入库）",
+      "desc": "手机号、身份证在库里加密存储，返回给前端的是脱敏后的视图。",
+      "group": "数据脱敏",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/customer",
+        "json": {
+          "name": "李四",
+          "phone": "13900001111",
+          "idCard": "320102199003071239",
+          "password": "cust-pass-123",
+          "level": "VIP"
+        },
+        "save": {
+          "customerId": "data.id"
+        }
+      },
+      "openapi": {
+        "summary": "新增客户"
+      }
+    },
+    {
+      "id": "customer-agent",
+      "name": "14.10 客服角色查看",
+      "desc": "role=agent 只能看到脱敏字段，手机号中间四位被打码。",
+      "group": "数据脱敏",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/customer/${customerId}",
+        "query": {
+          "role": "agent"
+        }
+      },
+      "openapi": {
+        "summary": "按角色查看客户",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "agent"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "customer-admin",
+      "name": "14.11 管理员查看",
+      "desc": "role=admin 能看到完整手机号，但仍需二次校验才能看身份证。",
+      "group": "数据脱敏",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/customer/${customerId}",
+        "query": {
+          "role": "admin"
+        }
+      },
+      "openapi": {
+        "summary": "管理员查看客户"
+      }
+    },
+    {
+      "id": "customer-verify",
+      "name": "14.12 二次校验密码",
+      "desc": "查看敏感字段前要求再输一次密码，这是\"二次认证\"在数据访问上的应用。",
+      "group": "数据脱敏",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/customer/${customerId}/verify-password",
+        "json": {
+          "password": "cust-pass-123"
+        }
+      },
+      "openapi": {
+        "summary": "校验客户密码"
+      }
+    },
+    {
+      "id": "chunk-init",
+      "name": "14.13 分片上传初始化",
+      "desc": "声明文件名、分片总数与整文件 MD5，返回 uploadId。秒传就是在这里判断：已有相同 MD5 的文件直接返回。",
+      "group": "分片上传",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/chunk/init",
+        "json": {
+          "fileName": "note.txt",
+          "totalChunks": 1,
+          "md5": "5e08942543a66e709e0102db11d9222a"
+        },
+        "save": {
+          "uploadId": "data.uploadId"
+        }
+      },
+      "openapi": {
+        "summary": "初始化分片上传"
+      }
+    },
+    {
+      "id": "chunk-upload",
+      "name": "14.14 上传第一个分片",
+      "desc": "分片按 index 落盘，服务端记录已收到的分片，支持断点续传。",
+      "group": "分片上传",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/chunk/upload",
+        "query": {
+          "uploadId": "${uploadId}",
+          "index": 0
+        },
+        "form": {
+          "files": [
+            {
+              "name": "file",
+              "path": "tools/fixtures/note.txt"
+            }
+          ]
+        }
+      },
+      "openapi": {
+        "summary": "上传分片"
+      }
+    },
+    {
+      "id": "chunk-status",
+      "name": "14.15 查询上传状态",
+      "desc": "返回已收到的分片编号，前端据此决定从第几片续传。",
+      "group": "分片上传",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/chunk/status",
+        "query": {
+          "uploadId": "${uploadId}"
+        }
+      },
+      "openapi": {
+        "summary": "查询分片状态"
+      }
+    },
+    {
+      "id": "chunk-merge",
+      "name": "14.16 合并分片",
+      "desc": "全部分片到齐后合并成完整文件，返回 fileId 与下载地址。",
+      "group": "分片上传",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/chunk/merge",
+        "query": {
+          "uploadId": "${uploadId}"
+        }
+      },
+      "openapi": {
+        "summary": "合并分片"
+      }
+    },
+    {
+      "id": "chunk-init-2",
+      "name": "14.17 另开一个两片的上传",
+      "group": "分片上传",
+      "desc": "同样的文件按两片来传，但先不传分片，用来验证未传完时不能合并。",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/chunk/init",
+        "json": {
+          "fileName": "note.txt",
+          "totalChunks": 2
+        },
+        "save": {
+          "uploadId2": "data.uploadId"
+        }
+      }
+    },
+    {
+      "id": "chunk-merge-incomplete",
+      "name": "14.18 缺片时合并被拒",
+      "group": "分片上传",
+      "desc": "一片都没传就调合并，返回 400 与业务码 41042，说明还缺几片，不会生成半个文件。",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/chunk/merge",
+        "query": {
+          "uploadId": "${uploadId2}"
+        }
+      },
+      "expect": 400
+    },
+    {
+      "id": "excel-export",
+      "name": "14.19 导出 Excel",
+      "desc": "响应是二进制流，Content-Disposition 带文件名。本图只记录状态与响应头。",
+      "group": "导出与巡检",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/excel/export"
+      },
+      "openapi": {
+        "summary": "导出订单 Excel"
+      }
+    },
+    {
+      "id": "excel-template",
+      "name": "14.20 下载导入模板",
+      "desc": "模板带表头与示例行，用户填完再上传，减少格式错误。",
+      "group": "导出与巡检",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/excel/template"
+      },
+      "openapi": {
+        "summary": "下载导入模板"
+      }
+    },
+    {
+      "id": "inspect",
+      "name": "14.21 接口巡检",
+      "desc": "批量检查一组 URL 的可达性与响应耗时，返回汇总。运维巡检脚本的核心逻辑。",
+      "group": "导出与巡检",
+      "req": {
+        "method": "POST",
+        "path": "/toolkit/inspect",
+        "json": {
+          "urls": [
+            "http://127.0.0.1:8014/toolkit/system",
+            "http://127.0.0.1:8014/toolkit/excel/template"
+          ]
+        }
+      },
+      "openapi": {
+        "summary": "批量巡检 URL"
+      }
+    },
+    {
+      "id": "system",
+      "name": "14.22 系统信息",
+      "desc": "CPU、内存、磁盘、JVM 运行信息，面板页的原始数据。",
+      "group": "导出与巡检",
+      "req": {
+        "method": "GET",
+        "path": "/toolkit/system"
+      },
+      "openapi": {
+        "summary": "系统信息"
+      }
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "module": "02-config",
+  "port": 8002,
+  "title": "02 · 配置管理",
+  "tag": "配置",
+  "groupSlug": { "取值与类型绑定": "binding", "多环境与优先级": "profiles" },
+  "startupArgs": ["--demo.priority=命令行参数覆盖的值"],
+  "cases": [
+    {
+      "id": "basic",
+      "name": "2.1 读取基础配置",
+      "desc": "用 @Value 注入 server.port 与 spring.application.name，验证配置文件被正确加载。",
+      "group": "取值与类型绑定",
+      "req": { "method": "GET", "path": "/config/basic" },
+      "openapi": { "summary": "读取端口与应用名", "responseDesc": "拼接后的说明文本" }
+    },
+    {
+      "id": "my",
+      "name": "2.2 读取自定义配置",
+      "desc": "mqxu.name / mqxu.job 是自定义前缀，@Value 按完整键名取值。",
+      "group": "取值与类型绑定",
+      "req": { "method": "GET", "path": "/config/my" },
+      "openapi": { "summary": "读取自定义配置项" }
+    },
+    {
+      "id": "value",
+      "name": "2.3 占位符、默认值、随机值、SpEL",
+      "desc": "一次看四种取值写法：${} 引用其他键、冒号给默认值、random 生成随机值、#{} 执行 SpEL 表达式。",
+      "group": "取值与类型绑定",
+      "req": { "method": "GET", "path": "/config/value" },
+      "openapi": { "summary": "四种 @Value 写法演示" }
+    },
+    {
+      "id": "app",
+      "name": "2.4 前缀批量绑定",
+      "desc": "@ConfigurationProperties(prefix=\"app\") 把同前缀的一组配置绑定到对象，max-count 按下划线转驼峰映射到 maxCount。",
+      "group": "取值与类型绑定",
+      "req": { "method": "GET", "path": "/config/app" },
+      "openapi": { "summary": "读取 app.* 配置对象", "responseDesc": "AppProperties 对象" }
+    },
+    {
+      "id": "student",
+      "name": "2.5 嵌套对象、List、Map",
+      "desc": "student.* 里有嵌套对象 address、List&lt;String&gt; hobbies、Map&lt;String,Integer&gt; scores、对象数组 courses，全部一次绑定成功。",
+      "group": "取值与类型绑定",
+      "req": { "method": "GET", "path": "/student/info" },
+      "openapi": { "summary": "读取 student.* 复杂结构", "responseDesc": "StudentProperties 对象" }
+    },
+    {
+      "id": "profiles",
+      "name": "2.6 多环境与 @Profile",
+      "desc": "当前激活 dev，env.* 来自 application-dev.yml；EnvService 注入的是 DevEnvService 而非 ProdEnvService。",
+      "group": "多环境与优先级",
+      "req": { "method": "GET", "path": "/config/profiles" },
+      "openapi": { "summary": "查看激活的 profile 与生效实现" }
+    },
+    {
+      "id": "priority",
+      "name": "2.7 配置优先级",
+      "desc": "同一个键 demo.priority 在 yml 和命令行各写了一份，Environment 返回命令行那份。遍历 PropertySource 能看到每个来源各自的值。",
+      "group": "多环境与优先级",
+      "req": { "method": "GET", "path": "/config/priority" },
+      "openapi": { "summary": "查看同一配置键的来源与最终取值" }
+    }
+  ]
+}

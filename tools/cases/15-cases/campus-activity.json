@@ -1,0 +1,302 @@
+{
+  "module": "15-cases/campus-activity",
+  "port": 8016,
+  "title": "15-3 · 校园活动小程序后端",
+  "tag": "综合案例",
+  "groupSlug": {
+    "公开接口": "public",
+    "小程序登录": "app-auth",
+    "学生端": "app",
+    "管理端": "admin"
+  },
+  "cases": [
+    {
+      "id": "ping",
+      "name": "15.1 探活",
+      "desc": "不查库、不校验身份，只确认进程还活着。容器编排的存活探针就调它。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/api/ping"
+      },
+      "openapi": {
+        "summary": "探活接口"
+      }
+    },
+    {
+      "id": "categories",
+      "name": "15.2 活动分类",
+      "desc": "列表页的筛选条数据。分类带排序与颜色，前端不用写死。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/categories"
+      },
+      "openapi": {
+        "summary": "活动分类"
+      }
+    },
+    {
+      "id": "activities",
+      "name": "15.3 活动列表",
+      "desc": "分页查询，返回报名状态与剩余名额。时间字段按天格式化，前端直接显示。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/activities",
+        "query": {
+          "page": 1,
+          "size": 3
+        }
+      },
+      "openapi": {
+        "summary": "活动列表",
+        "responseDesc": "分页 + 报名状态"
+      }
+    },
+    {
+      "id": "activity-detail",
+      "name": "15.4 活动详情",
+      "desc": "带出组织者、分类、报名窗口与当前报名人数。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/activities/3001"
+      },
+      "openapi": {
+        "summary": "活动详情"
+      }
+    },
+    {
+      "id": "app-login",
+      "name": "15.5 小程序登录",
+      "desc": "dev-mode 打开时传 devOpenId 跳过微信 code2session，本地与课堂都能直接跑。",
+      "group": "小程序登录",
+      "req": {
+        "method": "POST",
+        "path": "/api/app/auth/login",
+        "json": {
+          "devOpenId": "mock-student-1"
+        },
+        "save": {
+          "studentToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "小程序登录",
+        "responseDesc": "token 与绑定状态"
+      }
+    },
+    {
+      "id": "bind",
+      "name": "15.6 绑定学籍",
+      "desc": "学号必须落在白名单里，姓名以白名单为准，前端传的姓名不作数。绑定后才能报名。",
+      "group": "小程序登录",
+      "req": {
+        "method": "POST",
+        "path": "/api/app/auth/bind",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        },
+        "json": {
+          "studentNo": "2023001",
+          "realName": "张小明"
+        }
+      },
+      "openapi": {
+        "summary": "绑定学籍"
+      }
+    },
+    {
+      "id": "profile",
+      "name": "15.7 个人资料",
+      "desc": "绑定后返回学号、学院、年级与专业；没绑定则 bound=false。",
+      "group": "学生端",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/user/profile",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "openapi": {
+        "summary": "个人资料"
+      }
+    },
+    {
+      "id": "signup",
+      "name": "15.8 报名活动",
+      "desc": "报名前依次检查：是否绑定学籍、活动是否存在、报名窗口是否开启、是否重复报名、名额是否已满。3002 的报名窗口当前是开着的。",
+      "group": "学生端",
+      "req": {
+        "method": "POST",
+        "path": "/api/app/activities/3002/signup",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        },
+        "json": {
+          "formData": "{\"note\":\"想参加初赛\"}"
+        },
+        "save": {
+          "signupId": "data.id"
+        }
+      },
+      "openapi": {
+        "summary": "报名活动",
+        "responseDesc": "报名单号与状态"
+      }
+    },
+    {
+      "id": "signup-again",
+      "name": "15.9 重复报名被拦",
+      "desc": "种子数据里张小明已经报过 3001，再报一次返回业务码 30002。判断放在事务里，配合唯一索引兜并发。",
+      "group": "学生端",
+      "req": {
+        "method": "POST",
+        "path": "/api/app/activities/3001/signup",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        },
+        "json": {
+          "formData": "{}"
+        }
+      },
+      "expect": 200,
+      "openapi": {
+        "summary": "重复报名（业务码 30002）"
+      }
+    },
+    {
+      "id": "my-signups",
+      "name": "15.10 我的报名",
+      "desc": "只返回当前用户的报名，按提交时间倒序，带活动名称与状态文案。",
+      "group": "学生端",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/signups",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "openapi": {
+        "summary": "我的报名"
+      }
+    },
+    {
+      "id": "messages",
+      "name": "15.11 消息通知",
+      "desc": "报名、审核、取消都会写一条站内信；未读数单独有一个接口给小红点用。",
+      "group": "学生端",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/messages",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "openapi": {
+        "summary": "消息列表"
+      }
+    },
+    {
+      "id": "admin-login",
+      "name": "15.12 管理端登录",
+      "desc": "账号密码登录，与小程序端的微信登录是两套入口，签发的令牌角色不同。",
+      "group": "管理端",
+      "req": {
+        "method": "POST",
+        "path": "/api/admin/auth/login",
+        "json": {
+          "username": "admin",
+          "password": "Admin@123"
+        },
+        "save": {
+          "adminToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "管理端登录"
+      }
+    },
+    {
+      "id": "dashboard",
+      "name": "15.13 工作台统计",
+      "desc": "活动数、报名数、待审核数几个汇总数字，一次查询拼出来，避免首页发五六个请求。",
+      "group": "管理端",
+      "req": {
+        "method": "GET",
+        "path": "/api/admin/dashboard",
+        "headers": {
+          "Authorization": "Bearer ${adminToken}"
+        }
+      },
+      "openapi": {
+        "summary": "工作台统计"
+      }
+    },
+    {
+      "id": "audit-list",
+      "name": "15.14 待审核活动",
+      "desc": "组织者提交的活动先进入审核队列，团委通过后才对学生可见。",
+      "group": "管理端",
+      "req": {
+        "method": "GET",
+        "path": "/api/admin/activities/audit-list",
+        "headers": {
+          "Authorization": "Bearer ${adminToken}"
+        }
+      },
+      "openapi": {
+        "summary": "待审核活动列表"
+      }
+    },
+    {
+      "id": "admin-users",
+      "name": "15.15 用户管理",
+      "desc": "按角色筛选用户，含组织者与其所属组织。",
+      "group": "管理端",
+      "req": {
+        "method": "GET",
+        "path": "/api/admin/users",
+        "headers": {
+          "Authorization": "Bearer ${adminToken}"
+        }
+      },
+      "openapi": {
+        "summary": "用户列表"
+      }
+    },
+    {
+      "id": "admin-logs",
+      "name": "15.16 操作日志",
+      "desc": "审核、下架、改角色都记一条日志，排查“谁动了这条数据”时有据可查。",
+      "group": "管理端",
+      "req": {
+        "method": "GET",
+        "path": "/api/admin/logs",
+        "headers": {
+          "Authorization": "Bearer ${adminToken}"
+        }
+      },
+      "openapi": {
+        "summary": "操作日志"
+      }
+    },
+    {
+      "id": "no-token",
+      "name": "15.17 不带令牌访问个人资料",
+      "desc": "拦截器解析不到用户，RequireLogin 直接拒绝，返回业务码而不是 500。",
+      "group": "学生端",
+      "req": {
+        "method": "GET",
+        "path": "/api/app/user/profile"
+      },
+      "expect": 401,
+      "openapi": {
+        "summary": "未登录访问（应 401）"
+      }
+    }
+  ],
+  "mavenDir": "15-cases/campus-activity/server",
+  "jarDir": "15-cases/campus-activity/server/target"
+}

@@ -1,0 +1,224 @@
+{
+  "module": "15-cases/zhihu",
+  "port": 8080,
+  "title": "15-1 · 知乎问答社区",
+  "tag": "综合案例",
+  "groupSlug": {
+    "浏览": "browse",
+    "登录": "auth",
+    "提问": "question",
+    "回答与互动": "answer",
+    "关注与动态": "social"
+  },
+  "cases": [
+    {
+      "id": "topics",
+      "name": "15.1 话题列表",
+      "desc": "匿名可看。登录后 followed 会变成 true/false 的真实状态，未登录恒为 false。",
+      "group": "浏览",
+      "req": { "method": "GET", "path": "/api/v1/topics" },
+      "openapi": { "summary": "话题列表", "responseDesc": "六个话题与关注状态" }
+    },
+    {
+      "id": "questions",
+      "name": "15.2 问题列表分页",
+      "desc": "默认按发布时间倒序。分页由 MyBatis-Plus 插件拼 LIMIT，返回的 PageResult 只暴露前端需要的五个字段。",
+      "group": "浏览",
+      "req": {
+        "method": "GET",
+        "path": "/api/v1/questions",
+        "query": { "pageNum": 1, "pageSize": 3 }
+      },
+      "openapi": { "summary": "问题列表", "responseDesc": "分页结果，含作者名与话题名" }
+    },
+    {
+      "id": "questions-filter",
+      "name": "15.3 按话题与关键词筛选",
+      "desc": "两个条件用 and 包住，不会出现“话题过滤被关键词覆盖”的情况。",
+      "group": "浏览",
+      "req": {
+        "method": "GET",
+        "path": "/api/v1/questions",
+        "query": { "topicId": 3, "keyword": "索引" }
+      },
+      "openapi": { "summary": "问题列表（带筛选）" }
+    },
+    {
+      "id": "question-detail",
+      "name": "15.4 问题详情",
+      "desc": "每打开一次浏览数加一，用 SQL 自增而不是读改写。",
+      "group": "浏览",
+      "req": { "method": "GET", "path": "/api/v1/questions/3" },
+      "openapi": { "summary": "问题详情", "responseDesc": "含作者名、话题名、关注状态" }
+    },
+    {
+      "id": "login",
+      "name": "15.5 登录换 token",
+      "desc": "BCrypt 校验密码，签发 HS256 的 JWT。后续写操作都要带 Authorization: Bearer。",
+      "group": "登录",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "json": { "username": "alice", "password": "Zhihu#2026" },
+        "save": { "token": "data.token" }
+      },
+      "openapi": { "summary": "登录", "responseDesc": "token 与用户信息" }
+    },
+    {
+      "id": "me",
+      "name": "15.6 当前用户",
+      "desc": "token 有效时返回本人信息；返回体里没有 username 和 password。",
+      "group": "登录",
+      "req": {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "headers": { "Authorization": "Bearer ${token}" }
+      },
+      "openapi": { "summary": "当前登录用户" }
+    },
+    {
+      "id": "create-question",
+      "name": "15.7 发布问题",
+      "desc": "需要登录。返回的作者名、话题名由服务端补齐，前端不用再查一次。",
+      "group": "提问",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/questions",
+        "headers": { "Authorization": "Bearer ${token}" },
+        "json": {
+          "title": "事务里调用外部接口，应该放在事务内还是事务外？",
+          "content": "支付回调里既要写库又要通知第三方，担心通知失败导致事务回滚。",
+          "topicId": 1
+        },
+        "save": { "questionId": "data.id" }
+      },
+      "openapi": { "summary": "发布问题" }
+    },
+    {
+      "id": "update-question",
+      "name": "15.8 修改自己的问题",
+      "desc": "只有作者能改，其他人拿到 403。修改会同步 updatedAt。",
+      "group": "提问",
+      "req": {
+        "method": "PUT",
+        "path": "/api/v1/questions/${questionId}",
+        "headers": { "Authorization": "Bearer ${token}" },
+        "json": {
+          "title": "事务里调用外部接口，应该放在事务内还是事务外？（已补充）",
+          "content": "补充：第三方接口有重试，但重试也可能失败。",
+          "topicId": 1
+        }
+      },
+      "openapi": { "summary": "修改问题" }
+    },
+    {
+      "id": "answers",
+      "name": "15.9 回答列表",
+      "desc": "被采纳的排最前，其次按赞同数倒序。列表里带上了当前用户的投票状态。",
+      "group": "回答与互动",
+      "req": { "method": "GET", "path": "/api/v1/questions/3/answers" },
+      "openapi": { "summary": "回答列表", "responseDesc": "采纳优先 + 赞同排序" }
+    },
+    {
+      "id": "create-answer",
+      "name": "15.10 写回答",
+      "desc": "插入回答与问题的 answer_count 加一在同一个事务里完成。",
+      "group": "回答与互动",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/questions/${questionId}/answers",
+        "headers": { "Authorization": "Bearer ${token}" },
+        "json": { "content": "建议放到事务外：先落库生成待发送记录，再由异步任务推送，失败可重试且不影响主事务。" },
+        "save": { "answerId": "data.id" }
+      },
+      "openapi": { "summary": "写回答" }
+    },
+    {
+      "id": "vote-up",
+      "name": "15.11 赞同回答",
+      "desc": "同一个人对同一条回答只有一票，计数用 SQL 自增，并发下不会丢更新。",
+      "group": "回答与互动",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/answers/${answerId}/vote",
+        "query": { "value": 1 },
+        "headers": { "Authorization": "Bearer ${token}" }
+      },
+      "openapi": { "summary": "给回答投票", "responseDesc": "voteUp / voteDown / myVote" }
+    },
+    {
+      "id": "vote-cancel",
+      "name": "15.12 再点一次取消",
+      "desc": "同一个按钮点第二次等于取消，第三次又重新投上。myVote 返回的是操作后的状态。",
+      "group": "回答与互动",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/answers/${answerId}/vote",
+        "query": { "value": 1 },
+        "headers": { "Authorization": "Bearer ${token}" }
+      },
+      "openapi": { "summary": "取消投票" }
+    },
+    {
+      "id": "create-comment",
+      "name": "15.13 发表评论",
+      "desc": "不带 parentId 就是一级评论；回答的 comment_count 同步加一。",
+      "group": "回答与互动",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/answers/${answerId}/comments",
+        "headers": { "Authorization": "Bearer ${token}" },
+        "json": { "content": "异步推送这个思路好，重试也不用担心重复扣款。" },
+        "save": { "commentId": "data.id" }
+      },
+      "openapi": { "summary": "发表评论" }
+    },
+    {
+      "id": "comments",
+      "name": "15.14 评论列表",
+      "desc": "一级评论在前，楼中楼按时间跟后。replyToName 只有在回复别人时才有值。",
+      "group": "回答与互动",
+      "req": { "method": "GET", "path": "/api/v1/answers/${answerId}/comments" },
+      "openapi": { "summary": "评论列表" }
+    },
+    {
+      "id": "feed",
+      "name": "15.15 关注动态流",
+      "desc": "汇总三类来源：关注的人写的回答、关注的问题下的回答、关注话题下的回答。",
+      "group": "关注与动态",
+      "req": {
+        "method": "GET",
+        "path": "/api/v1/feed",
+        "query": { "pageNum": 1, "pageSize": 5 },
+        "headers": { "Authorization": "Bearer ${token}" }
+      },
+      "openapi": { "summary": "动态流", "responseDesc": "按时间倒序的回答列表" }
+    },
+    {
+      "id": "follow-question",
+      "name": "15.16 关注问题",
+      "desc": "关注接口是幂等的，重复调用不会报错，也不会产生重复记录（唯一键兜底）。",
+      "group": "关注与动态",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/follows",
+        "query": { "targetType": "QUESTION", "targetId": 3 },
+        "headers": { "Authorization": "Bearer ${token}" }
+      },
+      "openapi": { "summary": "关注对象" }
+    },
+    {
+      "id": "unauthorized",
+      "name": "15.17 未登录发问题",
+      "desc": "没有 token 时业务层抛 401，响应仍是统一的 {code, message, data} 结构。",
+      "group": "登录",
+      "req": {
+        "method": "POST",
+        "path": "/api/v1/questions",
+        "json": { "title": "匿名提问", "content": "试试没登录能不能发", "topicId": 1 }
+      },
+      "expect": 401,
+      "openapi": { "summary": "未登录发问题（应 401）" }
+    }
+  ]
+}

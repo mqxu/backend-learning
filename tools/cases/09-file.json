@@ -1,0 +1,271 @@
+{
+  "module": "09-file",
+  "port": 8009,
+  "title": "09 · 文件上传下载",
+  "tag": "文件",
+  "groupSlug": {
+    "上传": "upload",
+    "校验": "validate",
+    "下载与删除": "download"
+  },
+  "cases": [
+    {
+      "id": "upload-txt",
+      "name": "9.1 上传文本文件",
+      "desc": "multipart 上传，服务端按日期分目录落盘，返回对象 key 与访问地址。",
+      "group": "上传",
+      "req": {
+        "method": "POST",
+        "path": "/file/upload",
+        "form": {
+          "fields": {
+            "dir": "docs"
+          },
+          "files": [
+            {
+              "name": "file",
+              "path": "tools/fixtures/note.txt"
+            }
+          ]
+        },
+        "save": {
+          "txtKey": "data.objectKey"
+        }
+      },
+      "openapi": {
+        "summary": "上传单个文件",
+        "responseDesc": "objectKey + url + 文件信息"
+      }
+    },
+    {
+      "id": "upload-image",
+      "name": "9.2 上传图片",
+      "desc": "图片走单独的接口，额外做一次图片文件头校验，非图片内容即使扩展名是 .png 也过不去。",
+      "group": "上传",
+      "req": {
+        "method": "POST",
+        "path": "/file/upload/image",
+        "form": {
+          "fields": {
+            "dir": "avatar"
+          },
+          "files": [
+            {
+              "name": "file",
+              "path": "tools/fixtures/avatar.png"
+            }
+          ]
+        },
+        "save": {
+          "imgKey": "data.objectKey"
+        }
+      },
+      "openapi": {
+        "summary": "上传图片"
+      }
+    },
+    {
+      "id": "upload-batch",
+      "name": "9.3 批量上传",
+      "desc": "一次请求传多个文件，每个文件独立校验、独立返回结果。",
+      "group": "上传",
+      "req": {
+        "method": "POST",
+        "path": "/file/upload/batch",
+        "form": {
+          "fields": {
+            "dir": "batch"
+          },
+          "files": [
+            {
+              "name": "files",
+              "path": "tools/fixtures/note.txt"
+            },
+            {
+              "name": "files",
+              "path": "tools/fixtures/readme.md"
+            }
+          ]
+        }
+      },
+      "openapi": {
+        "summary": "批量上传"
+      }
+    },
+    {
+      "id": "bad-ext",
+      "name": "9.4 扩展名不允许",
+      "desc": "白名单里没有 exe，第一层校验就挡下，不会写盘。",
+      "group": "校验",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/file/upload",
+        "form": {
+          "files": [
+            {
+              "name": "file",
+              "path": "tools/fixtures/malware.exe"
+            }
+          ]
+        }
+      },
+      "openapi": {
+        "summary": "非法扩展名被拒",
+        "errors": {
+          "400": {
+            "description": "文件类型不允许"
+          }
+        }
+      }
+    },
+    {
+      "id": "fake-png",
+      "name": "9.5 文件头校验",
+      "desc": "扩展名是 .png，内容却是纯文本。只看扩展名会漏，读前几个字节比对魔数才能发现。",
+      "group": "校验",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/file/upload/image",
+        "form": {
+          "files": [
+            {
+              "name": "file",
+              "path": "tools/fixtures/fake.png"
+            }
+          ]
+        }
+      },
+      "openapi": {
+        "summary": "伪装图片被拒",
+        "errors": {
+          "400": {
+            "description": "文件内容与类型不符"
+          }
+        }
+      }
+    },
+    {
+      "id": "path-traversal",
+      "name": "9.6 路径穿越防护",
+      "desc": "dir 参数里塞 ../ 企图跳出上传目录，服务端规范化路径后拒绝。",
+      "group": "校验",
+      "req": {
+        "method": "POST",
+        "path": "/file/upload",
+        "form": {
+          "fields": {
+            "dir": "../../etc"
+          },
+          "files": [
+            {
+              "name": "file",
+              "path": "tools/fixtures/note.txt"
+            }
+          ]
+        }
+      },
+      "openapi": {
+        "summary": "路径穿越尝试"
+      },
+      "expect": 400
+    },
+    {
+      "id": "info",
+      "name": "9.7 存储配置",
+      "desc": "当前用的是本地磁盘存储，接口返回存储类型、根目录、单文件上限与允许的扩展名。",
+      "group": "下载与删除",
+      "req": {
+        "method": "GET",
+        "path": "/file/storage"
+      },
+      "openapi": {
+        "summary": "查看存储配置"
+      }
+    },
+    {
+      "id": "download",
+      "name": "9.8 下载文件",
+      "desc": "流式响应，Content-Disposition 用 RFC 5987 编码中文文件名，浏览器下载不乱码。",
+      "group": "下载与删除",
+      "req": {
+        "method": "GET",
+        "path": "/file/download/${txtKey}",
+        "query": {
+          "name": "测试笔记.txt"
+        }
+      },
+      "openapi": {
+        "summary": "下载文件",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "preview",
+      "name": "9.9 在线预览",
+      "desc": "preview 把 Content-Disposition 设成 inline，浏览器直接显示而不是下载。",
+      "group": "下载与删除",
+      "req": {
+        "method": "GET",
+        "path": "/file/preview/${txtKey}"
+      },
+      "openapi": {
+        "summary": "在线预览"
+      }
+    },
+    {
+      "id": "url",
+      "name": "9.10 获取访问地址",
+      "desc": "本地存储返回拼接的 URL；换成 OSS 后这里返回带签名的临时地址。",
+      "group": "下载与删除",
+      "req": {
+        "method": "GET",
+        "path": "/file/url/${imgKey}"
+      },
+      "openapi": {
+        "summary": "获取文件访问地址"
+      }
+    },
+    {
+      "id": "delete",
+      "name": "9.11 删除文件",
+      "desc": "删除后同一个 key 再下载会返回 404。",
+      "group": "下载与删除",
+      "req": {
+        "method": "DELETE",
+        "path": "/file/${txtKey}"
+      },
+      "openapi": {
+        "summary": "删除文件"
+      }
+    },
+    {
+      "id": "download-after-delete",
+      "name": "9.12 删除后下载",
+      "desc": "文件不存在时抛业务异常，返回统一错误结构而不是空响应。",
+      "group": "下载与删除",
+      "expect": 404,
+      "req": {
+        "method": "GET",
+        "path": "/file/download/${txtKey}"
+      },
+      "openapi": {
+        "summary": "下载已删除的文件",
+        "errors": {
+          "404": {
+            "description": "文件不存在"
+          }
+        }
+      }
+    }
+  ]
+}

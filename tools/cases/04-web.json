@@ -1,0 +1,374 @@
+{
+  "module": "04-web",
+  "port": 8004,
+  "title": "04 · Web 开发进阶",
+  "tag": "用户",
+  "groupSlug": {
+    "统一响应与分页": "crud",
+    "异常处理": "errors",
+    "过滤器": "filter",
+    "拦截器与监听器": "interceptor"
+  },
+  "console": {
+    "title": "控制台输出（过滤器 / 拦截器 / 监听器）",
+    "include": [
+      "Filter",
+      "Interceptor",
+      "拦截器",
+      "ServletContext",
+      "session"
+    ],
+    "limit": 26
+  },
+  "cases": [
+    {
+      "id": "page",
+      "name": "4.1 分页查询",
+      "desc": "统一响应体外层 Result，内层 PageResult 带 total/pageNum/pageSize，前端分页组件直接可用。",
+      "group": "统一响应与分页",
+      "req": {
+        "method": "GET",
+        "path": "/users",
+        "query": {
+          "pageNum": 1,
+          "pageSize": 5
+        }
+      },
+      "openapi": {
+        "summary": "分页查询用户",
+        "parameters": [
+          {
+            "name": "pageNum",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "create",
+      "name": "4.2 新增用户",
+      "desc": "请求体经 @Valid 校验通过后落库，返回带 ID 的完整对象。",
+      "group": "统一响应与分页",
+      "req": {
+        "method": "POST",
+        "path": "/users",
+        "json": {
+          "username": "钱七",
+          "age": 22,
+          "email": "qianqi@example.com"
+        },
+        "save": {
+          "userId": "data.id"
+        }
+      },
+      "openapi": {
+        "summary": "新增用户",
+        "responseDesc": "含服务端生成 ID 的用户对象"
+      }
+    },
+    {
+      "id": "detail",
+      "name": "4.3 查询详情",
+      "desc": "路径参数绑定为上一步返回的 ID，验证写读一致。",
+      "group": "统一响应与分页",
+      "req": {
+        "method": "GET",
+        "path": "/users/${userId}"
+      },
+      "openapi": {
+        "summary": "按 ID 查询用户",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "update",
+      "name": "4.4 更新用户",
+      "desc": "PUT 全量更新，age 也在更新范围内（早期的实现漏了这个字段，这里已补齐）。",
+      "group": "统一响应与分页",
+      "req": {
+        "method": "PUT",
+        "path": "/users/${userId}",
+        "json": {
+          "username": "钱七（已改名）",
+          "age": 23,
+          "email": "qianqi@example.com"
+        }
+      },
+      "openapi": {
+        "summary": "更新用户"
+      }
+    },
+    {
+      "id": "delete",
+      "name": "4.5 删除用户",
+      "desc": "删除成功返回 Result.ok()，data 为 null；重复删除会抛业务异常返回 404。",
+      "group": "统一响应与分页",
+      "req": {
+        "method": "DELETE",
+        "path": "/users/${userId}"
+      },
+      "openapi": {
+        "summary": "删除用户"
+      }
+    },
+    {
+      "id": "validate",
+      "name": "4.6 参数校验失败",
+      "desc": "username 为空、age 超范围，全局异常处理器挑出第一条错误信息返回，HTTP 状态为 400。",
+      "group": "异常处理",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/users",
+        "json": {
+          "username": "",
+          "age": 200,
+          "email": "bad@example.com"
+        }
+      },
+      "openapi": {
+        "summary": "参数校验失败示例",
+        "errors": {
+          "400": {
+            "description": "参数校验不通过"
+          }
+        }
+      }
+    },
+    {
+      "id": "type-mismatch",
+      "name": "4.7 参数类型不匹配",
+      "desc": "路径上传了非数字，类型转换失败由 MethodArgumentTypeMismatchException 接住。",
+      "group": "异常处理",
+      "expect": 400,
+      "req": {
+        "method": "GET",
+        "path": "/users/abc"
+      },
+      "openapi": {
+        "summary": "参数类型错误示例"
+      }
+    },
+    {
+      "id": "not-found",
+      "name": "4.8 资源不存在",
+      "desc": "Service 抛 BusinessException(NOT_FOUND)，响应体 code 与 HTTP 状态都是 404。",
+      "group": "异常处理",
+      "expect": 404,
+      "req": {
+        "method": "GET",
+        "path": "/users/9999"
+      },
+      "openapi": {
+        "summary": "资源不存在示例"
+      }
+    },
+    {
+      "id": "bad-json",
+      "name": "4.9 请求体格式错误",
+      "desc": "JSON 少一个引号导致解析失败，由 HttpMessageNotReadableException 接住，不泄露内部异常细节。",
+      "group": "异常处理",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/users",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "raw": "{\"username\": \"坏格式\", \"age\": 20"
+      },
+      "openapi": {
+        "summary": "请求体格式错误示例"
+      }
+    },
+    {
+      "id": "secure-deny",
+      "name": "4.10 过滤器拦截（无密钥）",
+      "desc": "ApiKeyFilter 直接写 401 响应并 return，请求根本没进 DispatcherServlet。",
+      "group": "过滤器",
+      "expect": 401,
+      "req": {
+        "method": "GET",
+        "path": "/demo/secure"
+      },
+      "openapi": {
+        "summary": "缺少 API Key",
+        "errors": {
+          "401": {
+            "description": "密钥不合法"
+          }
+        }
+      }
+    },
+    {
+      "id": "secure-pass",
+      "name": "4.11 过滤器放行",
+      "desc": "带上正确密钥后放行到控制器。对比上一条可以看到过滤器短路的效果。",
+      "group": "过滤器",
+      "req": {
+        "method": "GET",
+        "path": "/demo/secure",
+        "headers": {
+          "X-Api-Key": "demo-key"
+        }
+      },
+      "openapi": {
+        "summary": "带正确 API Key 访问"
+      }
+    },
+    {
+      "id": "annotation-filter",
+      "name": "4.12 注解注册的过滤器",
+      "desc": "@WebFilter + @ServletComponentScan 注册，不经过 Spring 容器，在控制台能看到它的日志。",
+      "group": "过滤器",
+      "req": {
+        "method": "GET",
+        "path": "/demo/annotation/hello"
+      },
+      "openapi": {
+        "summary": "@WebFilter 注解过滤器生效"
+      }
+    },
+    {
+      "id": "trim",
+      "name": "4.13 参数清洗",
+      "desc": "请求参数两端带空格，ParameterCleanFilter 用 HttpServletRequestWrapper 改写后，控制器拿到的已是干净值。",
+      "group": "过滤器",
+      "req": {
+        "method": "GET",
+        "path": "/demo/trim",
+        "query": {
+          "keyword": "  张三  "
+        }
+      },
+      "openapi": {
+        "summary": "演示参数去空格",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "token-deny",
+      "name": "4.14 拦截器短路",
+      "desc": "TokenInterceptor 的 preHandle 返回 false，控制器和 postHandle 都不会执行。",
+      "group": "拦截器与监听器",
+      "expect": 401,
+      "req": {
+        "method": "GET",
+        "path": "/demo/token"
+      },
+      "openapi": {
+        "summary": "缺少 Token",
+        "errors": {
+          "401": {
+            "description": "令牌不合法"
+          }
+        }
+      }
+    },
+    {
+      "id": "token-pass",
+      "name": "4.15 拦截器放行",
+      "desc": "补上 X-Token 后正常执行，控制台能看到三个回调的打印顺序。",
+      "group": "拦截器与监听器",
+      "req": {
+        "method": "GET",
+        "path": "/demo/token",
+        "headers": {
+          "X-Token": "demo-token"
+        }
+      },
+      "openapi": {
+        "summary": "带正确 Token 访问"
+      }
+    },
+    {
+      "id": "callback",
+      "name": "4.16 拦截器回调顺序",
+      "desc": "一次正常请求里，preHandle → 控制器 → postHandle → afterCompletion 依次触发。",
+      "group": "拦截器与监听器",
+      "req": {
+        "method": "GET",
+        "path": "/demo/callback"
+      },
+      "openapi": {
+        "summary": "观察三个回调的顺序"
+      }
+    },
+    {
+      "id": "session",
+      "name": "4.17 监听器统计在线数",
+      "desc": "首次访问创建 session，HttpSessionListener 把在线数加一，接口直接返回当前在线量。",
+      "group": "拦截器与监听器",
+      "req": {
+        "method": "GET",
+        "path": "/demo/session"
+      },
+      "openapi": {
+        "summary": "创建 session 并返回在线人数"
+      }
+    },
+    {
+      "id": "filter-log",
+      "name": "4.18 过滤器读取请求参数",
+      "desc": "LogFilter 用 getParameterMap 打印全部参数，控制台能看到这条请求的完整记录。",
+      "group": "过滤器",
+      "req": {
+        "method": "GET",
+        "path": "/api/log/hello",
+        "query": {
+          "name": "张三",
+          "age": 18
+        }
+      },
+      "openapi": {
+        "summary": "过滤器打印请求参数",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "age",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+{
+  "module": "15-cases/task-commit",
+  "port": 8017,
+  "title": "15-2 · 任务提交与批改",
+  "tag": "综合案例",
+  "groupSlug": {
+    "公开接口": "public",
+    "登录": "auth",
+    "学生视角": "student",
+    "教师视角": "teacher",
+    "管理端": "admin"
+  },
+  "cases": [
+    {
+      "id": "ping",
+      "name": "15.1 免认证接口",
+      "desc": "SecurityFilterChain 里 permitAll 的路径，不带头也能访问。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/public/ping"
+      },
+      "openapi": {
+        "summary": "探活接口",
+        "responseDesc": "服务状态"
+      }
+    },
+    {
+      "id": "no-token",
+      "name": "15.2 不带令牌访问受保护接口",
+      "desc": "由 RestAuthenticationEntryPoint 输出 JSON，而不是 Spring 默认的空响应。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/api/tasks/mine"
+      },
+      "expect": 401,
+      "openapi": {
+        "summary": "未认证（应 401）"
+      }
+    },
+    {
+      "id": "login-student",
+      "name": "15.3 学生登录",
+      "desc": "DaoAuthenticationProvider 比对 BCrypt 密文，签发 JWT。",
+      "group": "登录",
+      "req": {
+        "method": "POST",
+        "path": "/auth/login",
+        "json": {
+          "username": "student01",
+          "password": "Student#2026"
+        },
+        "save": {
+          "studentToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "登录",
+        "responseDesc": "token 与角色"
+      }
+    },
+    {
+      "id": "me",
+      "name": "15.4 当前身份",
+      "desc": "返回用户名、昵称、角色与权限点。页面刷新后靠它恢复登录态。",
+      "group": "登录",
+      "req": {
+        "method": "GET",
+        "path": "/auth/me",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "openapi": {
+        "summary": "当前用户"
+      }
+    },
+    {
+      "id": "mine",
+      "name": "15.5 我的提交",
+      "desc": "提交人从令牌里取，URL 上没有用户名，改参数也拿不到别人的数据。",
+      "group": "学生视角",
+      "req": {
+        "method": "GET",
+        "path": "/api/tasks/mine",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "openapi": {
+        "summary": "我的提交列表"
+      }
+    },
+    {
+      "id": "submit",
+      "name": "15.6 提交新任务",
+      "desc": "需要 task:submit 权限点。初始状态是 SUBMITTED，等待教师批改。",
+      "group": "学生视角",
+      "req": {
+        "method": "POST",
+        "path": "/api/tasks",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        },
+        "json": {
+          "title": "实训七：缓存与分布式锁",
+          "content": "用 Redis 做了商品缓存，热点 key 加了空值缓存，下单接口用 Redisson 加锁，20 并发下没有超卖。"
+        },
+        "save": {
+          "taskId": "data.id"
+        }
+      },
+      "openapi": {
+        "summary": "提交任务"
+      }
+    },
+    {
+      "id": "detail-own",
+      "name": "15.7 查看自己的提交",
+      "desc": "本人可看。换一个 id 看别人的提交会返回 403，判断在服务层用当前用户做归属校验。",
+      "group": "学生视角",
+      "req": {
+        "method": "GET",
+        "path": "/api/tasks/${taskId}",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "openapi": {
+        "summary": "提交详情"
+      }
+    },
+    {
+      "id": "login-student2",
+      "name": "15.8 换个学生登录",
+      "desc": "student02 登录，拿到的令牌只代表他自己。下一步用他去读 student01 的提交。",
+      "group": "学生视角",
+      "req": {
+        "method": "POST",
+        "path": "/auth/login",
+        "json": {
+          "username": "student02",
+          "password": "Student#2026"
+        },
+        "save": {
+          "otherToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "学生二登录"
+      }
+    },
+    {
+      "id": "detail-others",
+      "name": "15.9 越权查看别人的提交",
+      "desc": "student02 去看 student01 刚交的任务，返回 403。接口存在不等于数据可读。",
+      "group": "学生视角",
+      "req": {
+        "method": "GET",
+        "path": "/api/tasks/${taskId}",
+        "headers": {
+          "Authorization": "Bearer ${otherToken}"
+        }
+      },
+      "expect": 403,
+      "openapi": {
+        "summary": "越权访问（应 403）"
+      }
+    },
+    {
+      "id": "login-teacher",
+      "name": "15.10 教师登录",
+      "desc": "同一个登录接口，返回的角色与权限点不同：教师多了 task:review。",
+      "group": "教师视角",
+      "req": {
+        "method": "POST",
+        "path": "/auth/login",
+        "json": {
+          "username": "teacher01",
+          "password": "Teacher#2026"
+        },
+        "save": {
+          "teacherToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "教师登录"
+      }
+    },
+    {
+      "id": "all-tasks",
+      "name": "15.11 全部提交",
+      "desc": "只有 task:review 能拿到全量列表，URL 与方法级鉴权一起兜住。",
+      "group": "教师视角",
+      "req": {
+        "method": "GET",
+        "path": "/api/tasks",
+        "headers": {
+          "Authorization": "Bearer ${teacherToken}"
+        }
+      },
+      "openapi": {
+        "summary": "全部提交（教师）"
+      }
+    },
+    {
+      "id": "review",
+      "name": "15.12 批改打分",
+      "desc": "分数范围由 @Min/@Max 校验，评语可空。批改后状态变为 REVIEWED。",
+      "group": "教师视角",
+      "req": {
+        "method": "POST",
+        "path": "/api/tasks/${taskId}/review",
+        "headers": {
+          "Authorization": "Bearer ${teacherToken}"
+        },
+        "json": {
+          "score": 92,
+          "comment": "缓存三件套都做了，锁的粒度也合适。补一下降级方案就更完整。"
+        }
+      },
+      "openapi": {
+        "summary": "批改提交"
+      }
+    },
+    {
+      "id": "review-twice",
+      "name": "15.13 同一份重复批改",
+      "desc": "已批改的提交不能改分。这个模块把业务错误放在 HTTP 200 里，靠 code=30012 表达，与 09-file 那种“业务码映射真实状态”的做法不同，教程里会对比这两种约定。",
+      "group": "教师视角",
+      "req": {
+        "method": "POST",
+        "path": "/api/tasks/${taskId}/review",
+        "headers": {
+          "Authorization": "Bearer ${teacherToken}"
+        },
+        "json": {
+          "score": 60,
+          "comment": "再批一次试试"
+        }
+      },
+      "expect": 200,
+      "openapi": {
+        "summary": "重复批改（应 409）"
+      }
+    },
+    {
+      "id": "student-to-admin",
+      "name": "15.14 学生访问管理接口",
+      "desc": "认证通过但授权不足，返回 403 而不是 401——这两个状态的含义不能混。",
+      "group": "管理端",
+      "req": {
+        "method": "GET",
+        "path": "/admin/users",
+        "headers": {
+          "Authorization": "Bearer ${studentToken}"
+        }
+      },
+      "expect": 403,
+      "openapi": {
+        "summary": "越权访问管理接口（应 403）"
+      }
+    },
+    {
+      "id": "login-admin",
+      "name": "15.15 管理员登录",
+      "desc": "管理员具备 ADMIN 角色与 user:write 权限点。",
+      "group": "管理端",
+      "req": {
+        "method": "POST",
+        "path": "/auth/login",
+        "json": {
+          "username": "admin",
+          "password": "Admin#2026"
+        },
+        "save": {
+          "adminToken": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "管理员登录"
+      }
+    },
+    {
+      "id": "admin-users",
+      "name": "15.16 账号列表",
+      "desc": "响应里只有昵称、角色与启用状态，密码字段在 VO 层就被剔掉了。",
+      "group": "管理端",
+      "req": {
+        "method": "GET",
+        "path": "/admin/users",
+        "headers": {
+          "Authorization": "Bearer ${adminToken}"
+        }
+      },
+      "openapi": {
+        "summary": "账号列表"
+      }
+    }
+  ]
+}

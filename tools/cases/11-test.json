@@ -1,0 +1,112 @@
+{
+  "module": "11-test",
+  "port": 8011,
+  "title": "11 · 测试",
+  "tag": "订单",
+  "groupSlug": { "试算接口": "calc", "异常分支": "errors" },
+  "cases": [
+    {
+      "id": "normal",
+      "name": "11.1 普通用户满减",
+      "desc": "金额 300 命中满 300 减 40，这个分支在 OrderServiceTest 里也有对应的单元测试。",
+      "group": "试算接口",
+      "req": {
+        "method": "POST",
+        "path": "/orders/calculate",
+        "json": { "userId": 1, "amount": 300.0, "memberLevel": "NORMAL", "quantity": 1 }
+      },
+      "openapi": { "summary": "订单试算" }
+    },
+    {
+      "id": "gold",
+      "name": "11.2 金卡叠加会员折扣",
+      "desc": "300 减 40 后再打 95 折：优惠 40 + 13 = 53，应付 247。",
+      "group": "试算接口",
+      "req": {
+        "method": "POST",
+        "path": "/orders/calculate",
+        "json": { "userId": 1, "amount": 300.0, "memberLevel": "GOLD", "quantity": 1 }
+      },
+      "openapi": { "summary": "金卡试算" }
+    },
+    {
+      "id": "quick",
+      "name": "11.3 快捷试算",
+      "desc": "查询参数版本，方便 curl 手测；150 命中满 100 减 10，应付 140。",
+      "group": "试算接口",
+      "req": {
+        "method": "GET",
+        "path": "/orders/quick-calculate",
+        "query": { "amount": 150, "memberLevel": "NORMAL" }
+      },
+      "openapi": {
+        "summary": "快捷试算",
+        "parameters": [
+          { "name": "amount", "in": "query", "required": true, "schema": { "type": "number" } },
+          { "name": "memberLevel", "in": "query", "schema": { "type": "string", "default": "NORMAL" } }
+        ]
+      }
+    },
+    {
+      "id": "hello",
+      "name": "11.4 模块信息",
+      "desc": "返回跑测试与看覆盖率的命令，方便对照源码验证。",
+      "group": "试算接口",
+      "req": { "method": "GET", "path": "/orders/hello" },
+      "openapi": { "summary": "模块信息" }
+    },
+    {
+      "id": "bad-amount",
+      "name": "11.5 金额非法",
+      "desc": "amount 为 -1，@DecimalMin 拦下，返回 400 与具体原因。",
+      "group": "异常分支",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/orders/calculate",
+        "json": { "userId": 1, "amount": -1 }
+      },
+      "openapi": { "summary": "金额非法", "errors": { "400": { "description": "参数校验失败" } } }
+    },
+    {
+      "id": "missing-user",
+      "name": "11.6 缺少必填字段",
+      "desc": "userId 缺失，返回 400。",
+      "group": "异常分支",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/orders/calculate",
+        "json": { "amount": 100 }
+      },
+      "openapi": { "summary": "缺少必填字段", "errors": { "400": { "description": "参数校验失败" } } }
+    },
+    {
+      "id": "stock",
+      "name": "11.7 库存不足",
+      "desc": "买 200 件，真实库存客户端返回 100，业务码 30409 映射成 HTTP 409。",
+      "group": "异常分支",
+      "expect": 409,
+      "req": {
+        "method": "POST",
+        "path": "/orders/calculate",
+        "json": { "userId": 1, "amount": 100, "quantity": 200 }
+      },
+      "openapi": { "summary": "库存不足", "errors": { "409": { "description": "库存不足" } } }
+    },
+    {
+      "id": "broken-json",
+      "name": "11.8 请求体格式错误",
+      "desc": "少一个右括号，HttpMessageNotReadableException 被接住，返回 400 而不是 500。",
+      "group": "异常分支",
+      "expect": 400,
+      "req": {
+        "method": "POST",
+        "path": "/orders/calculate",
+        "headers": { "Content-Type": "application/json" },
+        "raw": "{\"userId\": 1, \"amount\": "
+      },
+      "openapi": { "summary": "请求体格式错误", "errors": { "400": { "description": "JSON 解析失败" } } }
+    }
+  ]
+}

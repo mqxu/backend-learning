@@ -1,0 +1,122 @@
+{
+  "module": "01-quickstart",
+  "port": 8001,
+  "title": "01 · 快速入门",
+  "tag": "用户",
+  "groupSlug": { "基础响应": "basic", "参数绑定与请求体": "params" },
+  "cases": [
+    {
+      "id": "hello",
+      "name": "1.1 纯文本响应",
+      "desc": "最简 GET 接口。返回 String 时不做 JSON 包装，响应体就是原文。",
+      "group": "基础响应",
+      "req": { "method": "GET", "path": "/user/hello" },
+      "openapi": {
+        "summary": "纯文本问候",
+        "tag": "用户",
+        "responseDesc": "字符串 hello world"
+      }
+    },
+    {
+      "id": "info",
+      "name": "1.2 对象响应",
+      "desc": "返回 User 对象，Jackson 自动序列化为 JSON；LocalDate 默认输出 ISO 格式。",
+      "group": "基础响应",
+      "req": { "method": "GET", "path": "/user/info" },
+      "openapi": { "summary": "返回一个用户对象", "tag": "用户", "responseDesc": "用户详情" }
+    },
+    {
+      "id": "list",
+      "name": "1.3 列表查询（不带参数）",
+      "desc": "keyword 为可选查询参数，不传时返回全部数据。",
+      "group": "参数绑定与请求体",
+      "req": { "method": "GET", "path": "/user/list" },
+      "openapi": {
+        "summary": "查询用户列表",
+        "tag": "用户",
+        "responseDesc": "用户数组",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "description": "姓名关键字，模糊匹配",
+            "schema": { "type": "string" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "list-keyword",
+      "name": "1.4 列表查询（带 keyword）",
+      "desc": "传 keyword 走过滤分支，验证 @RequestParam 绑定生效。",
+      "group": "参数绑定与请求体",
+      "req": { "method": "GET", "path": "/user/list", "query": { "keyword": "张" } },
+      "openapi": {
+        "summary": "按关键字查询用户列表",
+        "tag": "用户",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "description": "姓名关键字，模糊匹配",
+            "schema": { "type": "string" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "by-id",
+      "name": "1.5 路径参数（命中）",
+      "desc": "/{id} 中的 id 由 @PathVariable 注入，命中时返回 200 和用户对象。",
+      "group": "参数绑定与请求体",
+      "req": { "method": "GET", "path": "/user/1002" },
+      "openapi": {
+        "summary": "按 ID 查询用户",
+        "tag": "用户",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }
+        ],
+        "errors": { "404": { "description": "用户不存在" } }
+      }
+    },
+    {
+      "id": "by-id-404",
+      "name": "1.6 路径参数（未命中）",
+      "desc": "找不到记录时返回 404，用 ResponseEntity 控制状态码而不是抛异常。",
+      "group": "参数绑定与请求体",
+      "expect": 404,
+      "req": { "method": "GET", "path": "/user/9999" },
+      "openapi": {
+        "summary": "按 ID 查询用户（不存在）",
+        "tag": "用户",
+        "errors": { "404": { "description": "用户不存在" } }
+      }
+    },
+    {
+      "id": "create",
+      "name": "1.7 JSON 请求体",
+      "desc": "@RequestBody 把请求体反序列化成 User，服务端补 ID 后返回完整对象。",
+      "group": "参数绑定与请求体",
+      "req": {
+        "method": "POST",
+        "path": "/user",
+        "json": { "name": "赵六", "birthday": "2005-06-01" }
+      },
+      "openapi": {
+        "summary": "新增用户",
+        "tag": "用户",
+        "responseDesc": "含服务端生成 ID 的用户对象"
+      }
+    },
+    {
+      "id": "list-after-create",
+      "name": "1.8 回查列表",
+      "desc": "再次查询列表，确认上一步写入的数据仍在（内存列表在进程存活期间有效）。",
+      "group": "参数绑定与请求体",
+      "req": { "method": "GET", "path": "/user/list" },
+      "openapi": { "summary": "新增后回查列表", "tag": "用户" }
+    }
+  ]
+}

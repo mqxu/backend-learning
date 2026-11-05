@@ -1,0 +1,642 @@
+{
+  "module": "06-redis",
+  "port": 8006,
+  "title": "06 · 缓存与分布式锁",
+  "tag": "缓存",
+  "groupSlug": {
+    "登录准备": "auth",
+    "缓存写法": "cache",
+    "缓存防护": "protect",
+    "分布式锁": "lock",
+    "接口限流": "limit",
+    "数据类型": "datatype"
+  },
+  "console": {
+    "title": "控制台输出（缓存命中 / 加锁 / 短信通道）",
+    "include": [
+      "Cache",
+      "Lock",
+      "锁",
+      "缓存",
+      "验证码",
+      "短信"
+    ],
+    "limit": 22
+  },
+  "cases": [
+    {
+      "id": "sms-send",
+      "name": "6.1 发送验证码",
+      "desc": "模拟通道下把验证码放在 data 里返回，方便本地联调；真实通道返回 null。后续所有接口都带上这里拿到的 token。",
+      "group": "登录准备",
+      "req": {
+        "method": "POST",
+        "path": "/sms/send",
+        "query": {
+          "phone": "13800001234"
+        },
+        "save": {
+          "smsCode": "data"
+        }
+      },
+      "openapi": {
+        "summary": "发送短信验证码",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "sms-login",
+      "name": "6.2 验证码登录",
+      "desc": "用上一步拿到的验证码登录，返回 JWT token 与有效期。后面每个请求的 Authorization 头都引用这个变量。",
+      "group": "登录准备",
+      "req": {
+        "method": "POST",
+        "path": "/sms/login",
+        "json": {
+          "phone": "13800001234",
+          "code": "${smsCode}"
+        },
+        "save": {
+          "token": "data.token"
+        }
+      },
+      "openapi": {
+        "summary": "验证码登录",
+        "responseDesc": "token + 手机号 + 有效期"
+      }
+    },
+    {
+      "id": "sms-login-reuse",
+      "name": "6.3 验证码不可复用",
+      "desc": "同一个验证码再登录一次，被标记为已使用而拒绝。",
+      "group": "登录准备",
+      "req": {
+        "method": "POST",
+        "path": "/sms/login",
+        "json": {
+          "phone": "13800001234",
+          "code": "${smsCode}"
+        }
+      },
+      "openapi": {
+        "summary": "重复使用验证码"
+      }
+    },
+    {
+      "id": "me",
+      "name": "6.4 带 token 访问受保护接口",
+      "desc": "Authorization: Bearer 加上 token，拦截器验签通过后把 Claims 注入请求属性。",
+      "group": "登录准备",
+      "req": {
+        "method": "GET",
+        "path": "/user/me",
+        "headers": {
+          "Authorization": "Bearer ${token}"
+        }
+      },
+      "openapi": {
+        "summary": "查询当前登录用户",
+        "responses": {
+          "401": {
+            "description": "未登录"
+          }
+        }
+      }
+    },
+    {
+      "id": "me-no-token",
+      "name": "6.5 无 token 访问受保护接口",
+      "desc": "显式去掉 Authorization 头，拦截器抛业务异常。注意 HTTP 仍是 200，错误体现在 code 上。",
+      "group": "登录准备",
+      "req": {
+        "method": "GET",
+        "path": "/user/me"
+      },
+      "openapi": {
+        "summary": "未携带 token 访问"
+      }
+    },
+    {
+      "id": "db",
+      "name": "6.6 直接查库",
+      "desc": "不加缓存的基线：每次都走数据库，从返回的 source 字段能看出它没有命中缓存。",
+      "group": "缓存写法",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/db/1"
+      },
+      "openapi": {
+        "summary": "直接查数据库",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "manual",
+      "name": "6.7 手动缓存（首次未命中）",
+      "desc": "先查 Redis，没有就查库并回填。第一次调用 source 是 db，耗时较长。",
+      "group": "缓存写法",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/manual/1"
+      },
+      "openapi": {
+        "summary": "手动缓存读取",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "manual-hit",
+      "name": "6.8 手动缓存（二次命中）",
+      "desc": "同样的请求再发一次，source 变成 cache，耗时下降到毫秒以下。",
+      "group": "缓存写法",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/manual/1"
+      },
+      "openapi": {
+        "summary": "手动缓存命中"
+      }
+    },
+    {
+      "id": "anno",
+      "name": "6.9 注解缓存",
+      "desc": "@Cacheable 一行注解就能缓存返回值，key 由 SpEL 决定。",
+      "group": "缓存写法",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/anno/2"
+      },
+      "openapi": {
+        "summary": "@Cacheable 注解缓存",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "update-price",
+      "name": "6.10 改数据并删缓存",
+      "desc": "更新数据库后删除对应缓存，下次查询重新回填。先删缓存再更库会有一致性窗口，顺序不能反。",
+      "group": "缓存写法",
+      "req": {
+        "method": "PUT",
+        "path": "/cache/goods/2/price-anno",
+        "query": {
+          "price": 1199
+        }
+      },
+      "openapi": {
+        "summary": "更新价格并清除缓存",
+        "parameters": [
+          {
+            "name": "price",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "after-update",
+      "name": "6.11 更新后回查",
+      "desc": "价格已是新值，说明删缓存后重新回源拿到了最新数据。",
+      "group": "缓存写法",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/anno/2"
+      },
+      "openapi": {
+        "summary": "更新后读取"
+      }
+    },
+    {
+      "id": "penetrate",
+      "name": "6.12 缓存穿透防护",
+      "desc": "查一个不存在的 ID，缓存空值标记，后续请求不会每次都打到数据库。",
+      "group": "缓存防护",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/manual/99999"
+      },
+      "openapi": {
+        "summary": "查询不存在的商品（空值缓存）",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "penetrate-again",
+      "name": "6.13 空值缓存命中",
+      "desc": "再查同一个不存在的 ID，source 变成 cache-null，数据库压力被挡住。",
+      "group": "缓存防护",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/manual/99999"
+      },
+      "openapi": {
+        "summary": "空值缓存命中"
+      }
+    },
+    {
+      "id": "mutex",
+      "name": "6.14 互斥锁防击穿",
+      "desc": "缓存失效瞬间只让一个线程回源，其余线程短暂等待后读缓存，避免同时压垮数据库。",
+      "group": "缓存防护",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/manual-mutex/3"
+      },
+      "openapi": {
+        "summary": "互斥锁回源",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "anno-list",
+      "name": "6.15 集合缓存",
+      "desc": "整个列表一起缓存，注意列表里任一元素变更都要清理这个缓存，否则会看到旧数据。",
+      "group": "缓存防护",
+      "req": {
+        "method": "GET",
+        "path": "/cache/goods/anno/list"
+      },
+      "openapi": {
+        "summary": "缓存商品列表"
+      }
+    },
+    {
+      "id": "reset-stock",
+      "name": "6.16 重置库存",
+      "desc": "把商品库存重置为 10，给下面的并发测试一个统一的起点。",
+      "group": "分布式锁",
+      "req": {
+        "method": "POST",
+        "path": "/lock/reset",
+        "query": {
+          "id": 1,
+          "stock": 10
+        }
+      },
+      "openapi": {
+        "summary": "重置库存",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "stock",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "buy-no-lock",
+      "name": "6.17 无锁并发下单",
+      "desc": "20 个并发请求同时买 1 件，库存只有 10。先查后改的写法在并发下卖出了超过库存的订单。",
+      "group": "分布式锁",
+      "parallel": 20,
+      "req": {
+        "method": "POST",
+        "path": "/lock/buy/no-lock",
+        "query": {
+          "id": 1,
+          "quantity": 1
+        }
+      },
+      "openapi": {
+        "summary": "无锁并发下单（会超卖）"
+      }
+    },
+    {
+      "id": "stock-after-no-lock",
+      "name": "6.18 超卖后的库存",
+      "desc": "库存被扣成负数，这就是超卖的证据。",
+      "group": "分布式锁",
+      "req": {
+        "method": "GET",
+        "path": "/lock/stock/1"
+      },
+      "openapi": {
+        "summary": "查询库存"
+      }
+    },
+    {
+      "id": "reset-stock-2",
+      "name": "6.19 再次重置库存",
+      "desc": "重置回 10，准备用分布式锁重做一遍。",
+      "group": "分布式锁",
+      "req": {
+        "method": "POST",
+        "path": "/lock/reset",
+        "query": {
+          "id": 1,
+          "stock": 10
+        }
+      },
+      "openapi": {
+        "summary": "重置库存（第二次）"
+      }
+    },
+    {
+      "id": "buy-redisson",
+      "name": "6.20 Redisson 加锁下单",
+      "desc": "同样的 20 个并发，这次每个请求先进分布式锁，只有 10 个请求能抢到库存。",
+      "group": "分布式锁",
+      "parallel": 20,
+      "req": {
+        "method": "POST",
+        "path": "/lock/buy/redisson",
+        "query": {
+          "id": 1,
+          "quantity": 1
+        }
+      },
+      "openapi": {
+        "summary": "Redisson 分布式锁下单"
+      }
+    },
+    {
+      "id": "stock-after-lock",
+      "name": "6.21 加锁后的库存",
+      "desc": "库存停在 0，没有变成负数，超卖被挡住了。",
+      "group": "分布式锁",
+      "req": {
+        "method": "GET",
+        "path": "/lock/stock/1"
+      },
+      "openapi": {
+        "summary": "加锁后查询库存"
+      }
+    },
+    {
+      "id": "limit",
+      "name": "6.22 固定窗口限流",
+      "desc": "60 秒窗口内最多 5 次。并发 8 次请求，超出的部分 allowed=false。",
+      "group": "接口限流",
+      "parallel": 8,
+      "req": {
+        "method": "GET",
+        "path": "/limit/access",
+        "query": {
+          "user": "tao"
+        }
+      },
+      "openapi": {
+        "summary": "固定窗口限流",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "guest"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "str-set",
+      "name": "6.23 String 写入",
+      "desc": "带过期时间写入，返回 TTL。缓存一定要设过期时间，否则异常情况下会永久占内存。",
+      "group": "数据类型",
+      "req": {
+        "method": "POST",
+        "path": "/redis/string",
+        "query": {
+          "key": "demo:greeting",
+          "value": "hello redis",
+          "ttlSeconds": 600
+        }
+      },
+      "openapi": {
+        "summary": "写入字符串",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ttlSeconds",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 600
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "str-get",
+      "name": "6.24 String 读取",
+      "desc": "读回上一步写入的值。",
+      "group": "数据类型",
+      "req": {
+        "method": "GET",
+        "path": "/redis/string",
+        "query": {
+          "key": "demo:greeting"
+        }
+      },
+      "openapi": {
+        "summary": "读取字符串"
+      }
+    },
+    {
+      "id": "hash",
+      "name": "6.25 Hash 批量写字段",
+      "desc": "一个 key 挂多个字段，只改某个属性时不用整对象覆盖。",
+      "group": "数据类型",
+      "req": {
+        "method": "POST",
+        "path": "/redis/hash",
+        "query": {
+          "key": "demo:user:1",
+          "name": "张三",
+          "age": "20",
+          "city": "南京"
+        }
+      },
+      "openapi": {
+        "summary": "写入 Hash"
+      }
+    },
+    {
+      "id": "list",
+      "name": "6.26 List 追加",
+      "desc": "有序可重复，可以当消息队列或最新动态列表。",
+      "group": "数据类型",
+      "req": {
+        "method": "POST",
+        "path": "/redis/list",
+        "query": {
+          "key": "demo:queue",
+          "values": "order-1,order-2,order-3"
+        }
+      },
+      "openapi": {
+        "summary": "写入 List"
+      }
+    },
+    {
+      "id": "set",
+      "name": "6.27 Set 去重",
+      "desc": "写入时重复元素自动去重，返回的集合里只有一个 Java。",
+      "group": "数据类型",
+      "req": {
+        "method": "POST",
+        "path": "/redis/set",
+        "query": {
+          "key": "demo:tags",
+          "values": "Java,Vue,Java,MySQL"
+        }
+      },
+      "openapi": {
+        "summary": "写入 Set"
+      }
+    },
+    {
+      "id": "rank-warmup",
+      "name": "6.28 预热排行榜",
+      "group": "数据类型",
+      "desc": "把数据库里的销量灌进 ZSet。上线时执行一次，之后靠下单累加。",
+      "req": {
+        "method": "POST",
+        "path": "/rank/warmup"
+      },
+      "expect": 200
+    },
+    {
+      "id": "zset",
+      "name": "6.29 排行榜加分",
+      "desc": "给 3 号商品加 800 分。ZSet 按分数自动排序，加分后它的名次立刻变化，不需要重排全表。",
+      "group": "数据类型",
+      "req": {
+        "method": "POST",
+        "path": "/rank/increase",
+        "query": {
+          "id": 3,
+          "delta": 800
+        }
+      },
+      "openapi": {
+        "summary": "商品热度加分"
+      }
+    },
+    {
+      "id": "zset-top",
+      "name": "6.30 排行榜前五",
+      "desc": "取前五名，分数从高到低。分数来自 ZSet，商品名回到库里补。",
+      "group": "数据类型",
+      "req": {
+        "method": "GET",
+        "path": "/rank/top",
+        "query": {
+          "top": 5
+        }
+      },
+      "openapi": {
+        "summary": "查询排行榜",
+        "parameters": [
+          {
+            "name": "top",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 5
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "resetRedis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "password": "abc123",
+    "db": 10
+  }
+}
