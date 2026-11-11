@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
 @RestControllerAdvice
@@ -31,6 +32,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Void> handleIllegalArgument(IllegalArgumentException e) {
         return Result.fail(ResultCode.PARAM_ERROR.getCode(), e.getMessage());
+    }
+
+    /** 超过 multipart 上限时在进 Controller 前就抛出，这里翻译成业务码 70002，避免落到 500 */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public Result<Void> handleUploadSize(MaxUploadSizeExceededException e) {
+        return Result.fail(ResultCode.FILE_TOO_LARGE);
     }
 
     @ExceptionHandler(Exception.class)

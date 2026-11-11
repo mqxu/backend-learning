@@ -1,4 +1,4 @@
-import { http } from './request'
+import { http, uploadFile as uploadFileRequest } from './request'
 import type {
   ActivityDetail,
   ActivityItem,
@@ -13,6 +13,7 @@ import type {
   SaveActivityPayload,
   SignupDetail,
   SignupItem,
+  SmsSendResult,
   SysNotice,
   UserInfo
 } from '../types'
@@ -56,6 +57,14 @@ export const api = {
 
   profile: () => http.get<UserInfo>('/app/user/profile'),
   bind: (data: BindPayload) => http.post<UserInfo>('/app/auth/bind', data),
+
+  // ---------- 登录 / 登出 / 上传
+  sendSmsCode: (phone: string) =>
+    http.post<SmsSendResult>('/app/auth/sms/send-code', { phone }, { auth: false }),
+  smsLogin: (phone: string, code: string) =>
+    http.post<LoginResult>('/app/auth/sms/login', { phone, code }, { auth: false }),
+  logout: () => http.post<void>('/app/auth/logout', {}),
+  uploadFile: (filePath: string, bizType: string) => uploadFileRequest(filePath, bizType),
 
   // ---------- 组织者
   orgDashboard: () => http.get<OrgDashboard>('/org/dashboard'),

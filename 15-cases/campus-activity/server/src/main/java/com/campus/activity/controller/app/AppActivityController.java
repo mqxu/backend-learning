@@ -4,11 +4,11 @@ import com.campus.activity.common.PageResult;
 import com.campus.activity.common.Result;
 import com.campus.activity.common.UserContext;
 import com.campus.activity.entity.ActivityCategory;
-import com.campus.activity.security.RequireLogin;
 import com.campus.activity.service.ActivityService;
 import com.campus.activity.vo.ActivityDetailVO;
 import com.campus.activity.vo.ActivityItemVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,7 +52,7 @@ public class AppActivityController {
         return Result.ok(activityService.detail(id, UserContext.userId()));
     }
 
-    @RequireLogin
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/activities/{id}/favorite")
     public Result<Map<String, Object>> favorite(@PathVariable Long id) {
         boolean favorited = activityService.toggleFavorite(UserContext.requireUserId(), id);

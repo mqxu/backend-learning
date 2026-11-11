@@ -14,6 +14,30 @@ spring:
     time-zone: Asia/Shanghai
     default-property-inclusion: non_null
 
+  # Redis：缓存、短信验证码、JWT 黑名单、定时任务锁共用同一实例，用 database 11 与 01-14 模块隔离
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:abc123}
+      database: ${REDIS_DATABASE:11}
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1s
+
+  # 注解缓存的 TTL 与 key 前缀在 config/RedisConfig.java 中显式声明，
+  # 这里不写 spring.cache.*，避免两处配置不一致
+
+  servlet:
+    # 单文件上限，与 campus.file.max-file-size 保持一致
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -41,6 +65,55 @@ campus:
   wechat:
     app-id: ${WX_APPID:}
     app-secret: ${WX_SECRET:}
+  # 短信验证码：provider=mock 时只打日志，provider=cloopen 时调容联云真实通道
+  sms:
+    provider: mock
+    # 演示开关：把验证码回传给响应，方便本地 curl / Swagger 联调，生产必须 false
+    expose-code: true
+    code-expire-seconds: 300
+    send-interval-seconds: 60
+    send-daily-limit: 10
+    max-fail-count: 5
+    cloopen:
+      server-ip: app.cloopen.com
+      port: 8883
+      account-sid: ${CLOOPEN_ACCOUNT_SID:}
+      account-token: ${CLOOPEN_ACCOUNT_TOKEN:}
+      app-id: ${CLOOPEN_APP_ID:}
+      template-id: ${CLOOPEN_TEMPLATE_ID:1}
+  # 文件上传：storage-type=local 落盘到 ./uploads，storage-type=oss 走阿里云 OSS
+  file:
+    storage-type: local
+    max-file-size: 10MB
+    date-pattern: yyyy/MM/dd
+    allowed-extensions:
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - webp
+      - bmp
+      - pdf
+      - txt
+      - md
+      - csv
+      - doc
+      - docx
+      - xls
+      - xlsx
+      - ppt
+      - pptx
+      - zip
+    local:
+      base-dir: ./uploads
+      url-prefix: /uploads
+    oss:
+      endpoint: ${OSS_ENDPOINT:}
+      access-key-id: ${OSS_ACCESS_KEY_ID:}
+      access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
+      bucket-name: ${OSS_BUCKET:}
+      dir: files
+      domain: ${OSS_DOMAIN:}
   checkin:
     secret: campus-checkin-demo-secret-2026
     # 签到码时间片长度（秒），即二维码轮换周期

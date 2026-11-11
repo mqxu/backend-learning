@@ -2,6 +2,21 @@
   <view class="page">
     <view class="card">
       <view class="field">
+        <text class="label">活动封面</text>
+        <view v-if="form.coverUrl" class="cover-box">
+          <image :src="resolveFileUrl(form.coverUrl)" mode="aspectFill" class="cover-preview" />
+          <view class="cover-actions">
+            <text class="cover-link" @click="chooseCover">重新选择</text>
+            <text class="cover-link danger" @click="removeCover">移除</text>
+          </view>
+        </view>
+        <view v-else class="cover-empty" :class="{ disabled: uploading }" @click="chooseCover">
+          <text class="cover-plus">+</text>
+          <text class="muted">上传活动封面（建议 16:9 横图）</text>
+        </view>
+      </view>
+
+      <view class="field">
         <text class="label">活动标题 *</text>
         <input v-model="form.title" class="input" placeholder="不超过 30 字" maxlength="60" />
       </view>
@@ -109,6 +124,7 @@ import type { Category } from '../../types'
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
+import { resolveFileUrl } from '../../utils/request'
 
 const categories = ref<Category[]>([])
 const categoryIndex = ref(0)
@@ -116,6 +132,7 @@ const checkinLabels = ['扫码签到', '扫码 + 定位签到', '仅组织者手
 const checkinIndex = ref(0)
 const capacityText = ref('0')
 const saving = ref(false)
+const uploading = ref(false)
 
 const today = new Date()
 const pad = (n: number): string => String(n).padStart(2, '0')
@@ -130,6 +147,7 @@ const signupEndClock = ref('13:00')
 
 const form = reactive<{
   title: string
+  coverUrl: string | null
   categoryId: number | null
   summary: string
   content: string
@@ -141,6 +159,7 @@ const form = reactive<{
   formFields: string | null
 }>({
   title: '',
+  coverUrl: null,
   categoryId: null,
   summary: '',
   content: '',
@@ -204,7 +223,46 @@ function onCheckinTypeChange(e: PickerEvent): void {
   checkinIndex.value = Number(e.detail.value)
 }
 
+/** 选择并上传封面：uni.chooseImage 单张压缩图 → uni.uploadFile → 存相对地址 */
+function chooseCover(): void {
+  if (uploading.value) {
+    return
+  }
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const tempFilePath = res.tempFilePaths[0]
+      if (!tempFilePath) {
+        return
+      }
+      uploading.value = true
+      uni.showLoading({ title: '上传中', mask: true })
+      try {
+        const data = await api.uploadFile(tempFilePath, 'activity-cover')
+        uni.hideLoading()
+        form.coverUrl = data.url
+        uni.showToast({ title: '封面已上传', icon: 'success' })
+      } catch (e) {
+        // uploadFile 已 toast 失败原因
+        uni.hideLoading()
+      } finally {
+        uploading.value = false
+      }
+    }
+  })
+}
+
+function removeCover(): void {
+  form.coverUrl = null
+}
+
 async function save(submitAfter: boolean): Promise<void> {
+  if (uploading.value) {
+    uni.showToast({ title: '封面正在上传，请稍候', icon: 'none' })
+    return
+  }
   if (!form.title.trim()) {
     uni.showToast({ title: '请填写活动标题', icon: 'none' })
     return
@@ -307,5 +365,56 @@ function nowString(): string {
 
 .actions .btn-ghost {
   margin-bottom: 18rpx;
+}
+
+.cover-box {
+  background: #f7f8fa;
+  border-radius: 10rpx;
+  padding: 16rpx;
+}
+
+.cover-preview {
+  width: 100%;
+  height: 320rpx;
+  border-radius: 10rpx;
+  background: #eef0f3;
+}
+
+.cover-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14rpx;
+}
+
+.cover-link {
+  font-size: 24rpx;
+  color: #1f6feb;
+  margin-left: 28rpx;
+}
+
+.cover-link.danger {
+  color: #b3261e;
+}
+
+.cover-empty {
+  height: 200rpx;
+  background: #f7f8fa;
+  border: 1rpx dashed #d3d8e0;
+  border-radius: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-empty.disabled {
+  opacity: 0.6;
+}
+
+.cover-plus {
+  font-size: 48rpx;
+  color: #9aa0aa;
+  line-height: 1.2;
+  margin-bottom: 10rpx;
 }
 </style>

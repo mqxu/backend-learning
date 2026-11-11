@@ -13,11 +13,21 @@
     <view v-if="!list.length && !loading" class="empty">暂无报名记录</view>
 
     <view v-for="s in list" :key="s.id" class="card">
-      <view class="between">
-        <text class="item-title" @click="goDetail(s.activityId)">{{ s.activityTitle }}</text>
-        <text class="tag" :class="statusClass(s.status)">{{ s.statusLabel }}</text>
+      <view class="item-main">
+        <image
+          v-if="s.coverUrl"
+          :src="resolveFileUrl(s.coverUrl)"
+          mode="aspectFill"
+          class="item-cover"
+        />
+        <view class="item-body">
+          <view class="between">
+            <text class="item-title" @click="goDetail(s.activityId)">{{ s.activityTitle }}</text>
+            <text class="tag" :class="statusClass(s.status)">{{ s.statusLabel }}</text>
+          </view>
+          <view class="muted" style="margin-top: 10rpx">{{ fmtTime(s.startTime) }} · {{ s.locationName }}</view>
+        </view>
       </view>
-      <view class="muted" style="margin-top: 10rpx">{{ fmtTime(s.startTime) }} · {{ s.locationName }}</view>
 
       <view v-if="s.status === 1" class="ticket">
         <text class="ticket-label">签到凭证</text>
@@ -44,6 +54,7 @@ import type { SignupItem } from '../../types'
 import { ref } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
+import { resolveFileUrl } from '../../utils/request'
 
 const tabs = [
   { label: '全部', value: null },
@@ -161,6 +172,25 @@ onReachBottom(() => loadPage(false))
   font-weight: 600;
   flex: 1;
   margin-right: 16rpx;
+}
+
+.item-main {
+  display: flex;
+  align-items: flex-start;
+}
+
+.item-cover {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  background: #eef0f3;
+  flex-shrink: 0;
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .ticket {

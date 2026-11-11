@@ -1,0 +1,50 @@
+[Unit]
+# 校园活动小程序后端（Spring Boot 4 + JDK 21）
+# 安装：sudo cp deploy/campus-activity.service /etc/systemd/system/
+#       sudo systemctl daemon-reload && sudo systemctl enable campus-activity
+Description=Campus Activity backend (Spring Boot, port 8016)
+Documentation=file:/opt/campus-activity/README.md
+# 依赖网络就绪即可；MySQL/Redis 由 deploy/init-server.sh 安装并设为开机自启，
+# 这里不硬绑定具体 unit 名（不同发行版分别是 mysql.service / mysqld.service、redis / redis-server）。
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 非 root 运行；由 deploy/init-server.sh 创建（useradd --system campus）
+User=campus
+Group=campus
+# 工作目录决定 ./uploads 的落点 = /opt/campus-activity/uploads
+WorkingDirectory=/opt/campus-activity
+
+# 生产密钥与开关全部来自该文件；文件缺失时服务会启动失败（这是有意的保护，避免用仓库默认密钥裸奔）。
+EnvironmentFile=/etc/campus-activity/env
+# JVM 参数也可写在 /etc/campus-activity/env 的 JAVA_OPTS 里覆盖这里的默认值。
+Environment=JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8
+
+# $JAVA_OPTS 不带花括号时按空格拆分为多个参数；改路径时同步改这里与 deploy/deploy.sh 的 JAVA_BIN。
+ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/campus-activity/app.jar
+
+# 优雅停止：systemctl stop 发送 SIGTERM，Java 进程正常退出码 143
+KillSignal=SIGTERM
+TimeoutStopSec=30
+SuccessExitStatus=143
+
+# 崩溃自动拉起；连续失败时 systemd 会按 RestartSec 退避
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=campus-activity
+
+# ---------- 轻量安全加固 ----------
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+# 上传目录与日志目录需要可写
+ReadWritePaths=/opt/campus-activity/uploads /opt/campus-activity/logs
+
+[Install]
+WantedBy=multi-user.target

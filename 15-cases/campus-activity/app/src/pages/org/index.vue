@@ -32,13 +32,23 @@
     <view v-if="!list.length && !loading" class="empty">还没有活动，点击右下角发布</view>
 
     <view v-for="a in list" :key="a.id" class="card">
-      <view class="between">
-        <text class="item-title">{{ a.title }}</text>
-        <text class="tag" :class="statusClass(a.status)">{{ a.statusLabel }}</text>
-      </view>
-      <view class="muted" style="margin-top: 10rpx">{{ a.startTime }} · {{ a.locationName }}</view>
-      <view class="muted" style="margin-top: 6rpx">
-        报名 {{ a.signedCount }}/{{ a.capacity || '不限' }}
+      <view class="item-main">
+        <image
+          v-if="a.coverUrl"
+          :src="resolveFileUrl(a.coverUrl)"
+          mode="aspectFill"
+          class="item-cover"
+        />
+        <view class="item-body">
+          <view class="between">
+            <text class="item-title">{{ a.title }}</text>
+            <text class="tag" :class="statusClass(a.status)">{{ a.statusLabel }}</text>
+          </view>
+          <view class="muted" style="margin-top: 10rpx">{{ a.startTime }} · {{ a.locationName }}</view>
+          <view class="muted" style="margin-top: 6rpx">
+            报名 {{ a.signedCount }}/{{ a.capacity || '不限' }}
+          </view>
+        </view>
       </view>
 
       <view class="actions">
@@ -59,6 +69,7 @@ import type { ActivityItem, OrgDashboard } from '../../types'
 import { ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
+import { resolveFileUrl } from '../../utils/request'
 
 const tabs = [
   { label: '全部', value: null },
@@ -182,6 +193,25 @@ onPullDownRefresh(async () => {
   font-weight: 600;
   flex: 1;
   margin-right: 16rpx;
+}
+
+.item-main {
+  display: flex;
+  align-items: flex-start;
+}
+
+.item-cover {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  background: #eef0f3;
+  flex-shrink: 0;
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .actions {

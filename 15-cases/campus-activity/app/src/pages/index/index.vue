@@ -32,7 +32,7 @@
         <view class="hot-list">
           <view v-for="a in hot" :key="a.id" class="hot-card" @click="goDetail(a.id)">
             <view class="hot-cover">
-              <image v-if="a.coverUrl" :src="a.coverUrl" mode="aspectFill" class="cover-img" />
+              <image v-if="a.coverUrl" :src="resolveFileUrl(a.coverUrl)" mode="aspectFill" class="cover-img" />
               <text v-else class="cover-text">{{ a.categoryName }}</text>
             </view>
             <view class="hot-body">
@@ -81,7 +81,7 @@ import type { ActivityItem, Category, UserInfo } from '../../types'
 import { computed, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
-import { getToken } from '../../utils/request'
+import { getToken, resolveFileUrl } from '../../utils/request'
 import { login, currentUser } from '../../utils/auth'
 
 const categories = ref<Category[]>([])

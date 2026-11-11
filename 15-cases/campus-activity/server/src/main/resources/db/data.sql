@@ -37,12 +37,13 @@ INSERT INTO organization (id, name, type, logo_url, description, contact, status
 
 -- 账号：1 管理员，2 组织者，3/4/5 学生
 -- 后台密码：admin / Admin@123      org2001 / Org@123
-INSERT INTO sys_user (id, open_id, nickname, role, org_id, username, password_hash, status) VALUES
-(1, 'admin:admin',     '系统管理员', 'ADMIN',     NULL, 'admin',   '$2y$10$ek34CjWqpfOfFHKhv3EY3OaDQ12mhrjdmdFU24gT/oBuPlZ76l0ta', 1),
-(2, 'mock-organizer-1','计院学生会', 'ORGANIZER', 2001, 'org2001', '$2y$10$XMm30VfQ1k69wbAl2r2n7uCD83hIXnGPt7Ytc5pm5wFaDfI6OJGZq', 1),
-(3, 'mock-student-1',  '张小明',    'STUDENT',   NULL, NULL, NULL, 1),
-(4, 'mock-student-2',  '李小红',    'STUDENT',   NULL, NULL, NULL, 1),
-(5, 'mock-student-3',  '王大力',    'STUDENT',   NULL, NULL, NULL, 1);
+-- 3/4/5 号学生补手机号，用于手机号验证码登录演示（手机号仅演示用，不对应真实号码）
+INSERT INTO sys_user (id, open_id, nickname, role, org_id, username, password_hash, phone, status) VALUES
+(1, 'admin:admin',     '系统管理员', 'ADMIN',     NULL, 'admin',   '$2y$10$ek34CjWqpfOfFHKhv3EY3OaDQ12mhrjdmdFU24gT/oBuPlZ76l0ta', NULL, 1),
+(2, 'mock-organizer-1','计院学生会', 'ORGANIZER', 2001, 'org2001', '$2y$10$XMm30VfQ1k69wbAl2r2n7uCD83hIXnGPt7Ytc5pm5wFaDfI6OJGZq', NULL, 1),
+(3, 'mock-student-1',  '张小明',    'STUDENT',   NULL, NULL, NULL, '13800000003', 1),
+(4, 'mock-student-2',  '李小红',    'STUDENT',   NULL, NULL, NULL, '13800000004', 1),
+(5, 'mock-student-3',  '王大力',    'STUDENT',   NULL, NULL, NULL, '13800000005', 1);
 
 -- 学籍白名单
 INSERT INTO student_whitelist (id, student_no, real_name, college, grade, major, used_flag) VALUES

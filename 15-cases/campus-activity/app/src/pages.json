@@ -53,6 +53,12 @@
       }
     },
     {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationBarTitleText": "手机号登录"
+      }
+    },
+    {
       "path": "pages/checkin/scan",
       "style": {
         "navigationBarTitleText": "扫码签到"

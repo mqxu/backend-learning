@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1000" viewBox="0 0 1240 1000" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#8FA0B5"/>
+  </marker>
+  <marker id="ar-open" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9"
+          markerHeight="9" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11" fill="none" stroke="#8FA0B5" stroke-width="1.6"/>
+  </marker>
+  <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+  </marker>
+</defs>
+<rect x="300" y="80" width="680" height="856" rx="6" ry="6" fill="#FCFDFF" stroke="#94A3B8" stroke-width="1.6"/>
+<text x="640.0" y="120.1" font-size="17" fill="#475569" text-anchor="middle" font-weight="600">校园活动小程序</text>
+<ellipse cx="560" cy="170" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="175.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">微信登录</text>
+<ellipse cx="560" cy="250" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="255.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">绑定学号</text>
+<ellipse cx="560" cy="330" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="335.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">浏览活动</text>
+<ellipse cx="560" cy="410" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="415.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">查看活动详情</text>
+<ellipse cx="560" cy="490" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="495.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">收藏活动</text>
+<ellipse cx="560" cy="570" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="575.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">提交报名</text>
+<ellipse cx="560" cy="650" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="655.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">取消报名</text>
+<ellipse cx="560" cy="730" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="735.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">查看我的报名</text>
+<ellipse cx="560" cy="810" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="815.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">扫码签到</text>
+<ellipse cx="560" cy="890" rx="100" ry="28" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="560" y="895.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">查看消息</text>
+<circle cx="150" cy="530" r="15" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M150,545 L150,586" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M125,558 L175,558" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M150,586 L129,626" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M150,586 L171,626" stroke="#2563EB" stroke-width="1.9"/>
+<text x="150" y="663.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">学生</text>
+<path d="M175,558 L460,170" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,250" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,330" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,410" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,490" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,570" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,650" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,730" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,810" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M175,558 L460,890" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<circle cx="1120" cy="160" r="15" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1120,175 L1120,216" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1095,188 L1145,188" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1120,216 L1099,256" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1120,216 L1141,256" stroke="#2563EB" stroke-width="1.9"/>
+<text x="1120" y="293.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">微信开放平台</text>
+<path d="M1095,188 L660,170" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="840" cy="330" rx="90" ry="28" fill="#FEF6E7" stroke="#D97706" stroke-width="1.6"/>
+<text x="840" y="335.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="400">筛选 / 搜索</text>
+<path d="M660,330 L750,330" stroke="#8FA0B5" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#ar-open)"/>
+<text x="705" y="316.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">«include»</text>
+<path d="M700,560 H942 L958,576 V710 H700 Z" fill="#FFFBEB" stroke="#D6C48A" stroke-width="1.3"/>
+<path d="M942,560 V576 H958" fill="none" stroke="#D6C48A" stroke-width="1.3"/>
+<text x="716" y="589.0" font-size="14" fill="#0F172A" text-anchor="start" font-weight="600">补充说明</text>
+<text x="716" y="616.5" font-size="12.5" fill="#475569" text-anchor="start" font-weight="400">提交报名、扫码签到</text>
+<text x="716" y="642.5" font-size="12.5" fill="#475569" text-anchor="start" font-weight="400">以已完成学籍绑定</text>
+<text x="716" y="668.5" font-size="12.5" fill="#475569" text-anchor="start" font-weight="400">（绑定学号）为前提</text>
+<text x="716" y="694.5" font-size="12.5" fill="#475569" text-anchor="start" font-weight="400">（BR-01）。</text>
+<text x="60" y="972.5" font-size="12.5" fill="#5A6779" text-anchor="start" font-weight="400">图例：实线＝参与者与用例的关联；虚线箭头 «include» 表示被包含的用例必然执行。</text>
+</svg>

@@ -1,0 +1,36 @@
+%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：概要设计说明书 03 图3-4，报名占名额、满员候补、取消释放与队首转正。
+%% 要点：名额占用是一条条件 UPDATE，影响行数为 0 才进入候补。
+sequenceDiagram
+    participant U as 学生
+    participant S as 服务端
+    participant D as MySQL
+    participant Q as 候补队列
+
+    U->>S: 提交报名
+    activate S
+    S->>D: 校验已绑定 并条件 UPDATE 占名额
+    alt 占名额成功
+        S->>D: 写入报名 状态为报名成功
+        S-->>U: 报名成功 并发送站内消息
+    else 名额已满
+        S->>Q: 取 max(waitlist_seq) 加 1
+        S->>D: 写入报名 状态为候补中
+        S-->>U: 已加入候补 并发送站内消息
+    end
+    deactivate S
+
+    U->>S: 取消报名
+    activate S
+    S->>D: 状态置为已取消 并释放名额
+    S->>Q: 按 waitlist_seq 取队首
+    alt 队首存在且占位成功
+        S->>D: 队首报名置为报名成功
+        S-->>U: 取消成功 并发送转正消息
+    else 队列为空或占位失败
+        S->>S: 保持候补队列不变
+        S-->>U: 取消成功 名额已释放
+    end
+    deactivate S
+
+    Note over S,D: 释放名额与候补转正在同一事务内完成

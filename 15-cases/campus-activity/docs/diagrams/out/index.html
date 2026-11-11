@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>图集总览</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:36px 28px 64px;background:#F6F8FB;color:#0F172A;
+  font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Source Han Sans SC','Noto Sans CJK SC',sans-serif;line-height:1.65}
+h1{font-size:24px;margin:0 0 6px;letter-spacing:.01em}
+.sub{color:#64748B;font-size:13px;margin-bottom:28px}
+.wrap{max-width:1180px;margin:0 auto}
+.card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;
+  padding:22px 24px 16px;margin-bottom:22px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.card header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #EEF2F7}
+h2{font-size:16px;margin:0;font-weight:600}
+.tag{font-size:12px;color:#64748B;background:#F1F5F9;border-radius:999px;padding:2px 10px}
+.canvas{overflow-x:auto;text-align:center;padding:8px 0 12px}
+.canvas img{max-width:100%;height:auto}
+.canvas.err{color:#B42318;font-size:13px;text-align:left}
+details{border-top:1px dashed #E2E8F0;padding-top:10px}
+summary{cursor:pointer;font-size:13px;color:#2563EB;user-select:none}
+pre{background:#0F172A;color:#E2E8F0;padding:14px 16px;border-radius:10px;
+  overflow-x:auto;font-size:12.5px;line-height:1.6;margin:12px 0 4px}
+code{font-family:'SF Mono',Menlo,Consolas,monospace}
+</style></head><body><div class="wrap">
+<h1>图集总览</h1>
+<div class="sub">共 20 张图 · 预设 paper · 点击展开源码</div>
+<section class="card">
+  <header><h2>D07-ER物理模型</h2><span class="tag">1601 × 1250 px · E-R 图</span></header>
+  <div class="canvas"><img src="D07-ER物理模型.svg" alt="D07-ER物理模型" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% E-R 图（物理模型 / 表结构）
+%% 用途：数据库设计说明书 04 图4-2，12 张表的主键、关键字段与基数关系。
+%% 说明：字段全集与索引见 04 文档表格与 schema.sql，本图只保留主键与 2~3 个关键字段。
+%% 基数读法：||--o{ 读作「左边 1 条对右边 0..N 条」，||--o| 为一对零或一。
+erDiagram
+    SYS_USER ||--o| STUDENT_PROFILE : &quot;绑定学籍&quot;
+    STUDENT_WHITELIST ||--o| STUDENT_PROFILE : &quot;白名单校验&quot;
+    ORGANIZATION ||--o{ ORG_MEMBER : &quot;包含成员&quot;
+    SYS_USER ||--o{ ORG_MEMBER : &quot;加入组织&quot;
+    ORGANIZATION ||--o{ ACTIVITY : &quot;主办活动&quot;
+    ACTIVITY_CATEGORY ||--o{ ACTIVITY : &quot;分类归属&quot;
+    SYS_USER ||--o{ ACTIVITY : &quot;创建活动&quot;
+    ACTIVITY ||--o{ ACTIVITY_SIGNUP : &quot;收到报名&quot;
+    SYS_USER ||--o{ ACTIVITY_SIGNUP : &quot;提交报名&quot;
+    ACTIVITY_SIGNUP ||--o| ACTIVITY_CHECKIN : &quot;签到记录&quot;
+    ACTIVITY ||--o{ ACTIVITY_CHECKIN : &quot;签到归属&quot;
+    ACTIVITY ||--o{ ACTIVITY_FAVORITE : &quot;被收藏&quot;
+    SYS_USER ||--o{ ACTIVITY_FAVORITE : &quot;收藏活动&quot;
+    SYS_USER ||--o{ SYS_NOTICE : &quot;接收消息&quot;
+    SYS_USER ||--o{ AUDIT_RECORD : &quot;操作留痕&quot;
+
+    SYS_USER {
+        bigint id PK
+        varchar open_id UK
+        varchar role
+        tinyint status
+    }
+
+    STUDENT_PROFILE {
+        bigint user_id PK
+        varchar student_no UK
+        varchar real_name
+        varchar college
+    }
+
+    STUDENT_WHITELIST {
+        bigint id PK
+        varchar student_no UK
+        tinyint used_flag
+    }
+
+    ORGANIZATION {
+        bigint id PK
+        varchar name
+        tinyint type
+    }
+
+    ORG_MEMBER {
+        bigint id PK
+        bigint org_id FK
+        bigint user_id FK
+    }
+
+    ACTIVITY_CATEGORY {
+        bigint id PK
+        varchar code UK
+        varchar name
+    }
+
+    ACTIVITY {
+        bigint id PK
+        varchar title
+        bigint org_id FK
+        int capacity
+        int signed_count
+        tinyint status
+    }
+
+    ACTIVITY_SIGNUP {
+        bigint id PK
+        bigint activity_id FK
+        bigint user_id FK
+        tinyint status
+        int waitlist_seq
+    }
+
+    ACTIVITY_CHECKIN {
+        bigint id PK
+        bigint signup_id FK
+        tinyint checkin_type
+        datetime checkin_time
+    }
+
+    ACTIVITY_FAVORITE {
+        bigint id PK
+        bigint activity_id FK
+        bigint user_id FK
+    }
+
+    SYS_NOTICE {
+        bigint id PK
+        bigint user_id FK
+        varchar type
+        tinyint read_flag
+    }
+
+    AUDIT_RECORD {
+        bigint id PK
+        bigint biz_id
+        varchar action
+        bigint operator_id FK
+    }
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D09-活动状态图</h2><span class="tag">448 × 824 px · 状态图</span></header>
+  <div class="canvas"><img src="D09-活动状态图.svg" alt="D09-活动状态图" style="width:448px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 状态图 / 状态机图（State Machine Diagram）
+%% 用途：详细设计说明书 06 图6-2，activity.status 的 7 态迁移与触发条件。
+%% 要点：唯一的初态，三个终态；箭头文字为触发条件。
+stateDiagram-v2
+    direction TB
+    [*] --&gt; 草稿: 新建活动
+    草稿 --&gt; 待审核: 提交审核
+
+    待审核 --&gt; 已发布: 审核通过
+    待审核 --&gt; 已驳回: 驳回
+    已驳回 --&gt; 待审核: 修改后重提
+
+    已发布 --&gt; 进行中: 到开始时间
+    进行中 --&gt; 已结束: 到结束时间
+    已发布 --&gt; 已取消: 取消
+    进行中 --&gt; 已取消: 取消
+    已发布 --&gt; 待审核: 编辑后重提
+    进行中 --&gt; 待审核: 编辑后重提
+
+    已结束 --&gt; [*]
+    已取消 --&gt; [*]
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D10-报名状态图</h2><span class="tag">744 × 884 px · 状态图</span></header>
+  <div class="canvas"><img src="D10-报名状态图.svg" alt="D10-报名状态图" style="width:744px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 状态图 / 状态机图（State Machine Diagram）
+%% 用途：详细设计说明书 06 图6-3，activity_signup.status 的 7 态迁移与触发条件。
+%% 要点：同一初态可分流到待审核、报名成功、候补中三种结果。
+stateDiagram-v2
+    direction TB
+    [*] --&gt; 待审核: 报名需审核
+    [*] --&gt; 报名成功: 名额充足
+    [*] --&gt; 候补中: 满员且可候补
+
+    待审核 --&gt; 报名成功: 审核通过并占位
+    待审核 --&gt; 审核未通过: 驳回
+    待审核 --&gt; 已取消: 学生取消
+
+    报名成功 --&gt; 已签到: 扫码或补签
+    报名成功 --&gt; 已取消: 取消截止前取消
+    报名成功 --&gt; 未到场: 结束未签到
+
+    候补中 --&gt; 报名成功: 队首转正
+    候补中 --&gt; 已取消: 学生取消
+
+    已取消 --&gt; 待审核: 重新报名
+    已取消 --&gt; 报名成功: 重新报名
+    审核未通过 --&gt; 待审核: 重新报名
+    审核未通过 --&gt; 报名成功: 重新报名
+
+    已签到 --&gt; [*]
+    未到场 --&gt; [*]
+    已取消 --&gt; [*]
+    审核未通过 --&gt; [*]
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D11-登录绑定时序图</h2><span class="tag">788 × 1121 px · 时序图</span></header>
+  <div class="canvas"><img src="D11-登录绑定时序图.svg" alt="D11-登录绑定时序图" style="width:788px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：详细设计说明书 06 图6-1，小程序登录、建号、绑定学号与 JWT 签发。
+%% 要点：参与者为小程序、服务端、微信接口、MySQL 四者，JWT 由服务端签发。
+sequenceDiagram
+    participant U as 小程序
+    participant S as 服务端
+    participant W as 微信接口
+    participant D as MySQL
+
+    U-&gt;&gt;S: 提交登录 devOpenId 或 code
+    activate S
+    alt 开发模式 devMode
+        S-&gt;&gt;S: 直接使用 devOpenId 作为 mock openid
+    else 生产模式
+        S-&gt;&gt;W: jscode2session 换取 openid
+        W--&gt;&gt;S: openid
+    end
+    S-&gt;&gt;D: 查询或创建 sys_user
+    S-&gt;&gt;D: 查 student_profile 得到 needBind
+    S--&gt;&gt;U: 返回 JWT 与 needBind
+    deactivate S
+
+    U-&gt;&gt;S: 提交绑定学号
+    activate S
+    S-&gt;&gt;D: 按学号查询学籍白名单
+    alt 校验失败
+        S--&gt;&gt;U: 10004 不在名单 或 10005 已绑定
+    else 校验通过
+        S-&gt;&gt;D: 写 student_profile 并置 used_flag 为 1
+        S--&gt;&gt;U: 返回完整学籍资料
+    end
+    deactivate S
+
+    Note over S,D: JWT 有效期 2 小时，由服务端签发
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D12-发布审核时序图</h2><span class="tag">1028 × 1033 px · 时序图</span></header>
+  <div class="canvas"><img src="D12-发布审核时序图.svg" alt="D12-发布审核时序图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：概要设计说明书 03 图3-3，组织者建活动、提交审核、团委审核发布与审计留痕。
+%% 要点：参与者为组织者、服务端、MySQL、AuditRecord、管理员。
+sequenceDiagram
+    participant O as 组织者
+    participant S as 服务端
+    participant D as MySQL
+    participant A as AuditRecord
+    participant M as 管理员
+
+    O-&gt;&gt;S: 新建活动 填写时间地点与名额
+    activate S
+    S-&gt;&gt;D: 校验时间约束后插入 activity 草稿
+    S--&gt;&gt;O: 返回活动 ID 创建成功
+    deactivate S
+
+    O-&gt;&gt;S: 提交审核
+    activate S
+    S-&gt;&gt;D: 更新 activity 状态为待审核
+    S--&gt;&gt;O: 已提交 等待审核
+    deactivate S
+
+    M-&gt;&gt;S: 打开待审核列表并提交审核结论
+    activate S
+    alt 审核通过
+        S-&gt;&gt;D: 更新状态为已发布并写 publish_time
+        S-&gt;&gt;A: 插入 APPROVE 审计记录
+        S--&gt;&gt;M: 活动进入已发布 可被学生报名
+    else 审核驳回
+        S-&gt;&gt;D: 更新状态为已驳回并写 reject_reason
+        S-&gt;&gt;A: 插入 REJECT 审计记录
+        S--&gt;&gt;M: 已驳回 理由回显给组织者
+    end
+    deactivate S
+
+    Note over S,A: 状态变更与审计记录在同一事务内写入
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D13-报名候补时序图</h2><span class="tag">812 × 1211 px · 时序图</span></header>
+  <div class="canvas"><img src="D13-报名候补时序图.svg" alt="D13-报名候补时序图" style="width:812px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：概要设计说明书 03 图3-4，报名占名额、满员候补、取消释放与队首转正。
+%% 要点：名额占用是一条条件 UPDATE，影响行数为 0 才进入候补。
+sequenceDiagram
+    participant U as 学生
+    participant S as 服务端
+    participant D as MySQL
+    participant Q as 候补队列
+
+    U-&gt;&gt;S: 提交报名
+    activate S
+    S-&gt;&gt;D: 校验已绑定 并条件 UPDATE 占名额
+    alt 占名额成功
+        S-&gt;&gt;D: 写入报名 状态为报名成功
+        S--&gt;&gt;U: 报名成功 并发送站内消息
+    else 名额已满
+        S-&gt;&gt;Q: 取 max(waitlist_seq) 加 1
+        S-&gt;&gt;D: 写入报名 状态为候补中
+        S--&gt;&gt;U: 已加入候补 并发送站内消息
+    end
+    deactivate S
+
+    U-&gt;&gt;S: 取消报名
+    activate S
+    S-&gt;&gt;D: 状态置为已取消 并释放名额
+    S-&gt;&gt;Q: 按 waitlist_seq 取队首
+    alt 队首存在且占位成功
+        S-&gt;&gt;D: 队首报名置为报名成功
+        S--&gt;&gt;U: 取消成功 并发送转正消息
+    else 队列为空或占位失败
+        S-&gt;&gt;S: 保持候补队列不变
+        S--&gt;&gt;U: 取消成功 名额已释放
+    end
+    deactivate S
+
+    Note over S,D: 释放名额与候补转正在同一事务内完成
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D14-扫码签到时序图</h2><span class="tag">804 × 949 px · 时序图</span></header>
+  <div class="canvas"><img src="D14-扫码签到时序图.svg" alt="D14-扫码签到时序图" style="width:804px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：详细设计说明书 06 图6-4，组织者出动态码、学生扫码、服务端校验并写签到。
+%% 要点：参与者为组织者、学生、服务端、MySQL；签到码不落库，接受最近 3 个时间片。
+sequenceDiagram
+    participant O as 组织者
+    participant U as 学生
+    participant S as 服务端
+    participant D as MySQL
+
+    O-&gt;&gt;S: 请求核销台签到码
+    S--&gt;&gt;O: 返回 30 秒轮换的动态 token
+    Note over O,U: 组织者投屏二维码 学生扫码
+
+    U-&gt;&gt;S: 提交 token 与定位
+    activate S
+    S-&gt;&gt;S: 校验签名与最近 3 个时间片
+    alt 校验失败
+        S--&gt;&gt;U: 40001 签到码无效
+    else 校验通过
+        S-&gt;&gt;D: 查 activity 与报名记录
+        S-&gt;&gt;S: 校验签到窗口与 200 米定位
+        S-&gt;&gt;D: 写 activity_checkin 并更新报名为已签到
+        S--&gt;&gt;U: 签到成功 返回签到时间
+    end
+    deactivate S
+
+    Note over S,D: uk_signup 唯一索引兜底重复签到
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D15-报名业务流程活动图</h2><span class="tag">857 × 2198 px · 流程图 / 功能结构</span></header>
+  <div class="canvas"><img src="D15-报名业务流程活动图.svg" alt="D15-报名业务流程活动图" style="width:857px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 活动图（Activity Diagram，带泳道）
+%% 用途：需求规格说明书 02 图2-5，学生、系统、组织者三方在报名业务中的职责交接。
+%% 说明：Mermaid 无 activityDiagram，用 flowchart + subgraph 表达泳道；
+%%       实心圆为开始，双圆为结束，菱形为判断，出边均写条件。
+flowchart TD
+    S(( )):::sn
+
+    subgraph L1[&quot;学生&quot;]
+        A1[提交报名]
+        A2[绑定学号]
+    end
+
+    subgraph L2[&quot;系统&quot;]
+        B1{已绑定且在报名窗口?}
+        B2{是否已报名?}
+        B3{报名需审核?}
+        B4{名额充足?}
+        B6[写入报名成功]
+        B7[写入候补队列]
+        B8[写入待审核]
+    end
+
+    subgraph L3[&quot;组织者&quot;]
+        C1[审核报名]
+    end
+
+    E((( ))):::en
+
+    S --&gt; A1
+    A1 --&gt; B1
+    B1 -- 未绑定 返回 10003 --&gt; A2
+    B1 -- 不在报名窗口 返回 20005 --&gt; E
+    A2 -- 绑定成功 --&gt; A1
+    B1 -- 通过 --&gt; B2
+    B2 -- 已报名 返回 30002 --&gt; E
+    B2 -- 未报名 --&gt; B3
+    B3 -- 需审核 --&gt; B8
+    B8 --&gt; C1
+    C1 -- 审核通过且占名额成功 --&gt; B6
+    C1 -- 驳回或名额不足 --&gt; E
+    B3 -- 无需审核 --&gt; B4
+    B4 -- 名额充足 --&gt; B6
+    B4 -- 名额已满且可候补 --&gt; B7
+    B4 -- 满员且未开候补 返回 30001 --&gt; E
+    B6 --&gt; E
+    B7 --&gt; E
+
+    classDef sn fill:#0F172A,stroke:#0F172A
+    classDef en fill:#FFFFFF,stroke:#0F172A,stroke-width:2.6px
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D16-候补转正流程图</h2><span class="tag">551 × 1603 px · 流程图 / 功能结构</span></header>
+  <div class="canvas"><img src="D16-候补转正流程图.svg" alt="D16-候补转正流程图" style="width:551px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 流程图（Flowchart）
+%% 用途：详细设计说明书 06 图6-5，取消报名后候补转正的处理流程。
+%% 要点：取消、释放、取队首、占位、转正五步；每个失败分支都显式结束。
+flowchart TD
+    A([开始]) --&gt; B[学生取消报名 状态置为已取消]
+    B --&gt; C{原状态是否占用名额?}
+    C -- 否 待审核或候补中 --&gt; Z([结束])
+    C -- 是 报名成功或已签到 --&gt; D[releaseSeat 释放名额]
+    D --&gt; E[按 waitlist_seq 升序查询队首候补]
+    E --&gt; F{存在候补记录?}
+    F -- 否 队列为空 --&gt; Z
+    F -- 是 --&gt; G[&quot;条件 UPDATE 占位 capacity 为 0 或 signed_count 小于 capacity&quot;]
+    G --&gt; H{影响行数等于 1?}
+    H -- 否 名额再次被抢占 --&gt; Z
+    H -- 是 --&gt; I[候补记录状态置为报名成功]
+    I --&gt; J[NoticeService 发送候补转正消息]
+    J --&gt; Z
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D17-签到码校验流程图</h2><span class="tag">673 × 1461 px · 流程图 / 功能结构</span></header>
+  <div class="canvas"><img src="D17-签到码校验流程图.svg" alt="D17-签到码校验流程图" style="width:673px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 流程图（Flowchart）
+%% 用途：详细设计说明书 06 图6-6，扫码签到的校验顺序与错误码分流。
+%% 要点：校验顺序与 BR-10 一致；可合并的检查已并节点，失败分支在出边写错误码。
+flowchart TD
+    A([开始]) --&gt; B[/接收签到 token 与定位/]
+    B --&gt; C{签到码有效?}
+    C -- 否 40001 签到码无效 --&gt; Z([结束])
+    C -- 是 --&gt; D{活动可签到?}
+    D -- 否 20001 不存在 或 40004 不在时间窗与仅手动活动 --&gt; Z
+    D -- 是 --&gt; E{已报名且未签到?}
+    E -- 否 40002 未报名 或 40003 已签到 --&gt; Z
+    E -- 是 --&gt; F{定位距离不超过 200 米?}
+    F -- 否 40005 超出签到范围 --&gt; Z
+    F -- 是 --&gt; G[写签到记录并更新报名为已签到]
+    G --&gt; H([返回签到成功与签到时间])
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D18-后端分层类图</h2><span class="tag">1046 × 1636 px · 类图</span></header>
+  <div class="canvas"><img src="D18-后端分层类图.svg" alt="D18-后端分层类图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 类图（Class Diagram）
+%% 用途：详细设计说明书 06 图6-7，后端 Controller → Service → Mapper → Entity 四层依赖。
+%% 说明：只保留 8 个关键类，按层分包（namespace）表达分层；每类方法不超过 3 个。
+classDiagram
+    direction TB
+
+    namespace Controller {
+        class AppSignupController {
+            +signup(activityId, req) SignupVO
+            +mine() Page
+            +cancel(signupId) void
+        }
+        class OrgController {
+            +create(req) Long
+            +submit(id) void
+            +checkinQr(id) CheckinQrVO
+        }
+        class AdminActivityController {
+            +auditList() Page
+            +audit(id, req) void
+            +offline(id, reason) void
+        }
+    }
+
+    namespace Service {
+        class ActivityService {
+            +create(user, req) Long
+            +submit(user, id) void
+            +audit(operator, id, pass, reason) void
+        }
+        class SignupService {
+            +signup(user, activityId, req) SignupVO
+            +cancel(user, signupId) void
+            +promoteWaitlist(activityId) void
+        }
+    }
+
+    namespace Mapper {
+        class ActivitySignupMapper
+    }
+
+    namespace Entity {
+        class Activity {
+            -Long id
+            -String title
+            -Integer capacity
+            -Integer status
+        }
+        class ActivitySignup {
+            -Long id
+            -Long activityId
+            -Long userId
+            -Integer status
+        }
+    }
+
+    AppSignupController ..&gt; SignupService : 调用
+    OrgController ..&gt; ActivityService : 调用
+    OrgController ..&gt; SignupService : 调用
+    AdminActivityController ..&gt; ActivityService : 调用
+    SignupService ..&gt; ActivitySignupMapper : 依赖
+    ActivitySignupMapper ..&gt; ActivitySignup : 映射
+    ActivitySignup &quot;0..*&quot; --&gt; &quot;1&quot; Activity : 归属
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D19-页面导航流程图</h2><span class="tag">1352 × 867 px · 流程图 / 功能结构</span></header>
+  <div class="canvas"><img src="D19-页面导航流程图.svg" alt="D19-页面导航流程图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 流程图（Flowchart）
+%% 用途：用户操作手册 09 图9-1，小程序 13 页与管理后台 6 视图的导航关系。
+%% 说明：用 subgraph 分区表达两个端，箭头表示用户可达的跳转。
+flowchart LR
+    subgraph APP[&quot;小程序 13 页&quot;]
+        P1[首页]
+        P2[全部活动]
+        P3[活动详情]
+        P4[填写报名]
+        P5[消息]
+        P6[我的]
+        P7[我的报名]
+        P8[绑定学号]
+        P9[扫码签到]
+        P10[组织者工作台]
+        P11[发布活动]
+        P12[报名名单]
+        P13[签到核销]
+    end
+
+    subgraph ADMIN[&quot;管理后台 6 视图&quot;]
+        M1[登录]
+        M2[工作台]
+        M3[活动审核]
+        M4[活动管理]
+        M5[用户管理]
+        M6[操作日志]
+    end
+
+    P1 --&gt; P2
+    P2 --&gt; P3
+    P3 --&gt; P4
+    P1 --&gt; P5
+    P1 --&gt; P6
+    P6 --&gt; P7
+    P7 --&gt; P9
+    P6 --&gt; P8
+    P6 --&gt; P10
+    P10 --&gt; P11
+    P10 --&gt; P12
+    P10 --&gt; P13
+    P4 --&gt; P7
+
+    M1 --&gt; M2
+    M2 --&gt; M3
+    M2 --&gt; M4
+    M2 --&gt; M5
+    M2 --&gt; M6
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D20-项目甘特图</h2><span class="tag">756 × 712 px · 甘特图</span></header>
+  <div class="canvas"><img src="D20-项目甘特图.svg" alt="D20-项目甘特图" style="width:756px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>%% 甘特图（Gantt Chart）
+%% 用途：项目管理与进度计划 10 图10-1，两周迭代与里程碑。
+%% 要点：工期按 2026-11-09 至 2026-11-20（10 个工作日）；11-14/15 为周末，11-21/22 为机动缓冲。
+gantt
+    title 校园活动管理平台两周开发计划
+    dateFormat YYYY-MM-DD
+    axisFormat %m/%d
+    tickInterval 2days
+    todayMarker off
+
+    section 需求分析
+    需求调研与功能清单    :done, a1, 2026-11-09, 1d
+    需求规格说明书        :done, a2, 2026-11-10, 1d
+    需求评审              :milestone, m1, 2026-11-10, 0d
+
+    section 概要详细设计
+    架构与模块划分        :done, b1, 2026-11-10, 2d
+    数据库与接口设计      :done, b2, 2026-11-11, 2d
+    设计评审              :milestone, m2, 2026-11-12, 0d
+
+    section 后端开发
+    认证与用户模块        :crit, c1, 2026-11-12, 2d
+    活动与审核模块        :crit, c2, 2026-11-13, 2d
+    报名候补模块          :crit, c3, 2026-11-16, 1d
+    签到与统计模块        :c4, 2026-11-16, 2d
+    后端自测完成          :milestone, m3, 2026-11-17, 0d
+
+    section 前端开发
+    小程序页面与接口联调  :d1, 2026-11-12, 4d
+    管理后台视图          :d2, 2026-11-16, 2d
+    前端提测              :milestone, m4, 2026-11-17, 0d
+
+    section 联调测试
+    前后端联调            :crit, e1, 2026-11-18, 1d
+    冒烟与并发验证        :crit, e2, 2026-11-19, 1d
+    测试通过              :milestone, m5, 2026-11-19, 0d
+
+    section 文档答辩
+    文档定稿与图表核对    :f1, 2026-11-18, 2d
+    答辩材料与演示准备    :f2, 2026-11-19, 1d
+    项目答辩              :milestone, m6, 2026-11-20, 0d
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D01-系统总体架构图</h2><span class="tag">1240 × 980 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D01-系统总体架构图.svg" alt="D01-系统总体架构图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1240&quot; height=&quot;980&quot; viewBox=&quot;0 0 1240 980&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;rect x=&quot;36&quot; y=&quot;36&quot; width=&quot;1168&quot; height=&quot;104&quot; rx=&quot;14&quot; ry=&quot;14&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;defs&gt;&lt;clipPath id=&quot;c-cli&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;36&quot; width=&quot;1168&quot; height=&quot;104&quot; rx=&quot;14&quot; ry=&quot;14&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;
+&lt;g clip-path=&quot;url(#c-cli)&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;36&quot; width=&quot;96&quot; height=&quot;104&quot; fill=&quot;#2563EB&quot;/&gt;&lt;/g&gt;
+&lt;text x=&quot;84&quot; y=&quot;94.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;客户端层&lt;/text&gt;
+&lt;rect x=&quot;152&quot; y=&quot;50&quot; width=&quot;498&quot; height=&quot;76&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;401.0&quot; y=&quot;84.5&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;微信小程序&lt;/text&gt;
+&lt;text x=&quot;401.0&quot; y=&quot;106.0&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;uni-app 3.0（Vue3）· TypeScript · 13 个页面&lt;/text&gt;
+&lt;rect x=&quot;686&quot; y=&quot;50&quot; width=&quot;498&quot; height=&quot;76&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;935.0&quot; y=&quot;84.5&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;管理后台&lt;/text&gt;
+&lt;text x=&quot;935.0&quot; y=&quot;106.0&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;Vue3 + Vite + Element Plus · 6 个视图&lt;/text&gt;
+&lt;rect x=&quot;36&quot; y=&quot;176&quot; width=&quot;1168&quot; height=&quot;104&quot; rx=&quot;14&quot; ry=&quot;14&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;defs&gt;&lt;clipPath id=&quot;c-gate&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;176&quot; width=&quot;1168&quot; height=&quot;104&quot; rx=&quot;14&quot; ry=&quot;14&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;
+&lt;g clip-path=&quot;url(#c-gate)&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;176&quot; width=&quot;96&quot; height=&quot;104&quot; fill=&quot;#D97706&quot;/&gt;&lt;/g&gt;
+&lt;text x=&quot;84&quot; y=&quot;234.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;接入层&lt;/text&gt;
+&lt;rect x=&quot;152&quot; y=&quot;190&quot; width=&quot;498&quot; height=&quot;76&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;401.0&quot; y=&quot;224.5&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;HTTPS 传输&lt;/text&gt;
+&lt;text x=&quot;401.0&quot; y=&quot;246.0&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;TLS 加密 · 统一入口 · 跨域头由后端统一下发&lt;/text&gt;
+&lt;rect x=&quot;686&quot; y=&quot;190&quot; width=&quot;498&quot; height=&quot;76&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;935.0&quot; y=&quot;224.5&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;JWT 鉴权拦截器&lt;/text&gt;
+&lt;text x=&quot;935.0&quot; y=&quot;246.0&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;HS256 · 2 小时有效 · @RequireLogin / @RequireRole&lt;/text&gt;
+&lt;rect x=&quot;36&quot; y=&quot;316&quot; width=&quot;1168&quot; height=&quot;110&quot; rx=&quot;14&quot; ry=&quot;14&quot; fill=&quot;#F4F6F9&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;defs&gt;&lt;clipPath id=&quot;c-api&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;316&quot; width=&quot;1168&quot; height=&quot;110&quot; rx=&quot;14&quot; ry=&quot;14&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;
+&lt;g clip-path=&quot;url(#c-api)&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;316&quot; width=&quot;96&quot; height=&quot;110&quot; fill=&quot;#64748B&quot;/&gt;&lt;/g&gt;
+&lt;text x=&quot;84&quot; y=&quot;377.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;接口层&lt;/text&gt;
+&lt;rect x=&quot;152&quot; y=&quot;330&quot; width=&quot;240&quot; height=&quot;82&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;272.0&quot; y=&quot;366.4&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;/api/app 学生接口&lt;/text&gt;
+&lt;text x=&quot;272.0&quot; y=&quot;390.1&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;16 个接口：登录、浏览、报名、签到&lt;/text&gt;
+&lt;rect x=&quot;416&quot; y=&quot;330&quot; width=&quot;240&quot; height=&quot;82&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;536.0&quot; y=&quot;366.4&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;/api/org 组织者接口&lt;/text&gt;
+&lt;text x=&quot;536.0&quot; y=&quot;390.1&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;11 个接口：活动、审核、核销、统计&lt;/text&gt;
+&lt;rect x=&quot;680&quot; y=&quot;330&quot; width=&quot;240&quot; height=&quot;82&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;800.0&quot; y=&quot;366.4&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;/api/admin 管理接口&lt;/text&gt;
+&lt;text x=&quot;800.0&quot; y=&quot;390.1&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;10 个接口：审核、用户、日志&lt;/text&gt;
+&lt;rect x=&quot;944&quot; y=&quot;330&quot; width=&quot;240&quot; height=&quot;82&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;1064.0&quot; y=&quot;366.4&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;/api/ping 健康检查&lt;/text&gt;
+&lt;text x=&quot;1064.0&quot; y=&quot;390.1&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;1 个接口：存活探测&lt;/text&gt;
+&lt;rect x=&quot;36&quot; y=&quot;462&quot; width=&quot;1168&quot; height=&quot;170&quot; rx=&quot;14&quot; ry=&quot;14&quot; fill=&quot;#E9F7F5&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;defs&gt;&lt;clipPath id=&quot;c-svc&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;462&quot; width=&quot;1168&quot; height=&quot;170&quot; rx=&quot;14&quot; ry=&quot;14&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;
+&lt;g clip-path=&quot;url(#c-svc)&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;462&quot; width=&quot;96&quot; height=&quot;170&quot; fill=&quot;#0D9488&quot;/&gt;&lt;/g&gt;
+&lt;text x=&quot;84&quot; y=&quot;553.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;业务层&lt;/text&gt;
+&lt;rect x=&quot;152&quot; y=&quot;484&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;272.0&quot; y=&quot;513.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;认证服务&lt;/text&gt;
+&lt;text x=&quot;272.0&quot; y=&quot;531.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;登录 · 绑定 · JWT&lt;/text&gt;
+&lt;rect x=&quot;416&quot; y=&quot;484&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;536.0&quot; y=&quot;513.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;活动服务&lt;/text&gt;
+&lt;text x=&quot;536.0&quot; y=&quot;531.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;发布 · 审核 · 检索&lt;/text&gt;
+&lt;rect x=&quot;680&quot; y=&quot;484&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;800.0&quot; y=&quot;513.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;报名服务&lt;/text&gt;
+&lt;text x=&quot;800.0&quot; y=&quot;531.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;名额 · 候补 · 取消&lt;/text&gt;
+&lt;rect x=&quot;944&quot; y=&quot;484&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;1064.0&quot; y=&quot;513.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;签到服务&lt;/text&gt;
+&lt;text x=&quot;1064.0&quot; y=&quot;531.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;扫码 · 补签 · 核销&lt;/text&gt;
+&lt;rect x=&quot;284.0&quot; y=&quot;566&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;404.0&quot; y=&quot;595.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;后台管理服务&lt;/text&gt;
+&lt;text x=&quot;404.0&quot; y=&quot;613.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;审核 · 用户 · 日志&lt;/text&gt;
+&lt;rect x=&quot;548.0&quot; y=&quot;566&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;668.0&quot; y=&quot;595.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;消息服务&lt;/text&gt;
+&lt;text x=&quot;668.0&quot; y=&quot;613.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;站内消息 · 未读数&lt;/text&gt;
+&lt;rect x=&quot;812.0&quot; y=&quot;566&quot; width=&quot;240&quot; height=&quot;64&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;932.0&quot; y=&quot;595.5&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;签到码服务&lt;/text&gt;
+&lt;text x=&quot;932.0&quot; y=&quot;613.8&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;HMAC 签名 · 30 秒轮换&lt;/text&gt;
+&lt;rect x=&quot;36&quot; y=&quot;668&quot; width=&quot;1168&quot; height=&quot;110&quot; rx=&quot;14&quot; ry=&quot;14&quot; fill=&quot;#F3EEFD&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;defs&gt;&lt;clipPath id=&quot;c-data&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;668&quot; width=&quot;1168&quot; height=&quot;110&quot; rx=&quot;14&quot; ry=&quot;14&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;
+&lt;g clip-path=&quot;url(#c-data)&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;668&quot; width=&quot;96&quot; height=&quot;110&quot; fill=&quot;#7C3AED&quot;/&gt;&lt;/g&gt;
+&lt;text x=&quot;84&quot; y=&quot;729.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;数据层&lt;/text&gt;
+&lt;rect x=&quot;152&quot; y=&quot;685&quot; width=&quot;498&quot; height=&quot;76&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;401.0&quot; y=&quot;719.5&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;MySQL 8 数据库&lt;/text&gt;
+&lt;text x=&quot;401.0&quot; y=&quot;741.0&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;campus_activity · 12 张业务表 · utf8mb4&lt;/text&gt;
+&lt;rect x=&quot;686&quot; y=&quot;685&quot; width=&quot;498&quot; height=&quot;76&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;935.0&quot; y=&quot;719.5&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;数据访问&lt;/text&gt;
+&lt;text x=&quot;935.0&quot; y=&quot;741.0&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;MyBatis-Plus 3.5 · 雪花 ID · 逻辑删除 · 无物理外键&lt;/text&gt;
+&lt;rect x=&quot;36&quot; y=&quot;814&quot; width=&quot;1168&quot; height=&quot;120&quot; rx=&quot;14&quot; ry=&quot;14&quot; fill=&quot;#EDEDF4&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot; stroke-dasharray=&quot;7 5&quot;/&gt;
+&lt;defs&gt;&lt;clipPath id=&quot;c-sup&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;814&quot; width=&quot;1168&quot; height=&quot;120&quot; rx=&quot;14&quot; ry=&quot;14&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;
+&lt;g clip-path=&quot;url(#c-sup)&quot;&gt;&lt;rect x=&quot;36&quot; y=&quot;814&quot; width=&quot;96&quot; height=&quot;120&quot; fill=&quot;#4A4A6B&quot;/&gt;&lt;/g&gt;
+&lt;text x=&quot;84&quot; y=&quot;868.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;公共支撑&lt;/text&gt;
+&lt;text x=&quot;84&quot; y=&quot;894.3&quot; font-size=&quot;12&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;横切各层&lt;/text&gt;
+&lt;rect x=&quot;152.0&quot; y=&quot;840&quot; width=&quot;190.4&quot; height=&quot;68&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;247.2&quot; y=&quot;871.1&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;统一响应&lt;/text&gt;
+&lt;text x=&quot;247.2&quot; y=&quot;890.4&quot; font-size=&quot;11.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;code · message · data&lt;/text&gt;
+&lt;rect x=&quot;362.4&quot; y=&quot;840&quot; width=&quot;190.4&quot; height=&quot;68&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;457.6&quot; y=&quot;871.1&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;异常处理&lt;/text&gt;
+&lt;text x=&quot;457.6&quot; y=&quot;890.4&quot; font-size=&quot;11.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;全局处理器 · 错误码分段&lt;/text&gt;
+&lt;rect x=&quot;572.8&quot; y=&quot;840&quot; width=&quot;190.4&quot; height=&quot;68&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;668.0&quot; y=&quot;871.1&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;审计日志&lt;/text&gt;
+&lt;text x=&quot;668.0&quot; y=&quot;890.4&quot; font-size=&quot;11.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;audit_record 留痕&lt;/text&gt;
+&lt;rect x=&quot;783.2&quot; y=&quot;840&quot; width=&quot;190.4&quot; height=&quot;68&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;878.4&quot; y=&quot;871.1&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;定时任务&lt;/text&gt;
+&lt;text x=&quot;878.4&quot; y=&quot;890.4&quot; font-size=&quot;11.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;5 分钟状态推进&lt;/text&gt;
+&lt;rect x=&quot;993.6&quot; y=&quot;840&quot; width=&quot;190.4&quot; height=&quot;68&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;1088.8&quot; y=&quot;871.1&quot; font-size=&quot;14.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;站内消息&lt;/text&gt;
+&lt;text x=&quot;1088.8&quot; y=&quot;890.4&quot; font-size=&quot;11.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;sys_notice · 未读数&lt;/text&gt;
+&lt;path d=&quot;M320,140 L320,176&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M320,280 L320,316&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M320,426 L320,462&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M320,632 L320,668&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M620,140 L620,176&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M620,280 L620,316&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M620,426 L620,462&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M620,632 L620,668&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M920,140 L920,176&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M920,280 L920,316&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M920,426 L920,462&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;path d=&quot;M920,632 L920,668&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.7&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D02-功能模块图</h2><span class="tag">1240 × 900 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D02-功能模块图.svg" alt="D02-功能模块图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1240&quot; height=&quot;900&quot; viewBox=&quot;0 0 1240 900&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;rect x=&quot;470&quot; y=&quot;48&quot; width=&quot;300&quot; height=&quot;62&quot; rx=&quot;10&quot; ry=&quot;10&quot; fill=&quot;#1E3A5F&quot; stroke=&quot;#1E3A5F&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;620&quot; y=&quot;85.1&quot; font-size=&quot;17&quot; fill=&quot;#FFFFFF&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;校园活动管理平台&lt;/text&gt;
+&lt;path d=&quot;M620,110 L620,148&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M185,148 L1055,148&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M185,148 L185,182&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;60.0&quot; y=&quot;182&quot; width=&quot;250&quot; height=&quot;60&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;217.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;小程序学生端&lt;/text&gt;
+&lt;path d=&quot;M185,242 L185,256 L55.0,256 L55.0,668.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M55.0,303.0 L85.0,303.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;85.0&quot; y=&quot;274&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;308.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;登录绑定&lt;/text&gt;
+&lt;path d=&quot;M55.0,376.0 L85.0,376.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;85.0&quot; y=&quot;347&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;381.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动浏览&lt;/text&gt;
+&lt;path d=&quot;M55.0,449.0 L85.0,449.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;85.0&quot; y=&quot;420&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;454.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;报名&lt;/text&gt;
+&lt;path d=&quot;M55.0,522.0 L85.0,522.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;85.0&quot; y=&quot;493&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;527.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;签到&lt;/text&gt;
+&lt;path d=&quot;M55.0,595.0 L85.0,595.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;85.0&quot; y=&quot;566&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;600.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;消息&lt;/text&gt;
+&lt;path d=&quot;M55.0,668.0 L85.0,668.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;85.0&quot; y=&quot;639&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;185&quot; y=&quot;673.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;个人中心&lt;/text&gt;
+&lt;path d=&quot;M475,148 L475,182&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;350.0&quot; y=&quot;182&quot; width=&quot;250&quot; height=&quot;60&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#E9F7F5&quot; stroke=&quot;#0D9488&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;475&quot; y=&quot;217.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;组织者端&lt;/text&gt;
+&lt;path d=&quot;M475,242 L475,256 L345.0,256 L345.0,595.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M345.0,303.0 L375.0,303.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;375.0&quot; y=&quot;274&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;475&quot; y=&quot;308.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;工作台&lt;/text&gt;
+&lt;path d=&quot;M345.0,376.0 L375.0,376.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;375.0&quot; y=&quot;347&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;475&quot; y=&quot;381.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动管理&lt;/text&gt;
+&lt;path d=&quot;M345.0,449.0 L375.0,449.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;375.0&quot; y=&quot;420&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;475&quot; y=&quot;454.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;报名审核&lt;/text&gt;
+&lt;path d=&quot;M345.0,522.0 L375.0,522.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;375.0&quot; y=&quot;493&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;475&quot; y=&quot;527.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;签到核销&lt;/text&gt;
+&lt;path d=&quot;M345.0,595.0 L375.0,595.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;375.0&quot; y=&quot;566&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;475&quot; y=&quot;600.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;统计&lt;/text&gt;
+&lt;path d=&quot;M765,148 L765,182&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;640.0&quot; y=&quot;182&quot; width=&quot;250&quot; height=&quot;60&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;217.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;管理后台&lt;/text&gt;
+&lt;path d=&quot;M765,242 L765,256 L635.0,256 L635.0,668.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M635.0,303.0 L665.0,303.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;665.0&quot; y=&quot;274&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;308.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;登录&lt;/text&gt;
+&lt;path d=&quot;M635.0,376.0 L665.0,376.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;665.0&quot; y=&quot;347&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;381.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;工作台&lt;/text&gt;
+&lt;path d=&quot;M635.0,449.0 L665.0,449.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;665.0&quot; y=&quot;420&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;454.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动审核&lt;/text&gt;
+&lt;path d=&quot;M635.0,522.0 L665.0,522.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;665.0&quot; y=&quot;493&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;527.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动管理&lt;/text&gt;
+&lt;path d=&quot;M635.0,595.0 L665.0,595.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;665.0&quot; y=&quot;566&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;600.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;用户管理&lt;/text&gt;
+&lt;path d=&quot;M635.0,668.0 L665.0,668.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;665.0&quot; y=&quot;639&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;765&quot; y=&quot;673.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;操作日志&lt;/text&gt;
+&lt;path d=&quot;M1055,148 L1055,182&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;930.0&quot; y=&quot;182&quot; width=&quot;250&quot; height=&quot;60&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;#F3EEFD&quot; stroke=&quot;#7C3AED&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;1055&quot; y=&quot;217.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;公共服务&lt;/text&gt;
+&lt;path d=&quot;M1055,242 L1055,256 L925.0,256 L925.0,595.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M925.0,303.0 L955.0,303.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;955.0&quot; y=&quot;274&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;1055&quot; y=&quot;308.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;鉴权&lt;/text&gt;
+&lt;path d=&quot;M925.0,376.0 L955.0,376.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;955.0&quot; y=&quot;347&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;1055&quot; y=&quot;381.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;通知&lt;/text&gt;
+&lt;path d=&quot;M925.0,449.0 L955.0,449.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;955.0&quot; y=&quot;420&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;1055&quot; y=&quot;454.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;审计&lt;/text&gt;
+&lt;path d=&quot;M925.0,522.0 L955.0,522.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;955.0&quot; y=&quot;493&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;1055&quot; y=&quot;527.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;定时任务&lt;/text&gt;
+&lt;path d=&quot;M925.0,595.0 L955.0,595.0&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;955.0&quot; y=&quot;566&quot; width=&quot;200&quot; height=&quot;58&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#B6C2D2&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;1055&quot; y=&quot;600.0&quot; font-size=&quot;14&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;异常处理&lt;/text&gt;
+&lt;path d=&quot;M60,752 L1180,752&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.2&quot; fill=&quot;none&quot;/&gt;
+&lt;text x=&quot;60&quot; y=&quot;780.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;图例：圆角矩形＝一级分组；矩形＝二级功能；连线＝从属关系（分组 → 功能）。&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;806.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;二级功能 22 项，覆盖 FR-S 13 · FR-O 11 · FR-A 10 · FR-SYS 6，合计 40 项功能；分组配色沿用 paper 预设色带。&lt;/text&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D03-学生用例图</h2><span class="tag">1240 × 1000 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D03-学生用例图.svg" alt="D03-学生用例图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1240&quot; height=&quot;1000&quot; viewBox=&quot;0 0 1240 1000&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;rect x=&quot;300&quot; y=&quot;80&quot; width=&quot;680&quot; height=&quot;856&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FCFDFF&quot; stroke=&quot;#94A3B8&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;640.0&quot; y=&quot;120.1&quot; font-size=&quot;17&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;校园活动小程序&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;170&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;175.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;微信登录&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;250&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;255.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;绑定学号&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;330&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;335.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;浏览活动&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;410&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;415.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;查看活动详情&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;490&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;495.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;收藏活动&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;570&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;575.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;提交报名&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;650&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;655.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;取消报名&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;730&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;735.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;查看我的报名&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;810&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;815.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;扫码签到&lt;/text&gt;
+&lt;ellipse cx=&quot;560&quot; cy=&quot;890&quot; rx=&quot;100&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;560&quot; y=&quot;895.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;查看消息&lt;/text&gt;
+&lt;circle cx=&quot;150&quot; cy=&quot;530&quot; r=&quot;15&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,545 L150,586&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M125,558 L175,558&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,586 L129,626&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,586 L171,626&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;text x=&quot;150&quot; y=&quot;663.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;学生&lt;/text&gt;
+&lt;path d=&quot;M175,558 L460,170&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,250&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,330&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,410&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,490&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,570&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,650&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,730&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,810&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,558 L460,890&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;circle cx=&quot;1120&quot; cy=&quot;160&quot; r=&quot;15&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M1120,175 L1120,216&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M1095,188 L1145,188&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M1120,216 L1099,256&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M1120,216 L1141,256&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;text x=&quot;1120&quot; y=&quot;293.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;微信开放平台&lt;/text&gt;
+&lt;path d=&quot;M1095,188 L660,170&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;ellipse cx=&quot;840&quot; cy=&quot;330&quot; rx=&quot;90&quot; ry=&quot;28&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;840&quot; y=&quot;335.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;筛选 / 搜索&lt;/text&gt;
+&lt;path d=&quot;M660,330 L750,330&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot; stroke-dasharray=&quot;7 5&quot; marker-end=&quot;url(#ar-open)&quot;/&gt;
+&lt;text x=&quot;705&quot; y=&quot;316.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;«include»&lt;/text&gt;
+&lt;path d=&quot;M700,560 H942 L958,576 V710 H700 Z&quot; fill=&quot;#FFFBEB&quot; stroke=&quot;#D6C48A&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;path d=&quot;M942,560 V576 H958&quot; fill=&quot;none&quot; stroke=&quot;#D6C48A&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;716&quot; y=&quot;589.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;start&quot; font-weight=&quot;600&quot;&gt;补充说明&lt;/text&gt;
+&lt;text x=&quot;716&quot; y=&quot;616.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;提交报名、扫码签到&lt;/text&gt;
+&lt;text x=&quot;716&quot; y=&quot;642.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;以已完成学籍绑定&lt;/text&gt;
+&lt;text x=&quot;716&quot; y=&quot;668.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;（绑定学号）为前提&lt;/text&gt;
+&lt;text x=&quot;716&quot; y=&quot;694.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;（BR-01）。&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;972.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;图例：实线＝参与者与用例的关联；虚线箭头 «include» 表示被包含的用例必然执行。&lt;/text&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D04-组织者用例图</h2><span class="tag">1240 × 980 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D04-组织者用例图.svg" alt="D04-组织者用例图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1240&quot; height=&quot;980&quot; viewBox=&quot;0 0 1240 980&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;rect x=&quot;300&quot; y=&quot;80&quot; width=&quot;600&quot; height=&quot;810&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FCFDFF&quot; stroke=&quot;#94A3B8&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600.0&quot; y=&quot;120.1&quot; font-size=&quot;17&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;组织者工作台&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;170&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;175.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;查看工作台&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;262&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;267.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;发布活动&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;354&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;359.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;编辑活动&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;446&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;451.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;提交审核&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;538&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;543.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;取消活动&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;630&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;635.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;审核报名&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;722&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;727.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;签到核销&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;814&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;819.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;查看统计&lt;/text&gt;
+&lt;circle cx=&quot;150&quot; cy=&quot;492&quot; r=&quot;15&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,507 L150,548&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M125,520 L175,520&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,548 L129,588&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,548 L171,588&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;text x=&quot;150&quot; y=&quot;625.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;组织者&lt;/text&gt;
+&lt;path d=&quot;M175,520 L490,170&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,262&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,354&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,446&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,538&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,630&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,722&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,814&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M950,380 H1188 L1204,396 V530 H950 Z&quot; fill=&quot;#FFFBEB&quot; stroke=&quot;#D6C48A&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;path d=&quot;M1188,380 V396 H1204&quot; fill=&quot;none&quot; stroke=&quot;#D6C48A&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;966&quot; y=&quot;409.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;start&quot; font-weight=&quot;600&quot;&gt;覆盖功能清单&lt;/text&gt;
+&lt;text x=&quot;966&quot; y=&quot;436.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;FR-O-01 ～ FR-O-11&lt;/text&gt;
+&lt;text x=&quot;966&quot; y=&quot;462.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;共 11 项功能&lt;/text&gt;
+&lt;text x=&quot;966&quot; y=&quot;488.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;覆盖 8 个用例&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;948.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;图例：实线＝参与者与用例的关联；椭圆＝用例；圆角矩形＝系统边界。&lt;/text&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D05-管理员用例图</h2><span class="tag">1240 × 980 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D05-管理员用例图.svg" alt="D05-管理员用例图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1240&quot; height=&quot;980&quot; viewBox=&quot;0 0 1240 980&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;rect x=&quot;300&quot; y=&quot;80&quot; width=&quot;600&quot; height=&quot;810&quot; rx=&quot;6&quot; ry=&quot;6&quot; fill=&quot;#FCFDFF&quot; stroke=&quot;#94A3B8&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600.0&quot; y=&quot;120.1&quot; font-size=&quot;17&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;管理后台&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;170&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;175.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;登录后台&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;262&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;267.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;工作台概览&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;354&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;359.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动审核&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;446&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;451.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动管理&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;538&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;543.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动下架&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;630&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;635.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;用户管理&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;722&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;727.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;角色变更&lt;/text&gt;
+&lt;ellipse cx=&quot;600&quot; cy=&quot;814&quot; rx=&quot;110&quot; ry=&quot;28&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.6&quot;/&gt;
+&lt;text x=&quot;600&quot; y=&quot;819.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;查看操作日志&lt;/text&gt;
+&lt;circle cx=&quot;150&quot; cy=&quot;492&quot; r=&quot;15&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,507 L150,548&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M125,520 L175,520&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,548 L129,588&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;path d=&quot;M150,548 L171,588&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.9&quot;/&gt;
+&lt;text x=&quot;150&quot; y=&quot;625.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;审核员/管理员&lt;/text&gt;
+&lt;path d=&quot;M175,520 L490,170&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,262&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,354&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,446&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,538&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,630&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,722&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M175,520 L490,814&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.4&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M950,380 H1188 L1204,396 V530 H950 Z&quot; fill=&quot;#FFFBEB&quot; stroke=&quot;#D6C48A&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;path d=&quot;M1188,380 V396 H1204&quot; fill=&quot;none&quot; stroke=&quot;#D6C48A&quot; stroke-width=&quot;1.3&quot;/&gt;
+&lt;text x=&quot;966&quot; y=&quot;409.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;start&quot; font-weight=&quot;600&quot;&gt;覆盖功能清单&lt;/text&gt;
+&lt;text x=&quot;966&quot; y=&quot;436.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;FR-A-01 ～ FR-A-10&lt;/text&gt;
+&lt;text x=&quot;966&quot; y=&quot;462.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;共 10 项功能&lt;/text&gt;
+&lt;text x=&quot;966&quot; y=&quot;488.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;覆盖 8 个用例&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;948.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;图例：实线＝参与者与用例的关联；椭圆＝用例；圆角矩形＝系统边界。&lt;/text&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D06-ER概念图</h2><span class="tag">1400 × 1020 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D06-ER概念图.svg" alt="D06-ER概念图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1400&quot; height=&quot;1020&quot; viewBox=&quot;0 0 1400 1020&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;path d=&quot;M340,126 L340,191&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M340,249 L340,314&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M340,366 L340,421&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M340,479 L340,534&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M280,540 L250,540 L250,430 L180,430&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M280,580 L250,580 L250,670 L180,670&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M400,540 L520,540 L520,230 L640,230&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M400,560 L640,560&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M390,586 L390,870 L640,870&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M700,586 L700,689&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M760,230 L1020,230&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M760,560 L1020,560&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M760,870 L940,870 L940,575 L1020,575&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M1080,256 L1080,534&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M1080,586 L1080,844&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M258,340 L280,340&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M700,488 L700,534&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;path d=&quot;M1140,560 L1182,560&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;/&gt;
+&lt;rect x=&quot;280.0&quot; y=&quot;74.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;340&quot; y=&quot;105.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;学籍白名单&lt;/text&gt;
+&lt;rect x=&quot;280.0&quot; y=&quot;314.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;340&quot; y=&quot;345.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;学籍档案&lt;/text&gt;
+&lt;rect x=&quot;280.0&quot; y=&quot;534.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;340&quot; y=&quot;565.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;用户&lt;/text&gt;
+&lt;rect x=&quot;60.0&quot; y=&quot;404.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;120&quot; y=&quot;435.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;站内消息&lt;/text&gt;
+&lt;rect x=&quot;60.0&quot; y=&quot;644.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;120&quot; y=&quot;675.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;审计记录&lt;/text&gt;
+&lt;rect x=&quot;640.0&quot; y=&quot;204.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;700&quot; y=&quot;235.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;组织成员&lt;/text&gt;
+&lt;rect x=&quot;640.0&quot; y=&quot;534.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;700&quot; y=&quot;565.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;报名记录&lt;/text&gt;
+&lt;rect x=&quot;640.0&quot; y=&quot;689.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;700&quot; y=&quot;720.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;签到记录&lt;/text&gt;
+&lt;rect x=&quot;640.0&quot; y=&quot;844.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;700&quot; y=&quot;875.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;收藏&lt;/text&gt;
+&lt;rect x=&quot;1020.0&quot; y=&quot;204.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1080&quot; y=&quot;235.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;组织&lt;/text&gt;
+&lt;rect x=&quot;1020.0&quot; y=&quot;534.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1080&quot; y=&quot;565.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;活动&lt;/text&gt;
+&lt;rect x=&quot;1020.0&quot; y=&quot;844.0&quot; width=&quot;120&quot; height=&quot;52&quot; rx=&quot;3&quot; ry=&quot;3&quot; fill=&quot;#EFF5FE&quot; stroke=&quot;#2563EB&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1080&quot; y=&quot;875.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;活动分类&lt;/text&gt;
+&lt;ellipse cx=&quot;200&quot; cy=&quot;340&quot; rx=&quot;58&quot; ry=&quot;18&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.5&quot;/&gt;
+&lt;text x=&quot;200&quot; y=&quot;345.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;学号&lt;/text&gt;
+&lt;path d=&quot;M186.0,352 L214.0,352&quot; stroke=&quot;#0F172A&quot; stroke-width=&quot;1.1&quot;/&gt;
+&lt;ellipse cx=&quot;700&quot; cy=&quot;470&quot; rx=&quot;58&quot; ry=&quot;18&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.5&quot;/&gt;
+&lt;text x=&quot;700&quot; y=&quot;475.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;报名状态&lt;/text&gt;
+&lt;ellipse cx=&quot;1240&quot; cy=&quot;560&quot; rx=&quot;58&quot; ry=&quot;18&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.5&quot;/&gt;
+&lt;text x=&quot;1240&quot; y=&quot;565.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;活动状态&lt;/text&gt;
+&lt;polygon points=&quot;340,191.0 390.0,220 340,249.0 290.0,220&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;340&quot; y=&quot;225.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;校验&lt;/text&gt;
+&lt;polygon points=&quot;340,421.0 390.0,450 340,479.0 290.0,450&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;340&quot; y=&quot;455.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;绑定&lt;/text&gt;
+&lt;polygon points=&quot;250,456.0 300.0,485 250,514.0 200.0,485&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;250&quot; y=&quot;490.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;接收&lt;/text&gt;
+&lt;polygon points=&quot;250,596.0 300.0,625 250,654.0 200.0,625&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;250&quot; y=&quot;630.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;操作&lt;/text&gt;
+&lt;polygon points=&quot;520,351.0 570.0,380 520,409.0 470.0,380&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;520&quot; y=&quot;385.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;加入&lt;/text&gt;
+&lt;polygon points=&quot;520,531.0 570.0,560 520,589.0 470.0,560&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;520&quot; y=&quot;565.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;报名&lt;/text&gt;
+&lt;polygon points=&quot;510,841.0 560.0,870 510,899.0 460.0,870&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;510&quot; y=&quot;875.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;收藏&lt;/text&gt;
+&lt;polygon points=&quot;700,608.0 750.0,637 700,666.0 650.0,637&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;700&quot; y=&quot;642.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;签到&lt;/text&gt;
+&lt;polygon points=&quot;890,201.0 940.0,230 890,259.0 840.0,230&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;890&quot; y=&quot;235.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;包含&lt;/text&gt;
+&lt;polygon points=&quot;890,531.0 940.0,560 890,589.0 840.0,560&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;890&quot; y=&quot;565.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;接受报名&lt;/text&gt;
+&lt;polygon points=&quot;940,711.0 990.0,740 940,769.0 890.0,740&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;940&quot; y=&quot;745.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;被收藏&lt;/text&gt;
+&lt;polygon points=&quot;1080,351.0 1130.0,380 1080,409.0 1030.0,380&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1080&quot; y=&quot;385.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;主办&lt;/text&gt;
+&lt;polygon points=&quot;1080,671.0 1130.0,700 1080,729.0 1030.0,700&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1080&quot; y=&quot;705.0&quot; font-size=&quot;14&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;归类&lt;/text&gt;
+&lt;text x=&quot;324&quot; y=&quot;171.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;324&quot; y=&quot;288.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;324&quot; y=&quot;405.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;324&quot; y=&quot;509.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;268&quot; y=&quot;531.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;196&quot; y=&quot;421.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;268&quot; y=&quot;571.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;196&quot; y=&quot;661.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;450&quot; y=&quot;531.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;610&quot; y=&quot;221.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;435&quot; y=&quot;551.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;610&quot; y=&quot;551.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;406&quot; y=&quot;617.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;614&quot; y=&quot;861.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;718&quot; y=&quot;609.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;718&quot; y=&quot;679.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;792&quot; y=&quot;221.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;988&quot; y=&quot;221.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;792&quot; y=&quot;551.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;988&quot; y=&quot;551.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;790&quot; y=&quot;861.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;1004&quot; y=&quot;566.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;1064&quot; y=&quot;300.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;1064&quot; y=&quot;457.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;1064&quot; y=&quot;625.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;1&lt;/text&gt;
+&lt;text x=&quot;1064&quot; y=&quot;775.0&quot; font-size=&quot;14&quot; fill=&quot;#B4232A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;700&quot;&gt;n&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;964.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;图例：矩形＝实体；椭圆＝属性（下划线为主键）；菱形＝联系；边上 1 / n 为基数。概念模型不出现字段类型。&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;992.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;说明：用户与活动的 m:n「报名」「收藏」联系经报名记录、收藏消解为两个 1:n；用户与组织的 m:n「加入」联系经组织成员消解。&lt;/text&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section><section class="card">
+  <header><h2>D08-部署图</h2><span class="tag">1300 × 940 px · 手绘矢量图</span></header>
+  <div class="canvas"><img src="D08-部署图.svg" alt="D08-部署图" style="width:980px"></div>
+  <details><summary>查看 Mermaid 源码</summary><pre><code>&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;1300&quot; height=&quot;940&quot; viewBox=&quot;0 0 1300 940&quot; font-family=&quot;&#x27;PingFang SC&#x27;,&#x27;Hiragino Sans GB&#x27;,&#x27;Microsoft YaHei&#x27;,&#x27;Noto Sans CJK SC&#x27;,sans-serif&quot;&gt;
+&lt;defs&gt;
+  &lt;marker id=&quot;ar&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#8FA0B5&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-open&quot; viewBox=&quot;0 0 12 12&quot; refX=&quot;11&quot; refY=&quot;6&quot; markerWidth=&quot;9&quot;
+          markerHeight=&quot;9&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M1,1 L11,6 L1,11&quot; fill=&quot;none&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.6&quot;/&gt;
+  &lt;/marker&gt;
+  &lt;marker id=&quot;ar-ink&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;7.5&quot;
+          markerHeight=&quot;7.5&quot; orient=&quot;auto-start-reverse&quot;&gt;
+    &lt;path d=&quot;M0,0 L10,5 L0,10 Z&quot; fill=&quot;#475569&quot;/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;
+&lt;rect x=&quot;36&quot; y=&quot;36&quot; width=&quot;1228&quot; height=&quot;820&quot; rx=&quot;8&quot; ry=&quot;8&quot; fill=&quot;none&quot; stroke=&quot;#E3E8EF&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;text x=&quot;60&quot; y=&quot;71.6&quot; font-size=&quot;15.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;600&quot;&gt;«deployment» 校园活动管理平台部署视图&lt;/text&gt;
+&lt;path d=&quot;M90,200 L108,182 L348,182 L330,200 Z&quot; fill=&quot;#F4F6F9&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;path d=&quot;M330,200 L348,182 L348,302 L330,320 Z&quot; fill=&quot;#F4F6F9&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;rect x=&quot;90&quot; y=&quot;200&quot; width=&quot;240&quot; height=&quot;120&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;210&quot; y=&quot;239.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;«device» 学生手机&lt;/text&gt;
+&lt;text x=&quot;210&quot; y=&quot;268.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;微信小程序 / H5 浏览器&lt;/text&gt;
+&lt;path d=&quot;M90,620 L108,602 L348,602 L330,620 Z&quot; fill=&quot;#F4F6F9&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;path d=&quot;M330,620 L348,602 L348,722 L330,740 Z&quot; fill=&quot;#F4F6F9&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;rect x=&quot;90&quot; y=&quot;620&quot; width=&quot;240&quot; height=&quot;120&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#64748B&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;210&quot; y=&quot;659.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;«device» 管理员 PC&lt;/text&gt;
+&lt;text x=&quot;210&quot; y=&quot;688.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;Chrome 浏览器&lt;/text&gt;
+&lt;path d=&quot;M470,350 L488,332 L738,332 L720,350 Z&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;path d=&quot;M720,350 L738,332 L738,492 L720,510 Z&quot; fill=&quot;#FEF6E7&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;rect x=&quot;470&quot; y=&quot;350&quot; width=&quot;250&quot; height=&quot;160&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#D97706&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;595&quot; y=&quot;389.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;«node» Nginx&lt;/text&gt;
+&lt;text x=&quot;595&quot; y=&quot;416.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;静态资源 + 反向代理&lt;/text&gt;
+&lt;text x=&quot;595&quot; y=&quot;440.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;HTTPS 终结 · 6 个后台视图&lt;/text&gt;
+&lt;text x=&quot;595&quot; y=&quot;464.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;/api/** → 应用服务器&lt;/text&gt;
+&lt;path d=&quot;M930,200 L948,182 L1218,182 L1200,200 Z&quot; fill=&quot;#E9F7F5&quot; stroke=&quot;#0D9488&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;path d=&quot;M1200,200 L1218,182 L1218,332 L1200,350 Z&quot; fill=&quot;#E9F7F5&quot; stroke=&quot;#0D9488&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;rect x=&quot;930&quot; y=&quot;200&quot; width=&quot;270&quot; height=&quot;150&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#0D9488&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1065&quot; y=&quot;239.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;«node» 应用服务器&lt;/text&gt;
+&lt;text x=&quot;1065&quot; y=&quot;266.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;Spring Boot · JDK 21&lt;/text&gt;
+&lt;text x=&quot;1065&quot; y=&quot;290.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;REST 接口 38 个 · 端口 8016&lt;/text&gt;
+&lt;text x=&quot;1065&quot; y=&quot;314.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;JWT 鉴权拦截器&lt;/text&gt;
+&lt;path d=&quot;M930,660 L948,642 L1218,642 L1200,660 Z&quot; fill=&quot;#F3EEFD&quot; stroke=&quot;#7C3AED&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;path d=&quot;M1200,660 L1218,642 L1218,782 L1200,800 Z&quot; fill=&quot;#F3EEFD&quot; stroke=&quot;#7C3AED&quot; stroke-width=&quot;1.4&quot;/&gt;
+&lt;rect x=&quot;930&quot; y=&quot;660&quot; width=&quot;270&quot; height=&quot;140&quot; fill=&quot;#FFFFFF&quot; stroke=&quot;#7C3AED&quot; stroke-width=&quot;1.7&quot;/&gt;
+&lt;text x=&quot;1065&quot; y=&quot;699.6&quot; font-size=&quot;15.5&quot; fill=&quot;#0F172A&quot; text-anchor=&quot;middle&quot; font-weight=&quot;600&quot;&gt;«node» 数据库服务器&lt;/text&gt;
+&lt;text x=&quot;1065&quot; y=&quot;726.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;MySQL 8 · 端口 3306&lt;/text&gt;
+&lt;text x=&quot;1065&quot; y=&quot;750.5&quot; font-size=&quot;12.5&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;库 campus_activity · 12 张表&lt;/text&gt;
+&lt;path d=&quot;M348,260 L470,410&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.5&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;text x=&quot;430&quot; y=&quot;320.3&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;HTTPS 443&lt;/text&gt;
+&lt;path d=&quot;M348,680 L470,450&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.5&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;text x=&quot;392&quot; y=&quot;518.3&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;HTTPS 443&lt;/text&gt;
+&lt;path d=&quot;M738,430 L930,275&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.5&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;text x=&quot;845&quot; y=&quot;312.3&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;middle&quot; font-weight=&quot;400&quot;&gt;反向代理 /api（8016）&lt;/text&gt;
+&lt;path d=&quot;M1065,350 L1065,660&quot; stroke=&quot;#8FA0B5&quot; stroke-width=&quot;1.5&quot; fill=&quot;none&quot; marker-end=&quot;url(#ar)&quot;/&gt;
+&lt;text x=&quot;1082&quot; y=&quot;509.3&quot; font-size=&quot;12&quot; fill=&quot;#475569&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;JDBC 3306&lt;/text&gt;
+&lt;text x=&quot;60&quot; y=&quot;906.5&quot; font-size=&quot;12.5&quot; fill=&quot;#5A6779&quot; text-anchor=&quot;start&quot; font-weight=&quot;400&quot;&gt;说明：客户端经 HTTPS 443 访问 Nginx；Nginx 托管管理后台静态资源并把 /api/** 反向代理到应用服务器 8016；应用服务器经 JDBC 3306 访问 MySQL 8。图中不列具体 IP。&lt;/text&gt;
+&lt;/svg&gt;
+</code></pre></details>
+</section>
+</div></body></html>

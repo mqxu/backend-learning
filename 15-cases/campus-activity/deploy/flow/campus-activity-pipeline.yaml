@@ -1,0 +1,171 @@
+# ============================================================
+# 校园活动小程序 · 阿里云云效 Flow YAML 流水线
+# ============================================================
+# 使用方式（以云效当前界面为准）：
+#   云效 Flow -> 我的流水线 -> 新建流水线 -> 选择「YAML 流水线 / 导入 YAML」-> 粘贴或上传本文件
+#   也可先在「从模板创建」里选 Java 模板跑通界面配置，再对照本文件迁移
+#
+# 官方参考：
+#   什么是云效：https://help.aliyun.com/zh/yunxiao/product-overview/what-is-cloud-effect
+#   Java 应用构建并部署到 ECS 主机：https://help.aliyun.com/zh/yunxiao/user-guide/build-and-deploy-a-java-application-to-an-ecs-host
+#   YAML 流水线：https://help.aliyun.com/zh/yunxiao/user-guide/yaml-preliminary-experience
+#   步骤 steps 清单：https://help.aliyun.com/zh/yunxiao/user-guide/step-steps-list
+#   组件 component 清单：https://help.aliyun.com/zh/yunxiao/user-guide/component-manifest
+#
+# ==================== 需要替换的 4 个占位符 ====================
+#   ① <REPO_NAME>               代码库展示名称，如 campus-activity-01
+#   ② <CODEUP_REPO_URL>         Codeup 仓库地址（代码源页可复制 clone URL）
+#   ③ <SERVICE_CONNECTION_ID>   服务连接 ID（Codeup 代码源认证；云效「设置-服务连接」创建）
+#   ④ <MACHINE_GROUP_ID>        主机组 ID（ECS 主机组；云效「主机组管理」创建后复制）
+# 其余固定值（端口 8016、目录 /opt/campus-activity、下载路径 package.tgz）与
+# docs/教学包/07-附录-可复现事实清单与验收表.md 第 7、13 节一致，不要随意改。
+# ============================================================
+
+name: campus-activity-ci
+
+# ---------------- 流水线源 ----------------
+sources:
+  campus_activity:
+    type: codeup
+    name: <REPO_NAME>
+    endpoint: <CODEUP_REPO_URL>
+    branch: main
+    triggerEvents: push
+    certificate:
+      type: serviceConnection
+      serviceConnection: <SERVICE_CONNECTION_ID>
+
+stages:
+  # ==========================================================
+  # 阶段一：单元测试（可选）
+  # 本仓库测试是 @SpringBootTest，需要 MySQL(campus_activity) 与 Redis(abc123/db11)。
+  # 云效公共构建集群默认没有这两个服务，直接运行会失败。课堂默认处理方式：
+  #   - 在云效「运行配置 / 流水线编辑」中把本阶段设为「跳过」，或直接删除本阶段；
+  #   - 或改用已安装 MySQL/Redis 的自建构建集群后再启用。
+  # 单元测试数量口径：5 个测试类 / 20 个用例（见 07-附录 第 5 节）。
+  # ==========================================================
+  test_stage:
+    name: 单元测试（需 MySQL/Redis，公共集群请跳过）
+    jobs:
+      backend_test_job:
+        name: 后端单元测试
+        runsOn: public/cn-beijing
+        steps:
+          maven_test:
+            step: JavaBuild
+            name: Maven 测试（JDK 21）
+            with:
+              jdkVersion: "21"
+              mavenVersion: "3.9.11"
+              # 注意：本仓库后端在 server/ 子目录，不是仓库根目录
+              run: |
+                cd server
+                mvn -B test
+
+  # ==========================================================
+  # 阶段二：构建 + 制品上传
+  # 一个 job 内的多个 step 共享工作空间，因此后端/前端构建与打包必须放在同一个 job。
+  # ==========================================================
+  build_stage:
+    name: 构建与制品
+    jobs:
+      build_job:
+        name: 后端打包 + 双端前端构建 + 制品上传
+        runsOn: public/cn-beijing
+        steps:
+          # 1) 后端打包：产出 server/target/campus-activity-server-1.0.0.jar
+          #    公共构建集群没有 MySQL/Redis，故跳过测试打包；测试交给本地或 test_stage（自建集群）。
+          maven_build:
+            step: JavaBuild
+            name: Maven 打包（JDK 21，server 子目录）
+            with:
+              jdkVersion: "21"
+              mavenVersion: "3.9.11"
+              run: |
+                cd server
+                mvn -B clean package -DskipTests
+
+          # 2) 管理后台构建：产出 admin/dist
+          admin_build:
+            step: NodeBuild
+            name: 管理后台构建（Node 20）
+            with:
+              nodeVersion: "20"
+              run: |
+                cd admin
+                pnpm install --frozen-lockfile || pnpm install
+                pnpm run build
+
+          # 3) 小程序 H5 构建：产出 app/dist/build/h5
+          #    ⚠️ H5 部署在 /app/ 子路径，必须带 VITE_BASE=/app/ 构建（app/vite.config.ts 已支持），
+          #    否则 index.html 引用 /assets/... 会命中后台资源导致白屏/404（详见 06 号手册 6.2）。
+          app_build:
+            step: NodeBuild
+            name: 小程序 H5 构建（Node 20）
+            with:
+              nodeVersion: "20"
+              run: |
+                cd app
+                pnpm install --frozen-lockfile || pnpm install
+                VITE_BASE=/app/ pnpm run build:h5
+
+          # 4) 整理制品根目录结构：app.jar / web/admin / web/app / deploy.sh
+          #    必须放在工作空间根目录，上传后压缩包内才会是这 4 个顶层条目（与 07-附录 第 13 节一致）。
+          stage_artifact:
+            step: Command
+            name: 整理部署包结构
+            with:
+              run: |
+                set -e
+                rm -rf web app.jar deploy.sh
+                mkdir -p web
+                cp server/target/campus-activity-server-1.0.0.jar app.jar
+                cp -r admin/dist web/admin
+                cp -r app/dist/build/h5 web/app
+                cp deploy/deploy.sh deploy.sh
+                echo "制品结构："
+                ls -l app.jar deploy.sh
+                ls -l web
+
+          # 5) 制品上传：归档至云效公共存储，供主机部署下载
+          #    filePath 相对工作空间根目录；app.jar 与 deploy.sh 是文件、web 是目录，
+          #    压缩包内顶层即 app.jar、web/、deploy.sh。
+          upload_step:
+            step: ArtifactUpload
+            name: 制品上传
+            with:
+              uploadType: flowPublic
+              artifact: default
+              filePath:
+                - app.jar
+                - web
+                - deploy.sh
+
+  # ==========================================================
+  # 阶段三：主机部署（VMDeploy 组件）
+  # 前置：ECS 已执行 deploy/init-server.sh、主机组已接入该 ECS（SSH 密钥/密码），
+  #       主机上已安装 JDK 21、Nginx，且 /etc/campus-activity/env 已配置。
+  # ==========================================================
+  deploy_stage:
+    name: 主机部署
+    jobs:
+      deploy_job:
+        name: 部署到 ECS 主机组
+        component: VMDeploy
+        with:
+          # 引用构建阶段上传的制品（官方写法：stages.<stage>.<job>.<step>.artifacts.<artifact>）
+          artifact: $[stages.build_stage.build_job.upload_step.artifacts.default]
+          machineGroup: <MACHINE_GROUP_ID>
+          # 制品下载到 ECS 的路径：与 07-附录 第 13 节一致
+          artifactDownloadPath: /opt/campus-activity/package.tgz
+          executeUser: root
+          # 与 07-附录 第 13 节一致的主机部署脚本；deploy.sh 负责备份、同步 web、重启 systemd、reload Nginx、健康检查
+          #
+          # 备选（推荐，能精确保留旧 app.jar 用于回滚）：先解压到 staging 再执行
+          #   mkdir -p /opt/campus-activity/staging
+          #   tar zxvf /opt/campus-activity/package.tgz -C /opt/campus-activity/staging/
+          #   sh /opt/campus-activity/staging/deploy.sh restart
+          run: |
+            mkdir -p /opt/campus-activity
+            tar zxvf /opt/campus-activity/package.tgz -C /opt/campus-activity/
+            sh /opt/campus-activity/deploy.sh restart

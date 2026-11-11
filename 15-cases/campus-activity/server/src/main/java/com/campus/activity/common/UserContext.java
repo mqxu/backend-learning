@@ -1,7 +1,10 @@
 package com.campus.activity.common;
 
 /**
- * 登录用户上下文，由 AuthInterceptor 写入，Controller / Service 读取。
+ * 登录用户上下文，由 JwtAuthenticationFilter 写入，Controller / Service 读取。
+ * <p>
+ * Spring Security 已接管鉴权，但业务代码大量使用 UserContext.requireUserId()，
+ * 因此过滤器在写 SecurityContext 的同时也写这里，请求结束再清掉。
  */
 public final class UserContext {
 

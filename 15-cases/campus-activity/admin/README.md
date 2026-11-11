@@ -35,20 +35,23 @@ src/
     ├── audit/index.vue          活动审核：通过 / 驳回（必填理由）
     ├── activity/index.vue       活动管理：搜索、筛选、下架
     ├── user/index.vue           用户管理：角色分配、绑定组织
+    ├── file/index.vue           素材上传：存储信息、单文件上传、预览与复制地址
     └── log/index.vue            操作日志
 ```
 
 ## 接口
 
-请求前缀 `/api`，开发环境由 vite 代理到 `http://127.0.0.1:8080`，见 `vite.config.ts`。
+请求前缀 `/api`，开发环境由 vite 代理到 `http://127.0.0.1:8016`；后端返回的 `/uploads/...` 静态资源同样代理到 8016，见 `vite.config.ts`。
 
 | 页面 | 接口 |
 | --- | --- |
 | 登录 | `POST /api/admin/auth/login` |
+| 登出 | `POST /api/admin/auth/logout`（token 进黑名单） |
 | 工作台 | `GET /api/admin/dashboard` |
 | 活动审核 | `GET /api/admin/activities/audit-list`、`POST /api/admin/activities/{id}/audit` |
 | 活动管理 | `GET /api/admin/activities`、`POST /api/admin/activities/{id}/offline` |
 | 用户管理 | `GET /api/admin/users`、`POST /api/admin/users/{id}/roles`、`GET /api/admin/organizations` |
+| 素材上传 | `POST /api/files/upload?bizType=`、`GET /api/files/storage` |
 | 操作日志 | `GET /api/admin/logs` |
 | 活动详情 | `GET /api/app/activities/{id}`（公开接口，无需 token） |
 

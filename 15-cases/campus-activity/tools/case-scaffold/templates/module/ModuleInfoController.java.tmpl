@@ -1,0 +1,24 @@
+package {{PACKAGE}}.controller;
+
+import java.util.Map;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 模块入口：只返回模块信息，用来确认骨架能启动。
+ * 正式实现按业务替换或删除。
+ *
+ * @author {{AUTHOR}}
+ */
+@RestController
+public class ModuleInfoController {
+
+    @GetMapping("/hello")
+    public Map<String, Object> hello() {
+        return Map.of(
+                "module", "{{MODULE}}",
+                "port", {{PORT}}
+        );
+    }
+}

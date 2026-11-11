@@ -1,0 +1,27 @@
+%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：详细设计说明书 06 图6-4，组织者出动态码、学生扫码、服务端校验并写签到。
+%% 要点：参与者为组织者、学生、服务端、MySQL；签到码不落库，接受最近 3 个时间片。
+sequenceDiagram
+    participant O as 组织者
+    participant U as 学生
+    participant S as 服务端
+    participant D as MySQL
+
+    O->>S: 请求核销台签到码
+    S-->>O: 返回 30 秒轮换的动态 token
+    Note over O,U: 组织者投屏二维码 学生扫码
+
+    U->>S: 提交 token 与定位
+    activate S
+    S->>S: 校验签名与最近 3 个时间片
+    alt 校验失败
+        S-->>U: 40001 签到码无效
+    else 校验通过
+        S->>D: 查 activity 与报名记录
+        S->>S: 校验签到窗口与 200 米定位
+        S->>D: 写 activity_checkin 并更新报名为已签到
+        S-->>U: 签到成功 返回签到时间
+    end
+    deactivate S
+
+    Note over S,D: uk_signup 唯一索引兜底重复签到

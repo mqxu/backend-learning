@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#8FA0B5"/>
+  </marker>
+  <marker id="ar-open" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9"
+          markerHeight="9" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11" fill="none" stroke="#8FA0B5" stroke-width="1.6"/>
+  </marker>
+  <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+  </marker>
+</defs>
+<rect x="300" y="64" width="600" height="756" rx="6" ry="6" fill="#FCFDFF" stroke="#94A3B8" stroke-width="1.6"/>
+<text x="600.0" y="104" font-size="17" fill="#475569" text-anchor="middle" font-weight="600">在线教学平台</text>
+<circle cx="115" cy="330" r="15" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M115,345 L115,386" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M90,358 L140,358" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M115,386 L94,426" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M115,386 L136,426" stroke="#2563EB" stroke-width="1.9"/>
+<text x="115" y="458" font-size="16" fill="#0F172A" text-anchor="middle" font-weight="600">学生</text>
+<circle cx="115" cy="670" r="15" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M115,685 L115,726" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M90,698 L140,698" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M115,726 L94,766" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M115,726 L136,766" stroke="#2563EB" stroke-width="1.9"/>
+<text x="115" y="798" font-size="16" fill="#0F172A" text-anchor="middle" font-weight="600">教师</text>
+<circle cx="1085" cy="380" r="15" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1085,395 L1085,436" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1060,408 L1110,408" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1085,436 L1064,476" stroke="#2563EB" stroke-width="1.9"/>
+<path d="M1085,436 L1106,476" stroke="#2563EB" stroke-width="1.9"/>
+<text x="1085" y="508" font-size="16" fill="#0F172A" text-anchor="middle" font-weight="600">管理员</text>
+<ellipse cx="440" cy="200" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="205.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">浏览课程</text>
+<path d="M141,358 L358,200" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="440" cy="292" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="297.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">选课报名</text>
+<path d="M141,358 L358,292" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="440" cy="384" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="389.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">提交作业</text>
+<path d="M141,358 L358,384" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="440" cy="476" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="481.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">查看成绩</text>
+<path d="M141,358 L358,476" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="440" cy="580" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="585.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">发布课程</text>
+<path d="M141,698 L358,580" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="440" cy="668" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="673.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">批改作业</text>
+<path d="M141,698 L358,668" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="440" cy="756" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="440" y="761.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">录入成绩</text>
+<path d="M141,698 L358,756" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="760" cy="292" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="760" y="297.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">用户管理</text>
+<path d="M1059,408 L842,292" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="760" cy="384" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="760" y="389.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">角色授权</text>
+<path d="M1059,408 L842,384" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="760" cy="476" rx="82" ry="30" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="760" y="481.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">数据统计</text>
+<path d="M1059,408 L842,476" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<ellipse cx="760" cy="200" rx="82" ry="30" fill="#FEF6E7" stroke="#D97706" stroke-width="1.6"/>
+<text x="760" y="205.2" font-size="14.5" fill="#0F172A" text-anchor="middle" font-weight="400">校验选课冲突</text>
+<path d="M492,270 L670,226" stroke="#8FA0B5" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#ar-open)"/>
+<text x="608" y="238" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">«include»</text>
+<text x="300" y="860" font-size="12.5" fill="#475569" text-anchor="start" font-weight="400">图例：实线＝参与者与用例的关联；虚线箭头＝「包含」关系（被包含的用例必然执行）</text>
+</svg>

@@ -1,7 +1,13 @@
 <template>
   <view class="page">
     <view class="profile">
-      <view class="avatar">{{ initial }}</view>
+      <image
+        v-if="user.avatarUrl"
+        :src="resolveFileUrl(user.avatarUrl)"
+        mode="aspectFill"
+        class="avatar avatar-img"
+      />
+      <view v-else class="avatar">{{ initial }}</view>
       <view class="info">
         <text class="name">{{ user.realName || user.nickname || '微信用户' }}</text>
         <text class="sub" v-if="user.bound">{{ user.college }} · {{ user.grade }} 级 · {{ user.studentNo }}</text>
@@ -40,6 +46,10 @@
     </view>
 
     <view class="card menu">
+      <view class="menu-item" @click="go('/pages/auth/login')">
+        <text>手机号验证码登录</text>
+        <text class="arrow">›</text>
+      </view>
       <view class="menu-item" @click="resetStudent">
         <text>切换测试身份</text>
         <text class="muted">当前：{{ devOpenId }}</text>
@@ -59,6 +69,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
 import { currentUser, updateLocalUser, logout } from '../../utils/auth'
+import { resolveFileUrl } from '../../utils/request'
 
 const user = ref<UserInfo>(currentUser() || ({} as UserInfo))
 const devOpenId = ref<string>(uni.getStorageSync('campus_dev_openid') || 'mock-student-1')
@@ -106,8 +117,8 @@ function resetStudent(): void {
   })
 }
 
-function doLogout(): void {
-  logout()
+async function doLogout(): Promise<void> {
+  await logout()
 }
 </script>
 
@@ -129,6 +140,10 @@ function doLogout(): void {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.avatar-img {
+  border: 2rpx solid rgba(255, 255, 255, 0.4);
 }
 
 .info {

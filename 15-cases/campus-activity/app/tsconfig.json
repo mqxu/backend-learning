@@ -13,7 +13,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["@dcloudio/types"],
+    "types": ["@dcloudio/types", "node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

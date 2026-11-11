@@ -43,13 +43,23 @@
     <view v-if="!list.length && !loading" class="empty">没有找到活动</view>
 
     <view v-for="a in list" :key="a.id" class="card item" @click="goDetail(a.id)">
-      <view class="between">
-        <text class="item-title">{{ a.title }}</text>
-        <text class="tag" :class="a.signupOpen ? 'tag-green' : 'tag-orange'">
-          {{ a.signupOpen ? '报名中' : a.statusLabel }}
-        </text>
+      <view class="item-main">
+        <image
+          v-if="a.coverUrl"
+          :src="resolveFileUrl(a.coverUrl)"
+          mode="aspectFill"
+          class="item-cover"
+        />
+        <view class="item-body">
+          <view class="between">
+            <text class="item-title">{{ a.title }}</text>
+            <text class="tag" :class="a.signupOpen ? 'tag-green' : 'tag-orange'">
+              {{ a.signupOpen ? '报名中' : a.statusLabel }}
+            </text>
+          </view>
+          <view class="muted" style="margin-top: 8rpx">{{ a.summary || '暂无简介' }}</view>
+        </view>
       </view>
-      <view class="muted" style="margin-top: 8rpx">{{ a.summary || '暂无简介' }}</view>
       <view class="item-meta">
         <text class="muted">{{ a.startTime }}</text>
         <text class="muted">{{ a.locationName }}</text>
@@ -74,6 +84,7 @@ import type { ActivityItem, Category } from '../../types'
 import { ref } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
+import { resolveFileUrl } from '../../utils/request'
 
 const categories = ref<Category[]>([])
 const list = ref<ActivityItem[]>([])
@@ -231,6 +242,25 @@ onReachBottom(() => {
 
 .item {
   padding: 24rpx 26rpx;
+}
+
+.item-main {
+  display: flex;
+  align-items: flex-start;
+}
+
+.item-cover {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  background: #eef0f3;
+  flex-shrink: 0;
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .item-title {

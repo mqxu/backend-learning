@@ -1,4 +1,5 @@
 import { http, setToken, clearToken, getToken } from './request'
+import { api } from './api'
 import type { LoginResult, UserInfo } from '../types'
 
 const USER_KEY = 'campus_user'
@@ -43,9 +44,27 @@ export async function ensureLogin(): Promise<UserInfo> {
   return data.user
 }
 
-export function logout(): void {
-  clearToken()
-  uni.reLaunch({ url: '/pages/index/index' })
+/** 手机号 + 短信验证码登录：拿到 token 后与微信登录一样落本地 */
+export async function loginBySms(phone: string, code: string): Promise<LoginResult> {
+  const data = await api.smsLogin(phone, code)
+  setToken(data.token)
+  uni.setStorageSync(USER_KEY, data.user)
+  return data
+}
+
+/** 登出：先尽力通知后端把 token 拉黑（失败忽略），再清本地并回首页 */
+export async function logout(): Promise<void> {
+  try {
+    if (getToken()) {
+      await api.logout()
+    }
+  } catch (e) {
+    // 后端不可用或 token 已过期时忽略，保证本地仍能退出
+    console.warn('调用登出接口失败，已忽略', e)
+  } finally {
+    clearToken()
+    uni.reLaunch({ url: '/pages/index/index' })
+  }
 }
 
 export function currentUser(): UserInfo | null {

@@ -1,0 +1,63 @@
+%% 类图（Class Diagram）
+%% 用途：领域模型、设计模式结构、接口与实现关系。
+%% 要点：+ public，- private，# protected，~ package；
+%%       实线三角箭头＝继承，虚线三角箭头＝实现，实线菱形＝组合，空心菱形＝聚合。
+classDiagram
+    direction LR
+
+    class User {
+        <<abstract>>
+        #Long id
+        #String name
+        +login(pwd) Token
+        +getRole() Role
+    }
+
+    class Student {
+        -String studentNo
+        -String major
+        +enroll(course) Enrollment
+        +submit(assignment) Submission
+    }
+
+    class Teacher {
+        -String staffNo
+        -String title
+        +publish(course) Course
+        +grade(submission, score) void
+    }
+
+    class Course {
+        -String code
+        -String name
+        -int capacity
+        -int enrolled
+        +isFull() boolean
+        +remaining() int
+    }
+
+    class Enrollment {
+        -LocalDateTime enrolledAt
+        -BigDecimal score
+        +isPassed() boolean
+    }
+
+    class Submission {
+        -String fileUrl
+        -LocalDateTime submittedAt
+        +isLate() boolean
+    }
+
+    class EnrollmentService {
+        <<interface>>
+        +enroll(studentId, courseId) Enrollment
+        +drop(studentId, courseId) void
+    }
+
+    User <|-- Student
+    User <|-- Teacher
+    Student "1" --> "0..*" Enrollment : 选课
+    Course "1" --> "0..*" Enrollment : 被选
+    Student "1" --> "0..*" Submission : 提交
+    Teacher ..|> EnrollmentService : 实现
+    EnrollmentService ..> Enrollment : 创建

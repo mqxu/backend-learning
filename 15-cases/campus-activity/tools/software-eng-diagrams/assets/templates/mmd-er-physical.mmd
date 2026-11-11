@@ -1,0 +1,70 @@
+%% E-R 图（物理模型 / 表结构）
+%% 用途：数据库表结构与主外键关系，可直接对应建表语句。
+%% 说明：概念模型（矩形+椭圆+菱形，即 Chen 记号）用 svg-er.svg 模板手绘，
+%%       Mermaid 只能画物理模型，不要用它交概念模型的作业。
+%% 基数读法：||--o{ 读作「左边 1 条对右边 0..N 条」；
+%%           ||--|| 一对一，}o--o{ 多对多，|o--o| 零或一对一。
+erDiagram
+    STUDENT ||--o{ ENROLLMENT : "选修"
+    COURSE ||--o{ ENROLLMENT : "被选"
+    TEACHER ||--o{ COURSE : "讲授"
+    COURSE ||--o{ CHAPTER : "包含"
+    COURSE ||--o{ ASSIGNMENT : "布置"
+    STUDENT ||--o{ SUBMISSION : "提交"
+    ASSIGNMENT ||--o{ SUBMISSION : "收到"
+
+    STUDENT {
+        bigint id PK "主键"
+        varchar student_no UK "学号"
+        varchar name "姓名"
+        varchar major "专业"
+        datetime created_at "创建时间"
+    }
+
+    TEACHER {
+        bigint id PK
+        varchar staff_no UK "工号"
+        varchar name "姓名"
+        varchar title "职称"
+    }
+
+    COURSE {
+        bigint id PK
+        varchar course_code UK "课程代码"
+        varchar name "课程名"
+        decimal credit "学分"
+        bigint teacher_id FK "授课教师"
+        int capacity "容量"
+        int enrolled "已选人数"
+    }
+
+    ENROLLMENT {
+        bigint id PK
+        bigint student_id FK
+        bigint course_id FK
+        datetime enrolled_at "选课时间"
+        decimal score "成绩"
+    }
+
+    CHAPTER {
+        bigint id PK
+        bigint course_id FK
+        varchar title "章节标题"
+        int sort_no "排序号"
+    }
+
+    ASSIGNMENT {
+        bigint id PK
+        bigint course_id FK
+        varchar title "作业标题"
+        datetime deadline "截止时间"
+    }
+
+    SUBMISSION {
+        bigint id PK
+        bigint assignment_id FK
+        bigint student_id FK
+        varchar file_url "附件地址"
+        decimal score "得分"
+        datetime submitted_at "提交时间"
+    }

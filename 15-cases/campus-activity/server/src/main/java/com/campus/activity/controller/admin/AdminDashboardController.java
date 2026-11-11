@@ -3,10 +3,9 @@ package com.campus.activity.controller.admin;
 import com.campus.activity.common.PageResult;
 import com.campus.activity.common.Result;
 import com.campus.activity.entity.AuditRecord;
-import com.campus.activity.security.RequireLogin;
-import com.campus.activity.security.RequireRole;
 import com.campus.activity.service.AdminService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,8 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-@RequireLogin
-@RequireRole({"REVIEWER", "ADMIN"})
+@PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
 @RequiredArgsConstructor
 public class AdminDashboardController {
 

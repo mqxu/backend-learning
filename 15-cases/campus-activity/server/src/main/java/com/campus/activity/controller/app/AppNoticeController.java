@@ -4,9 +4,9 @@ import com.campus.activity.common.PageResult;
 import com.campus.activity.common.Result;
 import com.campus.activity.common.UserContext;
 import com.campus.activity.entity.SysNotice;
-import com.campus.activity.security.RequireLogin;
 import com.campus.activity.service.NoticeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/app/messages")
-@RequireLogin
+@PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class AppNoticeController {
 

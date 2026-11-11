@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="880" viewBox="0 0 1240 880" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#8FA0B5"/>
+  </marker>
+  <marker id="ar-open" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9"
+          markerHeight="9" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11" fill="none" stroke="#8FA0B5" stroke-width="1.6"/>
+  </marker>
+  <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+  </marker>
+</defs>
+<rect x="36" y="36" width="1168" height="96" rx="14" ry="14" fill="#F4F6F9" stroke="#E3E8EF" stroke-width="1.4"/>
+<defs><clipPath id="c-user"><rect x="36" y="36" width="1168" height="96" rx="14" ry="14"/></clipPath></defs>
+<g clip-path="url(#c-user)"><rect x="36" y="36" width="96" height="96" rx="0" ry="0" fill="#64748B"/></g>
+<text x="84.0" y="90.1" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="600">用户层</text>
+<rect x="152.0" y="46.0" width="300" height="76" rx="38" ry="38" fill="#FFFFFF" stroke="#E3E8EF" stroke-width="1.6"/>
+<text x="302.0" y="79.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">学生</text>
+<text x="302.0" y="101.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">选课 · 学习 · 提交作业</text>
+<rect x="518.0" y="46.0" width="300" height="76" rx="38" ry="38" fill="#FFFFFF" stroke="#E3E8EF" stroke-width="1.6"/>
+<text x="668.0" y="79.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">教师</text>
+<text x="668.0" y="101.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">建课 · 批改 · 成绩录入</text>
+<rect x="884.0" y="46.0" width="300" height="76" rx="38" ry="38" fill="#FFFFFF" stroke="#E3E8EF" stroke-width="1.6"/>
+<text x="1034.0" y="79.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">管理员</text>
+<text x="1034.0" y="101.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">用户 · 权限 · 统计</text>
+<rect x="36" y="168" width="1168" height="124" rx="14" ry="14" fill="#EFF5FE" stroke="#DBE7FB" stroke-width="1.4"/>
+<defs><clipPath id="c-pres"><rect x="36" y="168" width="1168" height="124" rx="14" ry="14"/></clipPath></defs>
+<g clip-path="url(#c-pres)"><rect x="36" y="168" width="96" height="124" rx="0" ry="0" fill="#2563EB"/></g>
+<text x="84.0" y="236.1" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="600">表现层</text>
+<rect x="152.0" y="192.0" width="320.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#DBE7FB" stroke-width="1.6"/>
+<text x="312.0" y="225.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">Web 管理端</text>
+<text x="312.0" y="247.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">Vue 3 + Element Plus</text>
+<rect x="508.0" y="192.0" width="320.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#DBE7FB" stroke-width="1.6"/>
+<text x="668.0" y="225.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">移动端 App</text>
+<text x="668.0" y="247.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">uni-app</text>
+<rect x="864.0" y="192.0" width="320.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#DBE7FB" stroke-width="1.6"/>
+<text x="1024.0" y="225.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">微信小程序</text>
+<text x="1024.0" y="247.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">uni-app 编译</text>
+<rect x="36" y="328" width="1168" height="100" rx="14" ry="14" fill="#FEF6E7" stroke="#FBE8C8" stroke-width="1.4"/>
+<defs><clipPath id="c-gate"><rect x="36" y="328" width="1168" height="100" rx="14" ry="14"/></clipPath></defs>
+<g clip-path="url(#c-gate)"><rect x="36" y="328" width="96" height="100" rx="0" ry="0" fill="#D97706"/></g>
+<text x="84.0" y="384.1" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="600">接入层</text>
+<rect x="152.0" y="340.0" width="498" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#FBE8C8" stroke-width="1.6"/>
+<text x="401.0" y="373.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">Nginx 反向代理</text>
+<text x="401.0" y="395.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">静态资源 · 负载均衡 · HTTPS 终结</text>
+<rect x="686.0" y="340.0" width="498" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#FBE8C8" stroke-width="1.6"/>
+<text x="935.0" y="373.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">API 网关</text>
+<text x="935.0" y="395.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">鉴权 · 限流 · 路由转发</text>
+<rect x="36" y="464" width="1168" height="210" rx="14" ry="14" fill="#E9F7F5" stroke="#CFEDE9" stroke-width="1.4"/>
+<defs><clipPath id="c-svc"><rect x="36" y="464" width="1168" height="210" rx="14" ry="14"/></clipPath></defs>
+<g clip-path="url(#c-svc)"><rect x="36" y="464" width="96" height="210" rx="0" ry="0" fill="#0D9488"/></g>
+<text x="84.0" y="575.1" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="600">业务层</text>
+<rect x="152.0" y="492" width="320.0" height="64" rx="8" ry="8" fill="#FFFFFF" stroke="#CFEDE9" stroke-width="1.6"/>
+<text x="312.0" y="519.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">认证授权服务</text>
+<text x="312.0" y="541.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">登录 · JWT 签发 · 权限校验</text>
+<rect x="508.0" y="492" width="320.0" height="64" rx="8" ry="8" fill="#FFFFFF" stroke="#CFEDE9" stroke-width="1.6"/>
+<text x="668.0" y="519.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">课程服务</text>
+<text x="668.0" y="541.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">课程维护 · 章节目录</text>
+<rect x="864.0" y="492" width="320.0" height="64" rx="8" ry="8" fill="#FFFFFF" stroke="#CFEDE9" stroke-width="1.6"/>
+<text x="1024.0" y="519.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">选课服务</text>
+<text x="1024.0" y="541.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">名额控制 · 冲突校验</text>
+<rect x="152.0" y="576" width="320.0" height="64" rx="8" ry="8" fill="#FFFFFF" stroke="#CFEDE9" stroke-width="1.6"/>
+<text x="312.0" y="603.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">作业服务</text>
+<text x="312.0" y="625.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">发布 · 提交 · 批改</text>
+<rect x="508.0" y="576" width="320.0" height="64" rx="8" ry="8" fill="#FFFFFF" stroke="#CFEDE9" stroke-width="1.6"/>
+<text x="668.0" y="603.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">成绩服务</text>
+<text x="668.0" y="625.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">统计 · 导出</text>
+<rect x="864.0" y="576" width="320.0" height="64" rx="8" ry="8" fill="#FFFFFF" stroke="#CFEDE9" stroke-width="1.6"/>
+<text x="1024.0" y="603.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">通知服务</text>
+<text x="1024.0" y="625.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">站内信 · 短信推送</text>
+<rect x="36" y="710" width="1168" height="132" rx="14" ry="14" fill="#F3EEFD" stroke="#E4D8FB" stroke-width="1.4"/>
+<defs><clipPath id="c-data"><rect x="36" y="710" width="1168" height="132" rx="14" ry="14"/></clipPath></defs>
+<g clip-path="url(#c-data)"><rect x="36" y="710" width="96" height="132" rx="0" ry="0" fill="#7C3AED"/></g>
+<text x="84.0" y="782.1" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="600">数据层</text>
+<rect x="152.0" y="738.0" width="243.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#E4D8FB" stroke-width="1.6"/>
+<text x="273.5" y="771.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">MySQL</text>
+<text x="273.5" y="793.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">业务主库 · 主从复制</text>
+<rect x="415.0" y="738.0" width="243.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#E4D8FB" stroke-width="1.6"/>
+<text x="536.5" y="771.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">Redis</text>
+<text x="536.5" y="793.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">会话 · 热点缓存</text>
+<rect x="678.0" y="738.0" width="243.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#E4D8FB" stroke-width="1.6"/>
+<text x="799.5" y="771.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">MinIO</text>
+<text x="799.5" y="793.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">课件 · 附件对象存储</text>
+<rect x="941.0" y="738.0" width="243.0" height="76" rx="8" ry="8" fill="#FFFFFF" stroke="#E4D8FB" stroke-width="1.6"/>
+<text x="1062.5" y="771.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">Elasticsearch</text>
+<text x="1062.5" y="793.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">课程与题库检索</text>
+<path d="M620.0,137 L620.0,162" stroke="#8FA0B5" stroke-width="1.7" fill="none" marker-end="url(#ar)"/>
+<path d="M620.0,297 L620.0,322" stroke="#8FA0B5" stroke-width="1.7" fill="none" marker-end="url(#ar)"/>
+<path d="M620.0,433 L620.0,458" stroke="#8FA0B5" stroke-width="1.7" fill="none" marker-end="url(#ar)"/>
+<path d="M620.0,679 L620.0,704" stroke="#8FA0B5" stroke-width="1.7" fill="none" marker-end="url(#ar)"/>
+</svg>

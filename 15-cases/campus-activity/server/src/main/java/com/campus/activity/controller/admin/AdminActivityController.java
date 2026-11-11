@@ -5,12 +5,11 @@ import com.campus.activity.common.Result;
 import com.campus.activity.common.UserContext;
 import com.campus.activity.dto.ActivityAuditRequest;
 import com.campus.activity.dto.CancelRequest;
-import com.campus.activity.security.RequireLogin;
-import com.campus.activity.security.RequireRole;
 import com.campus.activity.service.ActivityService;
 import com.campus.activity.vo.ActivityItemVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,8 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin/activities")
-@RequireLogin
-@RequireRole({"REVIEWER", "ADMIN"})
+@PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
 @RequiredArgsConstructor
 public class AdminActivityController {
 

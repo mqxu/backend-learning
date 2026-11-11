@@ -1,0 +1,40 @@
+# {{NAV_INDEX}} · {{TITLE}}
+
+> 📖 详细教程：[{{TUTORIAL}}]({{TUTORIAL_LINK}})
+
+{{DESC}}
+
+## 接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/hello` | 模块信息，验证骨架能启动 |
+
+> 骨架只带一条探活接口。实现业务后把这张表换成真实接口，并保留「全部接口都可用 curl 复现」这一条。
+
+## 运行
+
+```bash
+mvn -pl {{MODULE}} spring-boot:run
+curl http://127.0.0.1:{{PORT}}/hello
+```
+
+## 目录结构
+
+```
+{{MODULE}}/
+├── pom.xml
+├── README.md
+└── src/
+    ├── main/java/{{PACKAGE_PATH}}/
+    │   ├── {{APP_CLASS}}.java
+    │   └── controller/ModuleInfoController.java
+    └── main/resources/application.yml
+```
+
+## 待补
+
+- [ ] `README.md` 的接口表换成真实接口
+- [ ] `docs/{{TUTORIAL_BASENAME}}` 的每一节补齐（先看结果 → 核心实现 → 实测）
+- [ ] `{{CASE_JSON_PATH}}` 补全用例并跑 `node tools/run-cases.mjs {{MODULE}}`
+- [ ] 截图存到 `docs/public/shots/`，在教程里引用

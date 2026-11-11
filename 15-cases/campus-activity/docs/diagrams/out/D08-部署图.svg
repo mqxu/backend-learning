@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="940" viewBox="0 0 1300 940" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#8FA0B5"/>
+  </marker>
+  <marker id="ar-open" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9"
+          markerHeight="9" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11" fill="none" stroke="#8FA0B5" stroke-width="1.6"/>
+  </marker>
+  <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+  </marker>
+</defs>
+<rect x="36" y="36" width="1228" height="820" rx="8" ry="8" fill="none" stroke="#E3E8EF" stroke-width="1.4"/>
+<text x="60" y="71.6" font-size="15.5" fill="#475569" text-anchor="start" font-weight="600">«deployment» 校园活动管理平台部署视图</text>
+<path d="M90,200 L108,182 L348,182 L330,200 Z" fill="#F4F6F9" stroke="#64748B" stroke-width="1.4"/>
+<path d="M330,200 L348,182 L348,302 L330,320 Z" fill="#F4F6F9" stroke="#64748B" stroke-width="1.4"/>
+<rect x="90" y="200" width="240" height="120" fill="#FFFFFF" stroke="#64748B" stroke-width="1.7"/>
+<text x="210" y="239.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">«device» 学生手机</text>
+<text x="210" y="268.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">微信小程序 / H5 浏览器</text>
+<path d="M90,620 L108,602 L348,602 L330,620 Z" fill="#F4F6F9" stroke="#64748B" stroke-width="1.4"/>
+<path d="M330,620 L348,602 L348,722 L330,740 Z" fill="#F4F6F9" stroke="#64748B" stroke-width="1.4"/>
+<rect x="90" y="620" width="240" height="120" fill="#FFFFFF" stroke="#64748B" stroke-width="1.7"/>
+<text x="210" y="659.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">«device» 管理员 PC</text>
+<text x="210" y="688.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">Chrome 浏览器</text>
+<path d="M470,350 L488,332 L738,332 L720,350 Z" fill="#FEF6E7" stroke="#D97706" stroke-width="1.4"/>
+<path d="M720,350 L738,332 L738,492 L720,510 Z" fill="#FEF6E7" stroke="#D97706" stroke-width="1.4"/>
+<rect x="470" y="350" width="250" height="160" fill="#FFFFFF" stroke="#D97706" stroke-width="1.7"/>
+<text x="595" y="389.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">«node» Nginx</text>
+<text x="595" y="416.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">静态资源 + 反向代理</text>
+<text x="595" y="440.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">HTTPS 终结 · 6 个后台视图</text>
+<text x="595" y="464.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">/api/** → 应用服务器</text>
+<path d="M930,200 L948,182 L1218,182 L1200,200 Z" fill="#E9F7F5" stroke="#0D9488" stroke-width="1.4"/>
+<path d="M1200,200 L1218,182 L1218,332 L1200,350 Z" fill="#E9F7F5" stroke="#0D9488" stroke-width="1.4"/>
+<rect x="930" y="200" width="270" height="150" fill="#FFFFFF" stroke="#0D9488" stroke-width="1.7"/>
+<text x="1065" y="239.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">«node» 应用服务器</text>
+<text x="1065" y="266.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">Spring Boot · JDK 21</text>
+<text x="1065" y="290.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">REST 接口 38 个 · 端口 8016</text>
+<text x="1065" y="314.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">JWT 鉴权拦截器</text>
+<path d="M930,660 L948,642 L1218,642 L1200,660 Z" fill="#F3EEFD" stroke="#7C3AED" stroke-width="1.4"/>
+<path d="M1200,660 L1218,642 L1218,782 L1200,800 Z" fill="#F3EEFD" stroke="#7C3AED" stroke-width="1.4"/>
+<rect x="930" y="660" width="270" height="140" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.7"/>
+<text x="1065" y="699.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">«node» 数据库服务器</text>
+<text x="1065" y="726.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">MySQL 8 · 端口 3306</text>
+<text x="1065" y="750.5" font-size="12.5" fill="#475569" text-anchor="middle" font-weight="400">库 campus_activity · 12 张表</text>
+<path d="M348,260 L470,410" stroke="#8FA0B5" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+<text x="430" y="320.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">HTTPS 443</text>
+<path d="M348,680 L470,450" stroke="#8FA0B5" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+<text x="392" y="518.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">HTTPS 443</text>
+<path d="M738,430 L930,275" stroke="#8FA0B5" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+<text x="845" y="312.3" font-size="12" fill="#475569" text-anchor="middle" font-weight="400">反向代理 /api（8016）</text>
+<path d="M1065,350 L1065,660" stroke="#8FA0B5" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+<text x="1082" y="509.3" font-size="12" fill="#475569" text-anchor="start" font-weight="400">JDBC 3306</text>
+<text x="60" y="906.5" font-size="12.5" fill="#5A6779" text-anchor="start" font-weight="400">说明：客户端经 HTTPS 443 访问 Nginx；Nginx 托管管理后台静态资源并把 /api/** 反向代理到应用服务器 8016；应用服务器经 JDBC 3306 访问 MySQL 8。图中不列具体 IP。</text>
+</svg>

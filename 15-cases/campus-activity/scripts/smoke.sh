@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # 端到端冒烟测试：登录 -> 建活动 -> 审核 -> 报名 -> 满员候补 -> 签到 -> 统计
-# 用法：./scripts/smoke.sh
-# 依赖：后端已启动在 127.0.0.1:8080，本机有 curl 与 jq
+# 扩展能力：短信验证码登录 -> 登出黑名单 -> 文件上传与静态访问
+# 用法：./scripts/smoke.sh（BASE 可覆盖，默认 http://127.0.0.1:8016/api）
+# 依赖：后端已启动、MySQL/Redis 可用，本机有 curl 与 jq
 
 set -uo pipefail
 
-BASE=${BASE:-http://127.0.0.1:8080/api}
+BASE=${BASE:-http://127.0.0.1:8016/api}
+SERVER=${BASE%/api}
 PASS=0
 FAIL=0
 
@@ -120,6 +122,60 @@ STAT=$(curl -s --noproxy '*' "$BASE/org/activities/$AID/stat" -H "Authorization:
 check "已签到人数为 1" "1" "$(echo "$STAT" | jq -r '.data.checkedInCount')"
 check "候补人数为 1" "1" "$(echo "$STAT" | jq -r '.data.waitlistCount')"
 check "到场率 100" "100" "$(echo "$STAT" | jq -r '.data.attendanceRate | floor')"
+
+echo "== 7. 扩展能力：短信验证码登录 / 登出黑名单 / 文件上传 =="
+
+# 短信验证码：Mock 通道且 expose-code=true 时验证码直接回传，脚本不需要翻日志
+# 每次运行先清掉该手机号的验证码限流 key，保证脚本可重复执行
+SMS_PHONE=${SMS_PHONE:-13800000003}
+redis-cli -a "${REDIS_PASSWORD:-abc123}" --no-auth-warning -n "${REDIS_DATABASE:-11}" \
+  del "campus:sms:interval:$SMS_PHONE" "campus:sms:code:$SMS_PHONE" \
+      "campus:sms:daily:$SMS_PHONE" "campus:sms:fail:$SMS_PHONE" >/dev/null 2>&1 || true
+
+SMS_SEND=$(curl -s --noproxy '*' -X POST "$BASE/app/auth/sms/send-code" \
+  -H 'Content-Type: application/json' -d "{\"phone\":\"$SMS_PHONE\"}")
+check "发送短信验证码" "0" "$(echo "$SMS_SEND" | jq -r '.code')"
+SMS_CODE=$(echo "$SMS_SEND" | jq -r '.data.mockCode')
+check "Mock 通道回传验证码" "true" "$([ -n "$SMS_CODE" ] && [ "$SMS_CODE" != "null" ] && echo true || echo false)"
+
+# 先测错误验证码（验证码尚未被使用），再测正确验证码登录
+SMS_BAD=$(curl -s --noproxy '*' -X POST "$BASE/app/auth/sms/login" \
+  -H 'Content-Type: application/json' -d "{\"phone\":\"$SMS_PHONE\",\"code\":\"000000\"}")
+check "错误验证码被拒绝" "60005" "$(echo "$SMS_BAD" | jq -r '.code')"
+
+SMS_LOGIN=$(curl -s --noproxy '*' -X POST "$BASE/app/auth/sms/login" \
+  -H 'Content-Type: application/json' -d "{\"phone\":\"$SMS_PHONE\",\"code\":\"$SMS_CODE\"}")
+check "手机号验证码登录" "0" "$(echo "$SMS_LOGIN" | jq -r '.code')"
+SMS_TOKEN=$(echo "$SMS_LOGIN" | jq -r '.data.token')
+check "手机号登录返回 token" "true" "$([ -n "$SMS_TOKEN" ] && echo true || echo false)"
+
+SMS_PROFILE=$(curl -s --noproxy '*' "$BASE/app/user/profile" -H "Authorization: Bearer $SMS_TOKEN")
+check "手机号登录命中种子用户张小明" "张小明" "$(echo "$SMS_PROFILE" | jq -r '.data.nickname')"
+
+SMS_REPEAT=$(curl -s --noproxy '*' -X POST "$BASE/app/auth/sms/send-code" \
+  -H 'Content-Type: application/json' -d "{\"phone\":\"$SMS_PHONE\"}")
+check "60 秒内重复发送被限流" "60002" "$(echo "$SMS_REPEAT" | jq -r '.code')"
+
+# 登出：token 进 Redis 黑名单，同一 token 再用应 401
+check "登出成功" "0" "$(curl -s --noproxy '*' -X POST "$BASE/app/auth/logout" \
+  -H "Authorization: Bearer $SMS_TOKEN" | jq -r '.code')"
+check "登出后 token 失效" "10001" "$(curl -s --noproxy '*' "$BASE/app/user/profile" \
+  -H "Authorization: Bearer $SMS_TOKEN" | jq -r '.code')"
+
+# 文件上传：本地存储返回 /uploads/<key>，上传后可匿名访问
+TMP_PNG=$(mktemp -t campus-smoke-XXXXXX.png)
+printf '\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDRsmoke' > "$TMP_PNG"
+UPLOAD=$(curl -s --noproxy '*' -X POST "$BASE/files/upload?bizType=activity-cover" \
+  -H "Authorization: Bearer $A_TOKEN" \
+  -F "file=@$TMP_PNG;filename=smoke-cover.png;type=image/png")
+check "上传活动封面" "0" "$(echo "$UPLOAD" | jq -r '.code')"
+UPLOAD_URL=$(echo "$UPLOAD" | jq -r '.data.url')
+check "返回 /uploads/ 访问地址" "true" "$(echo "$UPLOAD_URL" | grep -q '^/uploads/' && echo true || echo false)"
+check "上传后可通过静态地址访问" "200" "$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$SERVER$UPLOAD_URL")"
+rm -f "$TMP_PNG"
+
+check "未登录上传被拒绝" "10001" "$(curl -s --noproxy '*' -X POST "$BASE/files/upload" \
+  -F "file=@/dev/null;filename=empty.png" | jq -r '.code')"
 
 echo
 if [ "$FAIL" -eq 0 ]; then

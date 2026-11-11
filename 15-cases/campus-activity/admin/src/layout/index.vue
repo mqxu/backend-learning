@@ -22,6 +22,10 @@
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
+        <el-menu-item index="/file">
+          <el-icon><UploadFilled /></el-icon>
+          <span>素材上传</span>
+        </el-menu-item>
         <el-menu-item index="/log">
           <el-icon><Document /></el-icon>
           <span>操作日志</span>
@@ -60,6 +64,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { logout } from '@/api'
 import { clearAuth, getCurrentUser } from '@/api/request'
 import { roleLabel } from '@/utils/dict'
 import type { UserInfo } from '@/types/api'
@@ -82,10 +87,17 @@ async function handleCommand(command: string | number | Record<string, unknown>)
   } catch {
     return
   }
-  clearAuth()
-  user.value = {}
-  ElMessage.success('已退出登录')
-  router.replace('/login')
+  try {
+    // best-effort：通知后端把当前 token 拉黑；接口异常（网络/已失效）不阻塞本地退出
+    await logout()
+  } catch {
+    // 错误提示已由请求拦截器统一处理，这里继续清理本地登录态
+  } finally {
+    clearAuth()
+    user.value = {}
+    ElMessage.success('已退出登录')
+    router.replace('/login')
+  }
 }
 </script>
 

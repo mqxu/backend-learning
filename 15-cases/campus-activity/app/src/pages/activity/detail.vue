@@ -1,7 +1,7 @@
 <template>
   <view class="page" v-if="activity.id">
     <view class="cover">
-      <image v-if="activity.coverUrl" :src="activity.coverUrl" mode="aspectFill" class="cover-img" />
+      <image v-if="activity.coverUrl" :src="resolveFileUrl(activity.coverUrl)" mode="aspectFill" class="cover-img" />
       <view v-else class="cover-fallback">{{ activity.categoryName }}</view>
     </view>
 
@@ -77,6 +77,7 @@ import type { ActivityDetail, FormField } from '../../types'
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { api } from '../../utils/api'
+import { resolveFileUrl } from '../../utils/request'
 import { ensureLogin } from '../../utils/auth'
 
 const activityId = ref<number | null>(null)

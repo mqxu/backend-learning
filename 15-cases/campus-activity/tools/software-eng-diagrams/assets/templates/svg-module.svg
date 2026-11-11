@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="500" viewBox="0 0 1240 500" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#8FA0B5"/>
+  </marker>
+  <marker id="ar-open" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9"
+          markerHeight="9" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11" fill="none" stroke="#8FA0B5" stroke-width="1.6"/>
+  </marker>
+  <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5"
+          markerHeight="7.5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+  </marker>
+</defs>
+<rect x="498.0" y="44" width="244" height="56" rx="10" ry="10" fill="#1E3A5F"/>
+<text x="620" y="78.1" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="600">在线教学平台</text>
+<path d="M620,100 L620,132" stroke="#8FA0B5" stroke-width="1.6"/>
+<path d="M153.0,132 L1087.0,132" stroke="#8FA0B5" stroke-width="1.6"/>
+<path d="M153.0,132 L153.0,170" stroke="#8FA0B5" stroke-width="1.6"/>
+<rect x="60.0" y="170" width="186" height="54" rx="8" ry="8" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="153.0" y="202.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">课程管理</text>
+<path d="M153.0,224 L153.0,240 L45.0,240 L45.0,426.0" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M45.0,302.0 L79.0,302.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="79.0" y="280.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="153.0" y="306.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">课程维护</text>
+<path d="M45.0,364.0 L79.0,364.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="79.0" y="342.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="153.0" y="368.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">章节目录</text>
+<path d="M45.0,426.0 L79.0,426.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="79.0" y="404.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="153.0" y="430.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">课件上传</text>
+<path d="M386.5,132 L386.5,170" stroke="#8FA0B5" stroke-width="1.6"/>
+<rect x="293.5" y="170" width="186" height="54" rx="8" ry="8" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="386.5" y="202.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">选课管理</text>
+<path d="M386.5,224 L386.5,240 L278.5,240 L278.5,426.0" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M278.5,302.0 L312.5,302.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="312.5" y="280.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="386.5" y="306.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">开课计划</text>
+<path d="M278.5,364.0 L312.5,364.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="312.5" y="342.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="386.5" y="368.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">选课报名</text>
+<path d="M278.5,426.0 L312.5,426.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="312.5" y="404.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="386.5" y="430.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">名额控制</text>
+<path d="M620.0,132 L620.0,170" stroke="#8FA0B5" stroke-width="1.6"/>
+<rect x="527.0" y="170" width="186" height="54" rx="8" ry="8" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="620.0" y="202.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">作业管理</text>
+<path d="M620.0,224 L620.0,240 L512.0,240 L512.0,426.0" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M512.0,302.0 L546.0,302.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="546.0" y="280.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="620.0" y="306.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">作业发布</text>
+<path d="M512.0,364.0 L546.0,364.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="546.0" y="342.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="620.0" y="368.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">在线提交</text>
+<path d="M512.0,426.0 L546.0,426.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="546.0" y="404.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="620.0" y="430.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">批改评分</text>
+<path d="M853.5,132 L853.5,170" stroke="#8FA0B5" stroke-width="1.6"/>
+<rect x="760.5" y="170" width="186" height="54" rx="8" ry="8" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="853.5" y="202.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">成绩管理</text>
+<path d="M853.5,224 L853.5,240 L745.5,240 L745.5,426.0" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M745.5,302.0 L779.5,302.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="779.5" y="280.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="853.5" y="306.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">成绩录入</text>
+<path d="M745.5,364.0 L779.5,364.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="779.5" y="342.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="853.5" y="368.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">成绩统计</text>
+<path d="M745.5,426.0 L779.5,426.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="779.5" y="404.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="853.5" y="430.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">成绩导出</text>
+<path d="M1087.0,132 L1087.0,170" stroke="#8FA0B5" stroke-width="1.6"/>
+<rect x="994.0" y="170" width="186" height="54" rx="8" ry="8" fill="#EFF5FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="1087.0" y="202.6" font-size="15.5" fill="#0F172A" text-anchor="middle" font-weight="600">系统管理</text>
+<path d="M1087.0,224 L1087.0,240 L979.0,240 L979.0,426.0" stroke="#8FA0B5" stroke-width="1.4" fill="none"/>
+<path d="M979.0,302.0 L1013.0,302.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="1013.0" y="280.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="1087.0" y="306.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">用户管理</text>
+<path d="M979.0,364.0 L1013.0,364.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="1013.0" y="342.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="1087.0" y="368.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">角色授权</text>
+<path d="M979.0,426.0 L1013.0,426.0" stroke="#8FA0B5" stroke-width="1.4"/>
+<rect x="1013.0" y="404.0" width="148" height="44" rx="6" ry="6" fill="#FFFFFF" stroke="#B6C2D2" stroke-width="1.3"/>
+<text x="1087.0" y="430.9" font-size="13.5" fill="#475569" text-anchor="middle" font-weight="400">操作日志</text>
+</svg>

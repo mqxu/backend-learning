@@ -206,3 +206,37 @@ export interface SetRoleParams {
   role: UserRole | string
   orgId: number | null
 }
+
+/** 文件上传结果 */
+export interface FileUploadResult {
+  /** 对象 key，形如 activity-cover/2026/11/10/xxx.png */
+  objectKey: string
+  /** 原始文件名 */
+  originalName: string
+  /** 可直接放进 img 标签的相对访问地址，如 /uploads/xxx.png */
+  url: string
+  /** 字节数 */
+  size: number
+  /** 内容类型，如 image/png */
+  contentType: string
+  /** 实际存储方式：local / oss */
+  storage: string
+}
+
+/** 当前生效的存储配置 */
+export interface StorageInfo {
+  /** 存储方式：local 本地磁盘 / oss 阿里云对象存储 */
+  storage: string
+  /** 单文件大小上限，如 10MB */
+  maxFileSize: string
+  /** 允许上传的扩展名（小写，不带点） */
+  allowedExtensions: string[]
+  /** 仅 local：落盘根目录 */
+  baseDir?: string
+  /** 仅 local：对外访问前缀，如 /uploads */
+  urlPrefix?: string
+  /** 仅 oss：bucket 名称 */
+  bucket?: string
+  /** 仅 oss：bucket 下的目录 */
+  dir?: string
+}

@@ -26,11 +26,14 @@ import com.campus.activity.mapper.OrganizationMapper;
 import com.campus.activity.vo.ActivityDetailVO;
 import com.campus.activity.vo.ActivityItemVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +53,8 @@ public class ActivityService {
 
     // ---------------------------------------------------------------- 学生端查询
 
+    /** 分类是典型的读多写少数据，缓存 10 分钟；后台目前没有改分类的接口，无需主动失效 */
+    @Cacheable(cacheNames = "categories", key = "'all'")
     public List<ActivityCategory> categories() {
         return categoryMapper.selectList(Wrappers.<ActivityCategory>lambdaQuery()
                 .eq(ActivityCategory::getStatus, 1)
@@ -99,12 +104,23 @@ public class ActivityService {
         return PageResult.of(result, this::toItemVO);
     }
 
+    /**
+     * 热门活动榜按报名人数排序，缓存 key 带 limit。
+     *
+     * <p>返回值用 ArrayList 而不是 stream().toList() 的不可变集合，
+     * 因为 Redis JSON 序列化需要能还原出具体集合类型。</p>
+     */
+    @Cacheable(cacheNames = "activity-hot", key = "#limit")
     public List<ActivityItemVO> hot(int limit) {
         List<Activity> list = activityMapper.selectList(Wrappers.<Activity>lambdaQuery()
                 .in(Activity::getStatus, ActivityStatus.PUBLISHED.getCode(), ActivityStatus.ONGOING.getCode())
                 .orderByDesc(Activity::getSignupCount)
                 .last("LIMIT " + Math.min(limit, 20)));
-        return list.stream().map(this::toItemVO).toList();
+        List<ActivityItemVO> result = new ArrayList<>(list.size());
+        for (Activity activity : list) {
+            result.add(toItemVO(activity));
+        }
+        return result;
     }
 
     @Transactional
@@ -147,6 +163,7 @@ public class ActivityService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "activity-hot", allEntries = true)
     public Long create(LoginUser user, ActivitySaveRequest request) {
         if (user.orgId() == null) {
             throw new BizException(ResultCode.FORBIDDEN, "当前账号未绑定组织，无法发布活动");
@@ -165,6 +182,7 @@ public class ActivityService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "activity-hot", allEntries = true)
     public void update(LoginUser user, Long activityId, ActivitySaveRequest request) {
         Activity activity = requireOwnActivity(user, activityId);
         if (activity.getStatus() == ActivityStatus.FINISHED.getCode()
@@ -193,12 +211,14 @@ public class ActivityService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "activity-hot", allEntries = true)
     public void cancelByOrg(LoginUser user, Long activityId, String reason) {
         Activity activity = requireOwnActivity(user, activityId);
         cancelInternal(activity, user, reason);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "activity-hot", allEntries = true)
     public void offline(LoginUser operator, Long activityId, String reason) {
         Activity activity = activityMapper.selectById(activityId);
         if (activity == null) {
@@ -230,6 +250,7 @@ public class ActivityService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "activity-hot", allEntries = true)
     public void audit(LoginUser operator, Long activityId, boolean pass, String reason) {
         Activity activity = activityMapper.selectById(activityId);
         if (activity == null) {

@@ -118,6 +118,24 @@ export interface LoginResult {
   user: UserInfo
 }
 
+/** 发送短信验证码结果；Mock 通道且 expose-code=true 时 mockCode 有值，真实短信为 null */
+export interface SmsSendResult {
+  phone: string
+  expireSeconds: number
+  intervalSeconds: number
+  mockCode?: string | null
+}
+
+/** 文件上传结果；url 是相对地址（形如 /uploads/xxx），渲染时统一用 resolveFileUrl 解析 */
+export interface FileUploadResult {
+  objectKey: string
+  originalName: string
+  url: string
+  size: number
+  contentType: string
+  storage: string
+}
+
 export interface SysNotice {
   id: number
   type: string
@@ -192,6 +210,7 @@ export interface ActivityQuery {
 
 export interface SaveActivityPayload {
   title: string
+  coverUrl?: string | null
   categoryId: number | null
   summary: string
   content: string

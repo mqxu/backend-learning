@@ -6,11 +6,10 @@ import com.campus.activity.common.Result;
 import com.campus.activity.common.UserContext;
 import com.campus.activity.entity.Organization;
 import com.campus.activity.mapper.OrganizationMapper;
-import com.campus.activity.security.RequireLogin;
-import com.campus.activity.security.RequireRole;
 import com.campus.activity.service.AdminService;
 import com.campus.activity.vo.UserVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,8 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-@RequireLogin
-@RequireRole({"ADMIN"})
+@PreAuthorize("hasAnyRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminUserController {
 

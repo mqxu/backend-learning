@@ -1,0 +1,31 @@
+%% 甘特图（Gantt Chart）
+%% 用途：项目进度计划、课程设计周计划、迭代排期。
+%% 要点：任务用「名称 :标签, 开始, 持续」定义；after 引用前序任务，改期后自动顺延；
+%%       里程碑用 milestone 且持续写 0d；关键路径任务加 crit。
+%%       刻度太密时用 tickInterval 控制，不要靠缩小画布硬塞。
+gantt
+    title 综合实训项目进度计划
+    dateFormat YYYY-MM-DD
+    axisFormat %m/%d
+    tickInterval 1week
+    todayMarker off
+
+    section 需求阶段
+    需求调研与访谈        :done, a1, 2026-03-02, 5d
+    需求规格说明书        :done, a2, after a1, 4d
+    需求评审              :milestone, m1, after a2, 0d
+
+    section 设计阶段
+    概要设计与模块划分    :active, b1, after a2, 5d
+    数据库设计            :active, b2, after a2, 4d
+    接口设计              :b3, after b1, 3d
+
+    section 开发阶段
+    后端接口开发          :crit, c1, after b3, 10d
+    前端页面开发          :c2, after b3, 10d
+    前后端联调            :crit, c3, after c1, 4d
+
+    section 测试交付
+    系统测试与缺陷修复    :d1, after c3, 5d
+    部署上线              :d2, after d1, 2d
+    验收答辩              :milestone, m2, after d2, 0d

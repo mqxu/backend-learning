@@ -1,0 +1,34 @@
+%% 活动图（Activity Diagram，带泳道）
+%% 用途：描述业务流程或操作流程中的活动顺序、判断分支与职责分工。
+%% 说明：Mermaid 没有独立的 activityDiagram 语法，活动图用 flowchart 表达：
+%%       泳道 = subgraph，圆角矩形 = 活动，菱形 = 判断，
+%%       实心圆 = 开始节点，双圆 = 结束节点。
+%% 要点：一条泳道只属于一个角色，箭头表示职责交接。
+%%       不要在泳道之间来回跳，跨泳道往返越多，布局越乱。
+flowchart TD
+    S(( )):::sn
+
+    subgraph L1["学生"]
+        A1[提交选课申请]
+    end
+
+    subgraph L2["选课服务"]
+        A2[/读取课程余量/]
+        A3{余量充足<br/>且未重复选课?}
+        A4[生成选课记录]
+        A5[返回名额已满]
+    end
+
+    subgraph L3["教务系统"]
+        A6[同步选课名单]
+        A7[生成学期课表]
+    end
+
+    E((( ))):::en
+
+    S --> A1 --> A2 --> A3
+    A3 -- 是 --> A4 --> A6 --> A7 --> E
+    A3 -- 否 --> A5 --> E
+
+    classDef sn fill:#0F172A,stroke:#0F172A
+    classDef en fill:#FFFFFF,stroke:#0F172A,stroke-width:2.6px

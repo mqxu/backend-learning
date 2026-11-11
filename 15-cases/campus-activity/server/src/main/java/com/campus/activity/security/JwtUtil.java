@@ -13,7 +13,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.UUID;
 
+/**
+ * JWT 的签发与解析。
+ * <p>
+ * 除了身份信息，token 里额外放一个 jti（唯一 id）：登出时把 jti 写进 Redis 黑名单，
+ * 在 token 自然过期前都能被识别成“已失效的旧凭证”。
+ */
 @Component
 public class JwtUtil {
 
@@ -29,9 +36,11 @@ public class JwtUtil {
         this.hours = properties.getJwt().getAccessTokenHours();
     }
 
+    /** 签发 token：sub 存用户 id，jti 存唯一标识，过期时间由配置决定 */
     public String generate(SysUser user) {
         Instant now = Instant.now();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(String.valueOf(user.getId()))
                 .claim("role", user.getRole())
                 .claim("orgId", user.getOrgId())
@@ -42,8 +51,11 @@ public class JwtUtil {
                 .compact();
     }
 
-    /** 解析失败（签名不对、过期、格式错误）统一返回 null，由调用方决定是否放行 */
-    public LoginUser parse(String token) {
+    /**
+     * 解析并验签，返回身份、jti 与过期时间。
+     * 解析失败（签名不对、过期、格式错误）统一返回 null，由调用方决定是否放行。
+     */
+    public TokenClaims parse(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(key)
@@ -55,9 +67,14 @@ public class JwtUtil {
             Object orgIdRaw = claims.get("orgId");
             Long orgId = orgIdRaw instanceof Number number ? number.longValue() : null;
             String nickname = claims.get("nickname", String.class);
-            return new LoginUser(userId, role, orgId, nickname);
+            LoginUser user = new LoginUser(userId, role, orgId, nickname);
+            return new TokenClaims(user, claims.getId(), claims.getExpiration().toInstant());
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** 解析结果：登录身份 + 黑名单要用的 jti + 黑名单 TTL 要用的过期时间 */
+    public record TokenClaims(LoginUser user, String jti, Instant expiresAt) {
     }
 }

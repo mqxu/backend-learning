@@ -6,6 +6,7 @@ import type {
   AuditParams,
   AuditRecord,
   DashboardData,
+  FileUploadResult,
   LoginParams,
   LoginResult,
   OfflineParams,
@@ -13,6 +14,7 @@ import type {
   PageQuery,
   PageResult,
   SetRoleParams,
+  StorageInfo,
   UserInfo,
   UserQuery
 } from '@/types/api'
@@ -20,6 +22,11 @@ import type {
 /** 管理员登录 */
 export function login(data: LoginParams): Promise<LoginResult> {
   return request.post<LoginResult>('/admin/auth/login', data)
+}
+
+/** 管理员登出：后端把当前 token 的 jti 写入黑名单，已失效的 token 也会返回成功 */
+export function logout(): Promise<void> {
+  return request.post<void>('/admin/auth/logout')
 }
 
 /** 工作台统计 */
@@ -70,4 +77,24 @@ export function fetchLogs(params: PageQuery): Promise<PageResult<AuditRecord>> {
 /** 活动详情 */
 export function fetchActivityDetail(id: number | string): Promise<ActivityDetail> {
   return request.get<ActivityDetail>(`/app/activities/${id}`)
+}
+
+/**
+ * 上传文件（管理后台上传活动封面、组织者 logo、头像共用）。
+ * multipart 字段名固定为 file；不手写 Content-Type，交给 axios 自动生成 boundary。
+ *
+ * @param file    待上传文件
+ * @param bizType 业务类型：activity-cover / org-logo / avatar / common
+ */
+export function uploadFile(file: File, bizType: string): Promise<FileUploadResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<FileUploadResult>('/files/upload', formData, {
+    params: { bizType }
+  })
+}
+
+/** 当前生效的文件存储方式与上传约束 */
+export function fetchStorageInfo(): Promise<StorageInfo> {
+  return request.get<StorageInfo>('/files/storage')
 }

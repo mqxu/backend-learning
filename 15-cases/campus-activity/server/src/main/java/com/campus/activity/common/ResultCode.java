@@ -40,6 +40,24 @@ public enum ResultCode {
 
     // 50xxx 通用
     PARAM_ERROR(50001, "参数错误"),
+
+    // 60xxx 短信与验证码
+    PHONE_FORMAT_INVALID(60001, "手机号格式不正确"),
+    SMS_CODE_SEND_TOO_MANY(60002, "验证码发送太频繁，请稍后再试"),
+    SMS_CODE_DAILY_LIMIT(60003, "今日验证码发送次数已达上限"),
+    SMS_CODE_EXPIRED(60004, "验证码已失效，请重新获取"),
+    SMS_CODE_ERROR(60005, "验证码错误"),
+    SMS_CODE_ERROR_TOO_MANY(60006, "验证码错误次数过多，请重新获取"),
+    SMS_CODE_USED(60007, "验证码已使用，请重新获取"),
+    SMS_SEND_FAILED(60008, "短信发送失败，请稍后再试"),
+
+    // 70xxx 文件
+    FILE_EMPTY(70001, "请选择要上传的文件"),
+    FILE_TOO_LARGE(70002, "文件超过大小限制"),
+    FILE_TYPE_NOT_ALLOWED(70003, "不支持的文件类型"),
+    FILE_STORAGE_ERROR(70004, "文件存储失败"),
+    FILE_NOT_FOUND(70005, "文件不存在"),
+
     SYSTEM_ERROR(50000, "系统繁忙，请稍后再试");
 
     private final int code;

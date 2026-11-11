@@ -1,0 +1,63 @@
+%% 类图（Class Diagram）
+%% 用途：详细设计说明书 06 图6-7，后端 Controller → Service → Mapper → Entity 四层依赖。
+%% 说明：只保留 8 个关键类，按层分包（namespace）表达分层；每类方法不超过 3 个。
+classDiagram
+    direction TB
+
+    namespace Controller {
+        class AppSignupController {
+            +signup(activityId, req) SignupVO
+            +mine() Page
+            +cancel(signupId) void
+        }
+        class OrgController {
+            +create(req) Long
+            +submit(id) void
+            +checkinQr(id) CheckinQrVO
+        }
+        class AdminActivityController {
+            +auditList() Page
+            +audit(id, req) void
+            +offline(id, reason) void
+        }
+    }
+
+    namespace Service {
+        class ActivityService {
+            +create(user, req) Long
+            +submit(user, id) void
+            +audit(operator, id, pass, reason) void
+        }
+        class SignupService {
+            +signup(user, activityId, req) SignupVO
+            +cancel(user, signupId) void
+            +promoteWaitlist(activityId) void
+        }
+    }
+
+    namespace Mapper {
+        class ActivitySignupMapper
+    }
+
+    namespace Entity {
+        class Activity {
+            -Long id
+            -String title
+            -Integer capacity
+            -Integer status
+        }
+        class ActivitySignup {
+            -Long id
+            -Long activityId
+            -Long userId
+            -Integer status
+        }
+    }
+
+    AppSignupController ..> SignupService : 调用
+    OrgController ..> ActivityService : 调用
+    OrgController ..> SignupService : 调用
+    AdminActivityController ..> ActivityService : 调用
+    SignupService ..> ActivitySignupMapper : 依赖
+    ActivitySignupMapper ..> ActivitySignup : 映射
+    ActivitySignup "0..*" --> "1" Activity : 归属

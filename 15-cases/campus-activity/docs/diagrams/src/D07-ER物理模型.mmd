@@ -1,0 +1,102 @@
+%% E-R 图（物理模型 / 表结构）
+%% 用途：数据库设计说明书 04 图4-2，12 张表的主键、关键字段与基数关系。
+%% 说明：字段全集与索引见 04 文档表格与 schema.sql，本图只保留主键与 2~3 个关键字段。
+%% 基数读法：||--o{ 读作「左边 1 条对右边 0..N 条」，||--o| 为一对零或一。
+erDiagram
+    SYS_USER ||--o| STUDENT_PROFILE : "绑定学籍"
+    STUDENT_WHITELIST ||--o| STUDENT_PROFILE : "白名单校验"
+    ORGANIZATION ||--o{ ORG_MEMBER : "包含成员"
+    SYS_USER ||--o{ ORG_MEMBER : "加入组织"
+    ORGANIZATION ||--o{ ACTIVITY : "主办活动"
+    ACTIVITY_CATEGORY ||--o{ ACTIVITY : "分类归属"
+    SYS_USER ||--o{ ACTIVITY : "创建活动"
+    ACTIVITY ||--o{ ACTIVITY_SIGNUP : "收到报名"
+    SYS_USER ||--o{ ACTIVITY_SIGNUP : "提交报名"
+    ACTIVITY_SIGNUP ||--o| ACTIVITY_CHECKIN : "签到记录"
+    ACTIVITY ||--o{ ACTIVITY_CHECKIN : "签到归属"
+    ACTIVITY ||--o{ ACTIVITY_FAVORITE : "被收藏"
+    SYS_USER ||--o{ ACTIVITY_FAVORITE : "收藏活动"
+    SYS_USER ||--o{ SYS_NOTICE : "接收消息"
+    SYS_USER ||--o{ AUDIT_RECORD : "操作留痕"
+
+    SYS_USER {
+        bigint id PK
+        varchar open_id UK
+        varchar role
+        tinyint status
+    }
+
+    STUDENT_PROFILE {
+        bigint user_id PK
+        varchar student_no UK
+        varchar real_name
+        varchar college
+    }
+
+    STUDENT_WHITELIST {
+        bigint id PK
+        varchar student_no UK
+        tinyint used_flag
+    }
+
+    ORGANIZATION {
+        bigint id PK
+        varchar name
+        tinyint type
+    }
+
+    ORG_MEMBER {
+        bigint id PK
+        bigint org_id FK
+        bigint user_id FK
+    }
+
+    ACTIVITY_CATEGORY {
+        bigint id PK
+        varchar code UK
+        varchar name
+    }
+
+    ACTIVITY {
+        bigint id PK
+        varchar title
+        bigint org_id FK
+        int capacity
+        int signed_count
+        tinyint status
+    }
+
+    ACTIVITY_SIGNUP {
+        bigint id PK
+        bigint activity_id FK
+        bigint user_id FK
+        tinyint status
+        int waitlist_seq
+    }
+
+    ACTIVITY_CHECKIN {
+        bigint id PK
+        bigint signup_id FK
+        tinyint checkin_type
+        datetime checkin_time
+    }
+
+    ACTIVITY_FAVORITE {
+        bigint id PK
+        bigint activity_id FK
+        bigint user_id FK
+    }
+
+    SYS_NOTICE {
+        bigint id PK
+        bigint user_id FK
+        varchar type
+        tinyint read_flag
+    }
+
+    AUDIT_RECORD {
+        bigint id PK
+        bigint biz_id
+        varchar action
+        bigint operator_id FK
+    }

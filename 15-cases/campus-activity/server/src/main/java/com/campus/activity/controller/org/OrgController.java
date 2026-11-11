@@ -8,8 +8,6 @@ import com.campus.activity.dto.ActivitySaveRequest;
 import com.campus.activity.dto.CancelRequest;
 import com.campus.activity.dto.ManualCheckinRequest;
 import com.campus.activity.dto.SignupAuditRequest;
-import com.campus.activity.security.RequireLogin;
-import com.campus.activity.security.RequireRole;
 import com.campus.activity.service.ActivityService;
 import com.campus.activity.service.CheckinService;
 import com.campus.activity.service.SignupService;
@@ -19,6 +17,7 @@ import com.campus.activity.vo.CheckinQrVO;
 import com.campus.activity.vo.SignupDetailVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,8 +32,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/org")
-@RequireLogin
-@RequireRole({"ORGANIZER", "ADMIN"})
+@PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
 @RequiredArgsConstructor
 public class OrgController {
 

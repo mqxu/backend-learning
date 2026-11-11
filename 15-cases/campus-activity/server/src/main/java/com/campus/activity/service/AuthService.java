@@ -16,15 +16,23 @@ import com.campus.activity.mapper.StudentProfileMapper;
 import com.campus.activity.mapper.StudentWhitelistMapper;
 import com.campus.activity.mapper.SysUserMapper;
 import com.campus.activity.security.JwtUtil;
+import com.campus.activity.security.SysUserDetails;
+import com.campus.activity.security.TokenBlacklistService;
 import com.campus.activity.vo.LoginVO;
 import com.campus.activity.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -41,7 +49,8 @@ public class AuthService {
     private final OrganizationMapper organizationMapper;
     private final JwtUtil jwtUtil;
     private final CampusProperties properties;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final AuthenticationManager authenticationManager;
+    private final TokenBlacklistService tokenBlacklistService;
 
     /** 小程序登录：换取 openid，不存在则建号 */
     @Transactional
@@ -71,17 +80,25 @@ public class AuthService {
         return buildLoginVO(user);
     }
 
-    /** 后台账号登录：账号密码 + BCrypt 校验 */
+    /**
+     * 后台账号登录：交给 Spring Security 的 AuthenticationManager 完成查库与密码校验。
+     * 密码错误 → LOGIN_FAILED，账号禁用 → ACCOUNT_DISABLED，角色限制沿用原逻辑。
+     */
     public LoginVO adminLogin(AdminLoginRequest request) {
-        SysUser user = userMapper.selectOne(Wrappers.<SysUser>lambdaQuery()
-                .eq(SysUser::getUsername, request.username()));
-        if (user == null || user.getPasswordHash() == null
-                || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(request.username(), request.password()));
+        } catch (DisabledException e) {
+            throw new BizException(ResultCode.ACCOUNT_DISABLED);
+        } catch (AuthenticationException e) {
+            // 用户不存在与密码错误在 DaoAuthenticationProvider 里已经被合并成 BadCredentialsException，
+            // 对外统一提示“账号或密码错误”，避免暴露账号是否存在
             throw new BizException(ResultCode.LOGIN_FAILED);
         }
-        if (user.getStatus() != null && user.getStatus() == 0) {
-            throw new BizException(ResultCode.ACCOUNT_DISABLED);
-        }
+
+        SysUserDetails principal = (SysUserDetails) authentication.getPrincipal();
+        SysUser user = principal.getUser();
         if (!"ADMIN".equals(user.getRole()) && !"REVIEWER".equals(user.getRole())) {
             throw new BizException(ResultCode.FORBIDDEN, "该账号没有后台登录权限");
         }
@@ -91,6 +108,22 @@ public class AuthService {
         userMapper.updateById(update);
 
         return buildLoginVO(user);
+    }
+
+    /**
+     * 登出：把 token 的 jti 写进 Redis 黑名单，TTL 取 token 的剩余有效期。
+     * token 已经无效（过期、伪造）时无需处理，直接返回。
+     */
+    public void logout(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return;
+        }
+        JwtUtil.TokenClaims claims = jwtUtil.parse(authorization.substring("Bearer ".length()).trim());
+        if (claims == null) {
+            return;
+        }
+        Duration ttl = Duration.between(Instant.now(), claims.expiresAt());
+        tokenBlacklistService.block(claims.jti(), ttl);
     }
 
     /** 学号绑定：与白名单比对，一个学号只能绑一个微信 */

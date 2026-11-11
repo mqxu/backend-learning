@@ -1,0 +1,45 @@
+%% 时序图 / 顺序图（Sequence Diagram）
+%% 用途：描述一次交互中对象之间的消息往来，强调时间顺序。
+%% 要点：参与者按「用户 → 前端 → 网关 → 服务 → 存储」从左到右排列；
+%%       同步调用用实线实心箭头，返回用虚线空心箭头；
+%%       分支用 alt，循环用 loop，可选流程用 opt，并行用 par。
+sequenceDiagram
+    autonumber
+    actor U as 学生
+    participant W as 前端应用
+    participant G as API 网关
+    participant S as 选课服务
+    participant D as 数据库
+
+    U->>W: 点击「选课报名」
+    W->>G: POST /api/enrollments {courseId}
+    activate G
+    G->>G: 校验 JWT 与接口权限
+    G->>S: 转发请求（X-User-Id）
+    activate S
+    S->>D: 查询课程余量 FOR UPDATE
+    activate D
+    D-->>S: 余量记录
+    deactivate D
+
+    alt 余量充足且未重复选课
+        S->>D: 写入选课记录
+        D-->>S: 影响行数 1
+        S->>D: 余量减 1
+        S-->>G: 201 {enrollmentId}
+        G-->>W: 201 Created
+        W-->>U: 提示「选课成功」并刷新列表
+    else 余量不足
+        S-->>G: 409 COURSE_FULL
+        G-->>W: 409 Conflict
+        W-->>U: 提示「名额已满」
+    else 重复选课
+        S-->>G: 409 ALREADY_ENROLLED
+        G-->>W: 409 Conflict
+        W-->>U: 提示「你已选过这门课」
+    end
+
+    deactivate S
+    deactivate G
+
+    Note over S,D: 余量扣减与记录写入在同一事务内完成

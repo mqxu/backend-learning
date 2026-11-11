@@ -1,0 +1,24 @@
+{
+  "module": "{{MODULE}}",
+  "port": {{PORT}},
+  "title": "{{NAV_INDEX}} · {{TITLE}}",
+  "tag": "{{TAG}}",
+  "groupSlug": {
+    "公开接口": "public"
+  },
+  "cases": [
+    {
+      "id": "hello",
+      "name": "{{NAV_INDEX}}.1 模块信息",
+      "desc": "确认骨架能启动，返回模块路径与端口。",
+      "group": "公开接口",
+      "req": {
+        "method": "GET",
+        "path": "/hello"
+      },
+      "openapi": {
+        "summary": "模块信息"
+      }
+    }
+  ]
+}
